@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/julian7/redact/gitutil"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -42,4 +45,22 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		logrus.Infof("Using config file: %s", viper.ConfigFileUsed())
 	}
+}
+
+func saveGitSettings() error {
+	argv0 := os.Args[0]
+	argv0, err := filepath.Abs(argv0)
+	if err != nil {
+		return errors.Wrap(err, "get absolute path of argv0")
+	}
+	if err := gitutil.GitConfig("filter.redact.clean", fmt.Sprintf(`"%s" git clean`, argv0)); err != nil {
+		return err
+	}
+	if err := gitutil.GitConfig("filter.redact.smudge", fmt.Sprintf(`"%s" git smudge`, argv0)); err != nil {
+		return err
+	}
+	if err := gitutil.GitConfig("diff.redact.textconv", fmt.Sprintf(`"%s" git diff`, argv0)); err != nil {
+		return err
+	}
+	return nil
 }

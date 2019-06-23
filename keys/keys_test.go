@@ -41,6 +41,41 @@ func prebuild(t *testing.T, k *MasterKey) bool {
 	return true
 }
 
+func TestGenerate(t *testing.T) {
+	k := genGitRepo(t)
+	if k == nil {
+		return
+	}
+	err := k.Generate()
+	if err != nil {
+		t.Errorf("Error generating keys: %v", err.Error())
+		return
+	}
+	if len(k.Key.AES()) == 0 {
+		t.Errorf("Empty AES key")
+	}
+	if len(k.Key.HMAC()) == 0 {
+		t.Errorf("Empty HMAC key")
+	}
+	nonzeros := 0
+	for _, c := range k.Key.AES() {
+		if c > 0 {
+			nonzeros++
+		}
+	}
+	if nonzeros == 0 {
+		t.Errorf("AES key is just zero bytes")
+	}
+	nonzeros = 0
+	for _, c := range k.Key.HMAC() {
+		if c > 0 {
+			nonzeros++
+		}
+	}
+	if nonzeros == 0 {
+		t.Errorf("HMAC key is just zero bytes")
+	}
+}
 
 func TestLoad(t *testing.T) {
 	tt := []struct {
@@ -65,6 +100,44 @@ func TestLoad(t *testing.T) {
 			}
 			if bytes.Compare(k.Key.AES(), []byte(sampleAES)) != 0 {
 				t.Errorf(`Wrong AES key\nExpected: "%s"\nReceived: "%s"`, sampleAES, k.Key.AES())
+			}
+		})
+	}
+}
+
+func TestSave(t *testing.T) {
+	tt := []struct {
+		name          string
+		hasKey        bool
+		expectedError string
+	}{
+		{"uninitialized", false, ""},
+		{"initialized", false, ""},
+	}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			k := genGitRepo(t)
+			if tc.hasKey {
+				if !prebuild(t, k) {
+					return
+				}
+			}
+			err := k.Generate()
+			if err != nil {
+				t.Errorf("Error generating keys: %v", err.Error())
+				return
+			}
+			err = k.Save()
+			if !checkError(t, tc.expectedError, err) {
+				return
+			}
+			finfo, err := k.Fs.Stat("/.git/test/key")
+			if err != nil {
+				t.Errorf("key not created: %v", err)
+				return
+			}
+			if !finfo.Mode().IsRegular() {
+				t.Errorf("key is not regular file")
 			}
 		})
 	}
