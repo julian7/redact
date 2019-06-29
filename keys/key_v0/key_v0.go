@@ -28,8 +28,13 @@ func NewKey(epoch uint32) *KeyV0 {
 	return key
 }
 
-// Version returns key format version
+// Version returns key epoch version
 func (k *KeyV0) Version() uint32 {
+	return k.Epoch
+}
+
+// Type returns key format type
+func (k *KeyV0) Type() uint32 {
 	return 0
 }
 

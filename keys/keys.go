@@ -15,8 +15,8 @@ import (
 const (
 	// KeyMagic magic string the key file starts with
 	KeyMagic = "\000REDACT\000"
-	// KeyCurrentVersion current key file version
-	KeyCurrentVersion = 0
+	// KeyCurrentType current key file version
+	KeyCurrentType = 0
 )
 
 // MasterKey contains master key in a git repository
@@ -70,13 +70,13 @@ func (k *MasterKey) Load() error {
 	if bytes.Compare(readbuf, []byte(KeyMagic)) != 0 {
 		return errors.New("invalid key file preamble")
 	}
-	var version uint32
-	err = binary.Read(f, binary.BigEndian, &version)
+	var keyType uint32
+	err = binary.Read(f, binary.BigEndian, &keyType)
 	if err != nil {
-		return errors.Wrap(err, "reading key version")
+		return errors.Wrap(err, "reading key type")
 	}
-	if version != KeyCurrentVersion {
-		return errors.New("invalid key version")
+	if keyType != KeyCurrentType {
+		return errors.New("invalid key type")
 	}
 	var key keyV0.KeyV0
 	err = binary.Read(f, binary.BigEndian, &key)
