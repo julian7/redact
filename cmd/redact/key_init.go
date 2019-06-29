@@ -8,7 +8,7 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initializes a repository",
+	Short: "Generates initial redact key",
 	Run:   initDo,
 }
 
@@ -32,7 +32,7 @@ func initDo(cmd *cobra.Command, args []string) {
 		return
 	}
 	masterkey.Generate()
-	logrus.Infof("repo key created: %v", masterkey)
+	logrus.Infof("new repo key created: %v", masterkey)
 	err = masterkey.Save()
 	if err != nil {
 		logrus.Fatalf("saving master key: %v", err)
