@@ -2,6 +2,7 @@ package keys
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"testing"
 
@@ -31,9 +32,18 @@ func prebuild(t *testing.T, k *MasterKey) bool {
 		return false
 	}
 	defer fd.Close()
-	_, err = fd.WriteString("\000REDACT\000\000\000\000\000\000\000\000\001" +
-		sampleAES + sampleHMAC,
+	_, err = fd.WriteString(
+		"\000REDACT\000" + // preamble
+			"\000\000\000\000" + // key type == 0
+			"\000\000\000\001" + // first key epoch
+			sampleAES + sampleHMAC + // sample key
+			"\000\000\000\002" + // second key epoch
+			sampleAES + sampleHMAC, // sample key
 	)
+	if err != nil {
+		t.Errorf("cannot write key file %s: %v", keyfile, err)
+		return false
+	}
 	if err != nil {
 		t.Errorf("cannot write key file %s: %v", keyfile, err)
 		return false
@@ -44,36 +54,48 @@ func prebuild(t *testing.T, k *MasterKey) bool {
 func TestGenerate(t *testing.T) {
 	k := genGitRepo(t)
 	if k == nil {
+		t.Error("cannot generate git repo")
 		return
 	}
-	err := k.Generate()
-	if err != nil {
-		t.Errorf("Error generating keys: %v", err.Error())
-		return
-	}
-	if len(k.Key.AES()) == 0 {
-		t.Errorf("Empty AES key")
-	}
-	if len(k.Key.HMAC()) == 0 {
-		t.Errorf("Empty HMAC key")
-	}
-	nonzeros := 0
-	for _, c := range k.Key.AES() {
-		if c > 0 {
-			nonzeros++
+	for _, name := range []string{"first", "second"} {
+		err := k.Generate()
+		if err != nil {
+			t.Errorf("Error generating %s keypair: %v", name, err.Error())
+			return
 		}
 	}
-	if nonzeros == 0 {
-		t.Errorf("AES key is just zero bytes")
+	tt := []struct {
+		name    string
+		keyfunc func(KeyHandler) []byte
+	}{
+		{"AES", (KeyHandler).AES},
+		{"HMAC", (KeyHandler).HMAC},
 	}
-	nonzeros = 0
-	for _, c := range k.Key.HMAC() {
-		if c > 0 {
-			nonzeros++
-		}
-	}
-	if nonzeros == 0 {
-		t.Errorf("HMAC key is just zero bytes")
+	for idx, name := range []string{"latest", "first", "second"} {
+		t.Run(fmt.Sprintf("%s key", name), func(t *testing.T) {
+			key, err := k.Key(uint32(idx))
+			if err != nil {
+				t.Errorf("cannot retrieve %s key: %v", name, err)
+				return
+			}
+			for _, tc := range tt {
+				t.Run(tc.name, func(t *testing.T) {
+					val := tc.keyfunc(key)
+					if len(val) == 0 {
+						t.Errorf("empty %s %s key", name, tc.name)
+					}
+					nonzeros := 0
+					for _, c := range val {
+						if c > 0 {
+							nonzeros++
+						}
+					}
+					if nonzeros == 0 {
+						t.Errorf("%s %s key is just zero bytes", name, tc.name)
+					}
+				})
+			}
+		})
 	}
 }
 
@@ -98,8 +120,14 @@ func TestLoad(t *testing.T) {
 			if !checkError(t, tc.expectedError, err) || err != nil {
 				return
 			}
-			if bytes.Compare(k.Key.AES(), []byte(sampleAES)) != 0 {
-				t.Errorf(`Wrong AES key\nExpected: "%s"\nReceived: "%s"`, sampleAES, k.Key.AES())
+			key, err := k.Key(0)
+			if err != nil {
+				t.Errorf("Cannot retrieve latest key: %v", err)
+				return
+			}
+			received := key.AES()
+			if bytes.Compare(received, []byte(sampleAES)) != 0 {
+				t.Errorf(`Wrong AES key\nExpected: "%s"\nReceived: "%s"`, sampleAES, received)
 			}
 		})
 	}

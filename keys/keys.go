@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/julian7/redact/gitutil"
@@ -22,8 +23,9 @@ const (
 // MasterKey contains master key in a git repository
 type MasterKey struct {
 	afero.Fs
-	Key    KeyHandler
-	KeyDir string
+	KeyDir    string
+	Keys      map[uint32]KeyHandler
+	LatestKey uint32
 }
 
 // NewMasterKey generates a new repo key in the OS' filesystem
@@ -32,14 +34,20 @@ func NewMasterKey() (*MasterKey, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot build repo key")
 	}
-	return &MasterKey{Fs: afero.NewOsFs(), KeyDir: buildKeyDir(gitdir)}, nil
+	return &MasterKey{
+		Fs:     afero.NewOsFs(),
+		KeyDir: buildKeyDir(gitdir),
+	}, nil
 }
 
 // Generate generates a new master key
-// TMP HACK: epoch is hardwired to 1
 func (k *MasterKey) Generate() error {
-	k.Key = keyV0.NewKey(1)
-	return k.Key.Generate()
+	epoch := k.LatestKey
+	k.ensureKeys()
+	epoch++
+	k.Keys[epoch] = keyV0.NewKey(epoch)
+	k.LatestKey = epoch
+	return k.Keys[epoch].Generate()
 }
 
 // Load loads existing key
@@ -78,13 +86,28 @@ func (k *MasterKey) Load() error {
 	if keyType != KeyCurrentType {
 		return errors.New("invalid key type")
 	}
-	var key keyV0.KeyV0
-	err = binary.Read(f, binary.BigEndian, &key)
-	if err != nil {
-		return errors.Wrap(err, "reading key data")
+	epoch := uint32(0)
+	k.ensureKeys()
+	for {
+		key := new(keyV0.KeyV0)
+		err = binary.Read(f, binary.BigEndian, key)
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return errors.Wrap(err, "reading key data")
+		}
+		if epoch >= key.Version() {
+			return errors.Errorf(
+				"invalid epoch in keys: %d (previous: %d)",
+				key.Version(),
+				epoch,
+			)
+		}
+		epoch = key.Version()
+		k.Keys[epoch] = key
+		k.LatestKey = epoch
 	}
-	k.Key = &key
-	return nil
 }
 
 // Save saves key
@@ -107,17 +130,41 @@ func (k *MasterKey) Save() error {
 	if err != nil {
 		return errors.Wrap(err, "writing key preamble")
 	}
-	versionData := make([]byte, 4)
-	binary.BigEndian.PutUint32(versionData, KeyCurrentVersion)
-	_, err = f.Write(versionData)
+	typeData := make([]byte, 4)
+	binary.BigEndian.PutUint32(typeData, KeyCurrentType)
+	_, err = f.Write(typeData)
 	if err != nil {
-		return errors.Wrap(err, "writing key version header")
+		return errors.Wrap(err, "writing key type header")
 	}
-	err = binary.Write(f, binary.BigEndian, k.Key)
-	if err != nil {
-		return errors.Wrap(err, "writing key contents")
+	for _, key := range k.Keys {
+		err = binary.Write(f, binary.BigEndian, key)
+		if err != nil {
+			return errors.Wrap(err, "writing key contents")
+		}
 	}
 	return nil
+}
+
+// Key returns the a key handler with a certain epoch. If epoch is 0,
+// it returns the latest key.
+func (k *MasterKey) Key(epoch uint32) (KeyHandler, error) {
+	if k.Keys == nil || k.LatestKey == 0 {
+		return nil, errors.New("no keys loaded")
+	}
+	if epoch == 0 {
+		epoch = k.LatestKey
+	}
+	key, ok := k.Keys[epoch]
+	if !ok {
+		return nil, errors.Errorf("key version %d not found", epoch)
+	}
+	return key, nil
+}
+
+func (k *MasterKey) ensureKeys() {
+	if k.Keys == nil {
+		k.Keys = make(map[uint32]KeyHandler)
+	}
 }
 
 func (k *MasterKey) getOrCreateKeyDir() error {
@@ -151,9 +198,16 @@ func (k *MasterKey) checkKeyDir() error {
 }
 
 func (k *MasterKey) String() string {
+	var keymsg string
+	key, err := k.Key(0)
+	if err != nil {
+		keymsg = err.Error()
+	} else {
+		keymsg = key.String()
+	}
 	return fmt.Sprintf(
 		"%s (%s)",
 		k.KeyDir,
-		k.Key,
+		keymsg,
 	)
 }
