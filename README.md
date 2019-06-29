@@ -4,6 +4,10 @@ Redact allows you to store sensitive data in a git repository by encrypting / de
 
 The project is very similar to [git-crypt](https://github.com/AGWA/git-crypt), [transcrypt](https://github.com/elasticdog/transcrypt), and [git-secret](https://github.com/sobolevn/git-secret).
 
+## WARNING
+
+In nominal cases, you should never store your secrets in a git repository. Use a different tool for that. However, when secrets are integral part of the repo (like if it is all about storing secret information), it's a nice touch to have an extra layer of security on top of what a git service can provide.
+
 ## What Redact provides, what other tools don't?
 
 * Redact is written in go, and as such, it can bring encryption into environments with no bash (???), and can be cross-compiled.
