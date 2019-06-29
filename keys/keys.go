@@ -117,10 +117,6 @@ func (k *MasterKey) Save() error {
 		return err
 	}
 	keyfile := buildKeyFileName(k.KeyDir)
-	_, err = k.Fs.Stat(keyfile)
-	if err == nil {
-		return errors.Errorf("key file (%s) already exists", keyfile)
-	}
 	f, err := k.Fs.OpenFile(keyfile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err != nil {
 		return errors.Wrap(err, "saving key file")

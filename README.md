@@ -27,8 +27,9 @@ is calculated from the plaintext's HMAC key, taking the first 96 bits. Encrypted
 
 * key: master key commands:
   * init: initializes master key
-  * rekey: reinitializes master key, and re-encrypts files
+  * generate: generates new master key
   * info (default): shows master key info
+  * list: lists all keys
 * unlock: unlocks repository with local key
 * access: key exchange commands
   * ls/list: list user access
