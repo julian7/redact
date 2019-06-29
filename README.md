@@ -1,5 +1,7 @@
 # Redact, data encryptor in git
 
+**PLEASE NOTE**: this project is still under heavy development, and not suitable for normal use. Also, most of the features described here are still don't exist.
+
 Redact allows you to store sensitive data in a git repository by encrypting / decrypting it on-the-fly.
 
 The project is very similar to [git-crypt](https://github.com/AGWA/git-crypt), [transcrypt](https://github.com/elasticdog/transcrypt), and [git-secret](https://github.com/sobolevn/git-secret).
@@ -30,6 +32,7 @@ is calculated from the plaintext's HMAC key, taking the first 96 bits. Encrypted
   * generate: generates new master key
   * info (default): shows master key info
   * list: lists all keys
+* lock: deletes local key
 * unlock: unlocks repository with local key
 * access: key exchange commands
   * ls/list: list user access
