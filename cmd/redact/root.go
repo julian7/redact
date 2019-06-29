@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/julian7/redact/gitutil"
+	"github.com/julian7/redact/keys"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -63,4 +64,20 @@ func saveGitSettings() error {
 		return err
 	}
 	return nil
+}
+
+func basicDo() (*keys.MasterKey, error) {
+	err := saveGitSettings()
+	if err != nil {
+		return nil, errors.Wrap(err, "setting git config")
+	}
+	masterkey, err := keys.NewMasterKey()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating master key object")
+	}
+	err = masterkey.Load()
+	if err != nil {
+		return nil, errors.Wrap(err, "loading master key")
+	}
+	return masterkey, nil
 }
