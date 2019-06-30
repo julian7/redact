@@ -72,9 +72,12 @@ func initConfig() {
 
 func saveGitSettings() error {
 	argv0 := os.Args[0]
-	argv0, err := filepath.Abs(argv0)
-	if err != nil {
-		return errors.Wrap(err, "get absolute path of argv0")
+	if argv0[0] == '.' {
+		var err error
+		argv0, err = filepath.Abs(argv0)
+		if err != nil {
+			return errors.Wrap(err, "get absolute path of argv0")
+		}
 	}
 	configItems := map[string]string{
 		"filter.%s.clean":  `"%s" git clean`,
