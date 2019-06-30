@@ -22,8 +22,8 @@ func listDo(cmd *cobra.Command, args []string) {
 		cmdErrHandler(err)
 		return
 	}
-	fmt.Printf("repo key: %v", masterkey)
-	for idx, key := range masterkey.Keys {
-		fmt.Printf(" - %d: %s", idx, key)
+	fmt.Printf("repo key: %v\n", masterkey)
+	for _, key := range masterkey.Keys {
+		fmt.Printf(" - %s\n", key)
 	}
 }
