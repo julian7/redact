@@ -15,7 +15,7 @@ func GitDir() (string, error) {
 		"--git-common-dir",
 	).Output()
 	if err != nil {
-		return "", errors.Wrap(err, "can't parse git dir")
+		return "", errors.Wrap(err, "parsing git dir")
 	}
 	return strings.TrimSuffix(string(out), "\n"), nil
 }
