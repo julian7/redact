@@ -81,3 +81,7 @@ func basicDo() (*keys.MasterKey, error) {
 	}
 	return masterkey, nil
 }
+
+func cmdErrHandler(err error) {
+	logrus.Fatalf("%v", err)
+}
