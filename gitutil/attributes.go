@@ -8,12 +8,14 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/julian7/redact/log"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 // CheckAttrs fills in filter attributes for file entries
 func (e FileEntries) CheckAttrs() error {
+	l := log.Log()
+
 	cmd := exec.Command(
 		"git",
 		"check-attr",
@@ -40,7 +42,7 @@ func (e FileEntries) CheckAttrs() error {
 	go logErrors(errorstream)
 	err = e.readCheckAttrs(receiver)
 	if err != nil {
-		logrus.Errorf("git command output error: %v", err)
+		l.Errorf("git command output error: %v", err)
 	}
 	err = cmd.Wait()
 	return err
@@ -56,6 +58,7 @@ func (e FileEntries) feedWithFileNames(writer io.WriteCloser) {
 func (e FileEntries) readCheckAttrs(reader io.ReadCloser) error {
 	var err error
 	defer reader.Close()
+	l := log.Log()
 
 	idx := make(map[string]*FileEntry)
 	for _, entry := range e {
@@ -82,7 +85,7 @@ func (e FileEntries) readCheckAttrs(reader io.ReadCloser) error {
 		}
 		item, ok := idx[items[0]]
 		if !ok {
-			logrus.Infof("item not found in file list: %s", items[0])
+			l.Infof("item not found in file list: %s", items[0])
 			continue
 		}
 		item.Filter = items[1]
@@ -93,6 +96,7 @@ func (e FileEntries) readCheckAttrs(reader io.ReadCloser) error {
 func logErrors(input io.ReadCloser) {
 	defer input.Close()
 	inbuf := bufio.NewReader(input)
+	l := log.Log()
 
 	for {
 		line, _, err := inbuf.ReadLine()
@@ -100,9 +104,9 @@ func logErrors(input io.ReadCloser) {
 			if err == io.EOF {
 				return
 			}
-			logrus.Errorf("error reading line from error: %v", err)
+			l.Errorf("error reading line from error: %v", err)
 			return
 		}
-		logrus.Errorf("git command error: %s", line)
+		l.Errorf("git command error: %s", line)
 	}
 }

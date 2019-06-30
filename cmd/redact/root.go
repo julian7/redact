@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/files"
+	"github.com/julian7/redact/gitutil"
+	"github.com/julian7/redact/log"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -25,12 +25,23 @@ var (
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(
+	flags := rootCmd.PersistentFlags()
+	flags.StringVar(
 		&cfgFile,
 		"config",
 		"",
 		"config file (default: ~/"+configName+".yaml)",
 	)
+	flags.StringP("verbosity", "v", "info", "Verbosity (possible values: debug, info, warn, error, fatal)")
+	viper.BindPFlag("verbosity", flags.Lookup("verbosity"))
+
+	logLevel := strings.ToLower(viper.GetString("verbosity"))
+	if logLevel != "" {
+		err := log.SetLogLevel(logLevel)
+		if err != nil {
+			log.Log().Warnf("%v", err)
+		}
+	}
 }
 
 func initConfig() {
@@ -44,7 +55,7 @@ func initConfig() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	if err := viper.ReadInConfig(); err == nil {
-		logrus.Infof("Using config file: %s", viper.ConfigFileUsed())
+		log.Log().Infof("Using config file: %s", viper.ConfigFileUsed())
 	}
 }
 
@@ -83,5 +94,5 @@ func basicDo() (*files.MasterKey, error) {
 }
 
 func cmdErrHandler(err error) {
-	logrus.Fatalf("%v", err)
+	log.Log().Fatalf("%v", err)
 }

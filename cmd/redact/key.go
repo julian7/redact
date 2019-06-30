@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/julian7/redact/files"
-	"github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -15,15 +17,15 @@ var keyCmd = &cobra.Command{
 func keyDo(cmd *cobra.Command, args []string) {
 	masterkey, err := files.NewMasterKey()
 	if err != nil {
-		logrus.Fatalf("building master key: %v", err)
+		cmdErrHandler(errors.Wrap(err, "building master key"))
 		return
 	}
 	err = masterkey.Load()
 	if err != nil {
-		logrus.Fatalf("loading master key: %v", err)
+		cmdErrHandler(errors.Wrap(err, "loading master key"))
 		return
 	}
-	logrus.Infof("repo key: %v", masterkey)
+	fmt.Printf("repo key: %v\n", masterkey)
 }
 
 func init() {

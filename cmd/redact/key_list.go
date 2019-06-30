@@ -1,7 +1,8 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -18,11 +19,11 @@ func init() {
 func listDo(cmd *cobra.Command, args []string) {
 	masterkey, err := basicDo()
 	if err != nil {
-		logrus.Fatalf("%v", err)
+		cmdErrHandler(err)
 		return
 	}
-	logrus.Infof("repo key: %v", masterkey)
+	fmt.Printf("repo key: %v", masterkey)
 	for idx, key := range masterkey.Keys {
-		logrus.Infof(" - %d: %s", idx, key)
+		fmt.Printf(" - %d: %s", idx, key)
 	}
 }

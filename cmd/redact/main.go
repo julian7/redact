@@ -3,12 +3,12 @@ package main
 import (
 	"os"
 
-	"github.com/sirupsen/logrus"
+	"github.com/julian7/redact/log"
 )
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		logrus.Errorf("%v", err)
+		log.Log().Errorf("%v", err)
 		os.Exit(1)
 	}
 }

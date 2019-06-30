@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/julian7/redact/files"
-	"github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -20,22 +22,22 @@ func init() {
 func generateDo(cmd *cobra.Command, args []string) {
 	err := saveGitSettings()
 	if err != nil {
-		logrus.Fatalf("setting git config: %v", err)
+		cmdErrHandler(errors.Wrap(err, "setting git config"))
 		return
 	}
 	masterkey, err := files.NewMasterKey()
 	if err != nil {
-		logrus.Fatalf("%v", err)
+		cmdErrHandler(err)
 	}
 	err = masterkey.Load()
 	if err != nil {
-		logrus.Fatalf("loading master key: %v", err)
+		cmdErrHandler(errors.Wrap(err, "loading master key"))
 		return
 	}
 	masterkey.Generate()
-	logrus.Infof("new repo key created: %v", masterkey)
+	fmt.Printf("New repo key created: %v\n", masterkey)
 	err = masterkey.Save()
 	if err != nil {
-		logrus.Fatalf("saving master key: %v", err)
+		cmdErrHandler(errors.Wrap(err, "saving master key"))
 	}
 }
