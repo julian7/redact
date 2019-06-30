@@ -14,6 +14,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	// AttrName defines name used in .gitattribute file's attribute
+	// like: `*.key filter=AttrName diff=AttrName`
+	AttrName = "redact"
+)
+
 var (
 	cfgFile    string
 	configName = ".redact"
@@ -70,14 +76,18 @@ func saveGitSettings() error {
 	if err != nil {
 		return errors.Wrap(err, "get absolute path of argv0")
 	}
-	if err := gitutil.GitConfig("filter.redact.clean", fmt.Sprintf(`"%s" git clean`, argv0)); err != nil {
-		return err
+	configItems := map[string]string{
+		"filter.%s.clean":  `"%s" git clean`,
+		"filter.%s.smudge": `"%s" git smudge`,
+		"diff.%s.textconv": `"%s" git diff`,
 	}
-	if err := gitutil.GitConfig("filter.redact.smudge", fmt.Sprintf(`"%s" git smudge`, argv0)); err != nil {
-		return err
-	}
-	if err := gitutil.GitConfig("diff.redact.textconv", fmt.Sprintf(`"%s" git diff`, argv0)); err != nil {
-		return err
+	for key, val := range configItems {
+		if err := gitutil.GitConfig(
+			fmt.Sprintf(key, AttrName),
+			fmt.Sprintf(val, argv0),
+		); err != nil {
+			return err
+		}
 	}
 	return nil
 }

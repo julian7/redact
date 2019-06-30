@@ -56,7 +56,7 @@ func statusDo(cmd *cobra.Command, args []string) {
 		return
 	}
 	for _, entry := range files {
-		if entry.Filter == "redact" {
+		if entry.Filter == AttrName {
 			if opts.encOnly || !opts.plainOnly {
 				printFileEntry(entry, true)
 			}
