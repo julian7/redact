@@ -12,8 +12,15 @@ var initCmd = &cobra.Command{
 	Run:   initDo,
 }
 
+var rootInitCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Generates initial redact key (alias of redact key init)",
+	Run:   initDo,
+}
+
 func init() {
 	keyCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(rootInitCmd)
 }
 
 func initDo(cmd *cobra.Command, args []string) {
