@@ -18,10 +18,23 @@ var (
 	cfgFile    string
 	configName = ".redact"
 	rootCmd    = &cobra.Command{
-		Use:   "redact",
-		Short: "encrypts files in a git repository",
+		Use:              "redact",
+		Short:            "encrypts files in a git repository",
+		PersistentPreRun: setupLogging,
 	}
 )
+
+func setupLogging(cmd *cobra.Command, args []string) {
+	logLevel := strings.ToLower(viper.GetString("verbosity"))
+	if logLevel != "" {
+		err := log.SetLogLevel(logLevel)
+		if err != nil {
+			log.Log().Warnf("%v", err)
+		} else {
+			log.Log().Debugf("Setting log level to %s", logLevel)
+		}
+	}
+}
 
 func init() {
 	cobra.OnInitialize(initConfig)
@@ -34,14 +47,6 @@ func init() {
 	)
 	flags.StringP("verbosity", "v", "info", "Verbosity (possible values: debug, info, warn, error, fatal)")
 	viper.BindPFlag("verbosity", flags.Lookup("verbosity"))
-
-	logLevel := strings.ToLower(viper.GetString("verbosity"))
-	if logLevel != "" {
-		err := log.SetLogLevel(logLevel)
-		if err != nil {
-			log.Log().Warnf("%v", err)
-		}
-	}
 }
 
 func initConfig() {
