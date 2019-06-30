@@ -7,12 +7,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	// DefaultKeyDir contains standard key directory name inside .git/ directory
+	DefaultKeyDir = "redact"
+	// DefaultKeyFile contains standard key file name inside key directory
+	DefaultKeyFile = "key"
+)
+
 func buildKeyDir(gitdir string) string {
-	return filepath.Join(gitdir, "redact")
+	return filepath.Join(gitdir, DefaultKeyDir)
 }
 
 func buildKeyFileName(path string) string {
-	return filepath.Join(path, "key")
+	return filepath.Join(path, DefaultKeyFile)
 }
 
 func checkFileMode(name string, fileinfo os.FileInfo, expected os.FileMode) error {
