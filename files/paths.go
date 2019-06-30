@@ -12,6 +12,8 @@ const (
 	DefaultKeyDir = "redact"
 	// DefaultKeyFile contains standard key file name inside key directory
 	DefaultKeyFile = "key"
+	// DefaultKeyExchangeDir is where key exchange files are stored
+	DefaultKeyExchangeDir = ".redact"
 )
 
 func buildKeyDir(gitdir string) string {

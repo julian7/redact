@@ -52,12 +52,9 @@ func (k *MasterKey) Encode(encodingFormat uint32, epoch uint32, reader io.Reader
 // Decode encodes an IO stream into another IO stream
 func (k *MasterKey) Decode(reader io.Reader, writer io.Writer) error {
 	var header fileHeader
-	err := binary.Read(reader, binary.BigEndian, &header)
+	err := k.readHeader(reader, &header)
 	if err != nil {
-		return errors.Wrap(err, "reading file header")
-	}
-	if bytes.Compare(header.Preamble[:], []byte(FileMagic)) != 0 {
-		return errors.New("invalid file preamble")
+		return err
 	}
 	key, err := k.Key(header.Epoch)
 	if err != nil {
@@ -77,4 +74,25 @@ func (k *MasterKey) Decode(reader io.Reader, writer io.Writer) error {
 	}
 	_, err = writer.Write(out)
 	return errors.Wrap(err, "writing decoded stream")
+}
+
+// FileStatus returns file encryption status and key used
+func (k *MasterKey) FileStatus(reader io.Reader) (bool, uint32) {
+	var header fileHeader
+	err := k.readHeader(reader, &header)
+	if err != nil {
+		return false, 0
+	}
+	return true, header.Epoch
+}
+
+func (k *MasterKey) readHeader(reader io.Reader, header *fileHeader) error {
+	err := binary.Read(reader, binary.BigEndian, header)
+	if err != nil {
+		return errors.Wrap(err, "reading file header")
+	}
+	if bytes.Compare(header.Preamble[:], []byte(FileMagic)) != 0 {
+		return errors.New("invalid file preamble")
+	}
+	return nil
 }
