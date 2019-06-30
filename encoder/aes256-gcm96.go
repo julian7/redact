@@ -42,7 +42,7 @@ func NewAES256GCM96(aes, hmac []byte) (Encoder, error) {
 // Encode takes a value, and encrypts it in a convergent way, making sure the same
 // input provides the same output every time, while not leaking secret information
 // about its encryption keys
-func (enc *AES256GCM96) Encode(value []byte) ([]byte, error) {
+func (enc AES256GCM96) Encode(value []byte) ([]byte, error) {
 	gcm, err := getGCM(enc.key)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (enc *AES256GCM96) Encode(value []byte) ([]byte, error) {
 }
 
 // Decode takes a byte stream, and decrypts its contents
-func (enc *AES256GCM96) Decode(ciphertext []byte) ([]byte, error) {
+func (enc AES256GCM96) Decode(ciphertext []byte) ([]byte, error) {
 	gcm, err := getGCM(enc.key)
 	if err != nil {
 		return nil, err
