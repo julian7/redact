@@ -1,4 +1,4 @@
-package keys
+package files
 
 // KeyHandler interface
 type KeyHandler interface {

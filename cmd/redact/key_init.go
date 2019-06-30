@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/julian7/redact/keys"
+	"github.com/julian7/redact/files"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -29,7 +29,7 @@ func initDo(cmd *cobra.Command, args []string) {
 		logrus.Fatalf("setting git config: %v", err)
 		return
 	}
-	masterkey, err := keys.NewMasterKey()
+	masterkey, err := files.NewMasterKey()
 	if err != nil {
 		logrus.Fatalf("%v", err)
 	}

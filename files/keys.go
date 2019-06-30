@@ -1,4 +1,4 @@
-package keys
+package files
 
 import (
 	"bytes"
@@ -7,8 +7,8 @@ import (
 	"io"
 	"os"
 
+	keyV0 "github.com/julian7/redact/files/key_v0"
 	"github.com/julian7/redact/gitutil"
-	keyV0 "github.com/julian7/redact/keys/key_v0"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )

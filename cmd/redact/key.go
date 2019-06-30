@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/julian7/redact/keys"
+	"github.com/julian7/redact/files"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +13,7 @@ var keyCmd = &cobra.Command{
 }
 
 func keyDo(cmd *cobra.Command, args []string) {
-	masterkey, err := keys.NewMasterKey()
+	masterkey, err := files.NewMasterKey()
 	if err != nil {
 		logrus.Fatalf("building master key: %v", err)
 		return
