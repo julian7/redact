@@ -64,7 +64,7 @@ func statusDo(cmd *cobra.Command, args []string) {
 		return
 	}
 	for _, entry := range files {
-		if entry.Filter == AttrName {
+		if entry.Filter == AttrName && entry.Status != gitutil.StatusOther {
 			if opts.encOnly || !opts.plainOnly {
 				opts.handleFileEntry(entry, true)
 			}
@@ -79,6 +79,7 @@ func statusDo(cmd *cobra.Command, args []string) {
 func (opts statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEncrypted bool) {
 	var isEncrypted bool
 	var encKeyVersion uint32
+
 	reader, err := gitutil.Cat(entry.SHA1[:])
 	if err == nil {
 		isEncrypted, encKeyVersion = opts.key.FileStatus(reader)
