@@ -22,8 +22,7 @@ In nominal cases, you should never store your secrets in a git repository. Use a
 
 Keys are prepared for AES-256 (256 bits) and HMAC-256 (512 bits). The system is able to store multiple keys, with different epoch numbers. All keys are usable for decryption, but by default only the latest key is used for encryption.
 
-File encoding uses AES256-GCM96 encoding, which uses an HMAC-based Extract-and-Expand Key Derivation Function for calculating the final AES / HMAC keys. Encryption nonce
-is calculated from the plaintext's HMAC key, taking the first 96 bits. Encrypted file stores this calculated nonce, and ciphertext. During decoding, the saved nonce is checked against calculated HMAC, whether its first 96 bits are matching.
+File encoding uses AES256-GCM96 encoding. Encryption nonce is calculated from the plaintext's HMAC key, taking the first 96 bits. Encrypted file stores this calculated nonce, and ciphertext. During decoding, the saved nonce is checked against calculated HMAC, whether its first 96 bits are matching.
 
 ## Subcommands
 

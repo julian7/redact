@@ -18,25 +18,7 @@ type AES256GCM96 struct {
 
 // NewAES256GCM96 returns a new Encoder initialized with a key handler
 func NewAES256GCM96(aes, hmac []byte) (Encoder, error) {
-	var encoder AES256GCM96
-	fullLength := 64
-	length := fullLength / 2
-	key, err := DeriveKey(aes, hmac, fullLength)
-	if err != nil {
-		return nil, err
-	}
-	if len(key) < fullLength {
-		return nil, errors.New("could not derive key; input is too small")
-	}
-	encoder.key = key[:length]
-	if len(encoder.key) != length {
-		return nil, errors.New("could not derive encryption key; length doesn't match")
-	}
-	encoder.hmac = key[length:]
-	if len(encoder.hmac) != length {
-		return nil, errors.New("could not derive hmac key; length doesn't match")
-	}
-	return encoder, nil
+	return &AES256GCM96{key: aes, hmac: hmac}, nil
 }
 
 // Encode takes a value, and encrypts it in a convergent way, making sure the same
