@@ -29,11 +29,11 @@ func gitDiffDo(cmd *cobra.Command, args []string) {
 		return
 	}
 	reader, err := os.Open(args[0])
-	defer reader.Close()
 	if err != nil {
 		cmdErrHandler(err)
 		return
 	}
+	defer reader.Close()
 	err = masterkey.Decode(reader, os.Stdout)
 	if err == nil {
 		return
@@ -48,7 +48,7 @@ func gitDiffDo(cmd *cobra.Command, args []string) {
 	}
 	readbuf := make([]byte, 1024)
 	for {
-		_, err := reader.Read(readbuf)
+		n, err := reader.Read(readbuf)
 		if err != nil {
 			if err == io.EOF {
 				return
@@ -56,7 +56,7 @@ func gitDiffDo(cmd *cobra.Command, args []string) {
 			cmdErrHandler(errors.Wrap(err, "reading file"))
 			return
 		}
-		os.Stdout.Write(readbuf)
+		os.Stdout.Write(readbuf[:n])
 	}
 
 }
