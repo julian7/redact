@@ -2,11 +2,7 @@ package main
 
 import (
 	"bytes"
-	"crypto"
-	"fmt"
-	"io"
 	"os"
-	"time"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
@@ -16,18 +12,16 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/armor"
-	"golang.org/x/crypto/openpgp/packet"
 )
 
 var accessGrantCmd = &cobra.Command{
 	Use:   "grant [KEY...]",
-	Short: "Grant OpenPGP access",
+	Short: "Grants access to collaborators with OpenPGP keys",
 	RunE:  accessGrantDo,
 }
 
 func init() {
-	flags := accessCmd.Flags()
+	flags := accessGrantCmd.Flags()
 	flags.StringSliceP("openpgp", "p", nil, "import from OpenPGP file instead of gpg keyring")
 	flags.StringSliceP("openpgp-armor", "a", nil, "import from OpenPGP ASCII Armored file instead of gpg keyring")
 	accessCmd.AddCommand(accessGrantCmd)
@@ -42,28 +36,18 @@ func accessGrantDo(cmd *cobra.Command, args []string) error {
 
 	if len(pgpFiles) > 0 {
 		for _, pgpFile := range pgpFiles {
-			out, err := os.Open(pgpFile)
+			entries, err := gpgutil.LoadPubKeyFromFile(pgpFile, false)
 			if err != nil {
-				cmdErrHandler(errors.Wrap(err, "opening pgp file"))
-				return nil
-			}
-			entries, err := openpgp.ReadKeyRing(out)
-			if err != nil {
-				cmdErrHandler(errors.Wrapf(err, "read keyring of pgp file %s", pgpFile))
+				log.Log().Warnf("loading public key: %v", err)
 			}
 			keyEntries = append(keyEntries, entries...)
 		}
 	}
 	if len(armorFiles) > 0 {
 		for _, pgpFile := range armorFiles {
-			out, err := os.Open(pgpFile)
+			entries, err := gpgutil.LoadPubKeyFromFile(pgpFile, true)
 			if err != nil {
-				cmdErrHandler(errors.Wrap(err, "opening pgp asc file"))
-				return nil
-			}
-			entries, err := openpgp.ReadArmoredKeyRing(out)
-			if err != nil {
-				cmdErrHandler(errors.Wrapf(err, "read keyring of pgp asc file %s", pgpFile))
+				log.Log().Warnf("loading public key: %v", err)
 			}
 			keyEntries = append(keyEntries, entries...)
 		}
@@ -76,7 +60,7 @@ func accessGrantDo(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 		reader := bytes.NewReader(out)
-		entries, err := openpgp.ReadArmoredKeyRing(reader)
+		entries, err := gpgutil.LoadPubKey(reader, true)
 		if err != nil {
 			cmdErrHandler(errors.Wrap(err, "reading GPG key"))
 		}
@@ -114,7 +98,7 @@ func accessGrantDo(cmd *cobra.Command, args []string) error {
 }
 
 func saveKey(masterkey *files.MasterKey, key *openpgp.Entity, toplevel string) error {
-	printKey(key)
+	gpgutil.PrintKey(key)
 	kxstub, err := masterkey.GetExchangeFilenameStubFor(toplevel, key.PrimaryKey.Fingerprint)
 	if err != nil {
 		return err
@@ -126,36 +110,6 @@ func saveKey(masterkey *files.MasterKey, key *openpgp.Entity, toplevel string) e
 		return err
 	}
 	return nil
-}
-
-func printKey(key *openpgp.Entity) {
-	fmt.Printf(
-		"KeyID: %s, fingerprint: %x\n",
-		key.PrimaryKey.KeyIdShortString(),
-		key.PrimaryKey.Fingerprint,
-	)
-	for _, id := range key.Identities {
-		var expires string
-		if id.SelfSignature.SigType != packet.SigTypePositiveCert {
-			continue
-		}
-		sig := id.SelfSignature
-		if sig.KeyLifetimeSecs == nil {
-			expires = "no expiration"
-		} else {
-			expiry := sig.CreationTime.Add(time.Duration(*sig.KeyLifetimeSecs) * time.Second)
-			if !expiry.After(time.Now()) {
-				expires = fmt.Sprintf("%s (expired)", expiry)
-			} else {
-				expires = expiry.String()
-			}
-		}
-		fmt.Printf(
-			"  identity: %s, expires: %s\n",
-			id.Name,
-			expires,
-		)
-	}
 }
 
 func saveMasterExchange(masterkey *files.MasterKey, kxstub string, key *openpgp.Entity) error {
@@ -170,26 +124,7 @@ func saveMasterExchange(masterkey *files.MasterKey, kxstub string, key *openpgp.
 		return errors.Wrap(err, "opening exchange master key")
 	}
 	defer masterWriter.Close()
-	hints := openpgp.FileHints{IsBinary: true}
-	config := packet.Config{
-		DefaultHash:            crypto.SHA256,
-		DefaultCipher:          packet.CipherAES256,
-		DefaultCompressionAlgo: packet.CompressionZLIB,
-		CompressionConfig: &packet.CompressionConfig{
-			Level: 9,
-		},
-		RSABits: 4096,
-	}
-	plain, err := openpgp.Encrypt(masterWriter, []*openpgp.Entity{key}, nil, &hints, &config)
-	if err != nil {
-		return errors.Wrap(err, "creating encryption stream")
-	}
-	defer plain.Close()
-	_, err = io.Copy(plain, masterKeyReader)
-	if err != nil {
-		return errors.Wrap(err, "writing master key to encryption stream")
-	}
-	return nil
+	return gpgutil.Encrypt(masterKeyReader, masterWriter, key)
 }
 
 func savePubkeyExchange(masterkey *files.MasterKey, kxstub string, key *openpgp.Entity) error {
@@ -199,12 +134,7 @@ func savePubkeyExchange(masterkey *files.MasterKey, kxstub string, key *openpgp.
 		return errors.Wrap(err, "opening exchange pubkey file")
 	}
 	defer pubkeyWriter.Close()
-	arm, err := armor.Encode(pubkeyWriter, openpgp.PublicKeyType, make(map[string]string))
-	if err != nil {
-		return errors.Wrap(err, "creating armor stream")
-	}
-	defer arm.Close()
-	if err := key.Serialize(arm); err != nil {
+	if err := gpgutil.SavePubKey(pubkeyWriter, key, true); err != nil {
 		return errors.Wrap(err, "serializing public key to exchange store")
 	}
 	return nil
