@@ -11,6 +11,7 @@ import (
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/gpgutil"
+	"github.com/julian7/redact/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -95,12 +96,20 @@ func accessGrantDo(cmd *cobra.Command, args []string) error {
 		cmdErrHandler(err)
 	}
 
+	saved := 0
 	for _, key := range keyEntries {
 		if err = saveKey(masterkey, key, toplevel); err != nil {
-			cmdErrHandler(err)
-			return nil
+			log.Log().Warnf("cannot save key: %v", err)
+			continue
 		}
+		saved++
 	}
+	log.Log().Infof(
+		"Added %d key%s. Don't forget to commit exchange files to the repository.",
+		saved,
+		map[bool]string{true: "", false: "s"}[saved == 1],
+	)
+
 	return nil
 }
 
@@ -131,11 +140,15 @@ func printKey(key *openpgp.Entity) {
 			continue
 		}
 		sig := id.SelfSignature
-		expiry := sig.CreationTime.Add(time.Duration(*sig.KeyLifetimeSecs) * time.Second)
-		if !expiry.After(time.Now()) {
-			expires = fmt.Sprintf("%s (expired)", expiry)
+		if sig.KeyLifetimeSecs == nil {
+			expires = "no expiration"
 		} else {
-			expires = expiry.String()
+			expiry := sig.CreationTime.Add(time.Duration(*sig.KeyLifetimeSecs) * time.Second)
+			if !expiry.After(time.Now()) {
+				expires = fmt.Sprintf("%s (expired)", expiry)
+			} else {
+				expires = expiry.String()
+			}
 		}
 		fmt.Printf(
 			"  identity: %s, expires: %s\n",
