@@ -21,7 +21,7 @@ const (
 // - .key: Master key encryped with public key
 func (k *MasterKey) GetExchangeFilenameStubFor(toplevel string, fingerprint [20]byte) (string, error) {
 	kxdir := ExchangeDir(toplevel)
-	if err := k.ensureExchangeDir(toplevel); err != nil {
+	if err := k.ensureExchangeDir(kxdir); err != nil {
 		return "", err
 	}
 	return filepath.Join(kxdir, fmt.Sprintf("%x", fingerprint)), nil

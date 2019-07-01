@@ -1,9 +1,12 @@
 package files
 
 import (
+	"bytes"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"github.com/julian7/redact/log"
 	"github.com/pkg/errors"
 )
 
@@ -13,7 +16,13 @@ const (
 	// DefaultKeyFile contains standard key file name inside key directory
 	DefaultKeyFile = "key"
 	// DefaultKeyExchangeDir is where key exchange files are stored
-	DefaultKeyExchangeDir = ".redact"
+	DefaultKeyExchangeDir   = ".redact"
+	gitAttributesFile       = ".gitattributes"
+	kxGitAttributesContents = `# This file has been created by redact
+# DO NOT EDIT!
+* !filter !diff
+*.gpg binary
+`
 )
 
 func buildKeyDir(gitdir string) string {
@@ -55,5 +64,28 @@ func (k *MasterKey) ensureExchangeDir(kxdir string) error {
 	if !st.IsDir() {
 		return errors.New("key exchange is not a directory")
 	}
-	return nil
+	return k.ensureExchangeGitAttributes(kxdir)
+}
+
+func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
+	var data []byte
+	gaFileName := filepath.Join(kxdir, gitAttributesFile)
+	st, err := k.Fs.Stat(gaFileName)
+	if err == nil {
+		if st.IsDir() {
+			return errors.Errorf("%s is not a normal file: %+v", gaFileName, st)
+		}
+		data, err = ioutil.ReadFile(gaFileName)
+		if err != nil {
+			return errors.Wrap(err, "reading .gitattributes file in key exchange dir")
+		}
+		if bytes.Compare(data, []byte(kxGitAttributesContents)) == 0 {
+			return nil
+		}
+		log.Log().Warn("rewriting .gitattributes file in key exchange dir")
+	}
+	return errors.Wrap(
+		ioutil.WriteFile(gaFileName, []byte(kxGitAttributesContents), 0644),
+		"writing .gitattributes file in key exchange dir",
+	)
 }
