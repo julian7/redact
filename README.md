@@ -13,10 +13,13 @@ In nominal cases, you should never store your secrets in a git repository. Use a
 ## What Redact provides, what other tools don't?
 
 * Redact is written in go, and as such, it can bring encryption into environments with no bash (???), and can be cross-compiled.
-* it uses GPG for key exchange (à la git-crypt)
+* it uses OpenPGP for key exchange (almost like git-crypt)
+* it requires GnuPG only for unlocking, all OpenPGP operations are handled internally
+* it stores OpenPGP keys of collaborators next to their encrypted master key copies
 * it supports key rotation (like transcrypt)
 * auto-generates key (not like transcrypt)
-* only dependencies are git and gnupg, and this latter is only for key exchange
+* only dependencies are git and GnuPG
+* it doesn't commit into the repository automatically
 
 ## Security
 
