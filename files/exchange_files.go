@@ -20,8 +20,8 @@ const (
 // - .asc: Public key ASCII armor file
 // - .key: Master key encryped with public key
 func (k *MasterKey) GetExchangeFilenameStubFor(toplevel string, fingerprint [20]byte) (string, error) {
-	kxdir, err := k.getExchangeDir(toplevel)
-	if err != nil {
+	kxdir := ExchangeDir(toplevel)
+	if err := k.ensureExchangeDir(toplevel); err != nil {
 		return "", err
 	}
 	return filepath.Join(kxdir, fmt.Sprintf("%x", fingerprint)), nil

@@ -35,21 +35,25 @@ func checkFileMode(name string, fileinfo os.FileInfo, expected os.FileMode) erro
 	return nil
 }
 
-func (k *MasterKey) getExchangeDir(toplevel string) (string, error) {
-	kxdir := filepath.Join(toplevel, DefaultKeyExchangeDir)
+// ExchangeDir returns Key Exchange dir inside the git repo
+func ExchangeDir(toplevel string) string {
+	return filepath.Join(toplevel, DefaultKeyExchangeDir)
+}
+
+func (k *MasterKey) ensureExchangeDir(kxdir string) error {
 	st, err := k.Fs.Stat(kxdir)
 	if err != nil {
 		err = k.Fs.Mkdir(kxdir, 0755)
 		if err != nil {
-			return "", errors.Wrap(err, "creating key exchange dir")
+			return errors.Wrap(err, "creating key exchange dir")
 		}
 		st, err = k.Fs.Stat(kxdir)
 	}
 	if err != nil {
-		return "", errors.Wrap(err, "stat key exchange dir")
+		return errors.Wrap(err, "stat key exchange dir")
 	}
 	if !st.IsDir() {
-		return "", errors.New("key exchange is not a directory")
+		return errors.New("key exchange is not a directory")
 	}
-	return kxdir, nil
+	return nil
 }
