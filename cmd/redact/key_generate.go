@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/julian7/redact/files"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -20,18 +19,13 @@ func init() {
 }
 
 func generateDo(cmd *cobra.Command, args []string) {
-	err := saveGitSettings()
-	if err != nil {
-		cmdErrHandler(errors.Wrap(err, "setting git config"))
-		return
-	}
-	masterkey, err := files.NewMasterKey()
+	masterkey, err := basicDo()
 	if err != nil {
 		cmdErrHandler(err)
 	}
-	err = masterkey.Load()
+	err = saveGitSettings()
 	if err != nil {
-		cmdErrHandler(errors.Wrap(err, "loading master key"))
+		cmdErrHandler(errors.Wrap(err, "setting git config"))
 		return
 	}
 	masterkey.Generate()

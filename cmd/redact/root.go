@@ -96,10 +96,6 @@ func saveGitSettings() error {
 }
 
 func basicDo() (*files.MasterKey, error) {
-	err := saveGitSettings()
-	if err != nil {
-		return nil, errors.Wrap(err, "setting git config")
-	}
 	masterkey, err := files.NewMasterKey()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating master key object")
