@@ -33,10 +33,10 @@ is calculated from the plaintext's HMAC key, taking the first 96 bits. Encrypted
   * [x] info (default): shows master key info
   * [x] list: lists all keys
 * [ ] lock: locks repository (deletes local key and removes diff/filter configs)
-* [ ] unlock: unlocks repository with local key
-* [ ] access: key exchange commands
-  * [ ] ls/list: list user access
-  * [ ] grant: add GPG key access
+* [x] unlock: unlocks repository with local key
+* [o] access: key exchange commands
+  * [x] ls/list: list user access
+  * [x] grant: add GPG key access
   * [ ] revoke: remove GPG key access
 * [x] git: git filter commands
   * [x] clean: acts as clean filter for git

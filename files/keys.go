@@ -55,28 +55,10 @@ func (k *MasterKey) KeyFile() string {
 	return buildKeyFileName(k.KeyDir)
 }
 
-// Load loads existing key
-func (k *MasterKey) Load() error {
-	err := k.checkKeyDir()
-	if err != nil {
-		return err
-	}
-	keyfile := buildKeyFileName(k.KeyDir)
-	fs, err := k.Fs.Stat(keyfile)
-	if err != nil {
-		return err
-	}
-	err = checkFileMode("key file", fs, 0600)
-	if err != nil {
-		return err
-	}
-	f, err := k.Fs.OpenFile(keyfile, os.O_RDONLY, 0600)
-	if err != nil {
-		return errors.Wrap(err, "opening key file for reading")
-	}
-	defer f.Close()
+// Read loads key from reader stream
+func (k *MasterKey) Read(f io.Reader) error {
 	readbuf := make([]byte, len(KeyMagic))
-	_, err = f.Read(readbuf)
+	_, err := f.Read(readbuf)
 	if err != nil {
 		return errors.Wrap(err, "reading preamble from key file")
 	}
@@ -113,6 +95,29 @@ func (k *MasterKey) Load() error {
 		k.Keys[epoch] = key
 		k.LatestKey = epoch
 	}
+}
+
+// Load loads existing key
+func (k *MasterKey) Load() error {
+	err := k.checkKeyDir()
+	if err != nil {
+		return err
+	}
+	keyfile := buildKeyFileName(k.KeyDir)
+	fs, err := k.Fs.Stat(keyfile)
+	if err != nil {
+		return err
+	}
+	err = checkFileMode("key file", fs, 0600)
+	if err != nil {
+		return err
+	}
+	f, err := k.Fs.OpenFile(keyfile, os.O_RDONLY, 0600)
+	if err != nil {
+		return errors.Wrap(err, "opening key file for reading")
+	}
+	defer f.Close()
+	return k.Read(f)
 }
 
 // Save saves key

@@ -1,9 +1,7 @@
 # To be implemented
 
 - key exchange
-  - use GnuPG for decryption
-  - use [golang.org/x/crypto/openpgp](https://godoc.org/golang.org/x/crypto/openpgp) for encryption
-  - store public GPG keys into key exchange files
+  - when creating key exchange dir, add special .gitattributes there
   - allow keybase's encryption to be used
 - fix encryption issues
   - encrypted what shouldn't been
