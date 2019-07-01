@@ -50,6 +50,11 @@ func (k *MasterKey) Generate() error {
 	return k.Keys[epoch].Generate()
 }
 
+// KeyFile returns master key's file name
+func (k *MasterKey) KeyFile() string {
+	return buildKeyFileName(k.KeyDir)
+}
+
 // Load loads existing key
 func (k *MasterKey) Load() error {
 	err := k.checkKeyDir()

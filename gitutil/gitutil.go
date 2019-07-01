@@ -36,3 +36,16 @@ func GitDir() (string, error) {
 	}
 	return strings.TrimSuffix(string(out), "\n"), nil
 }
+
+// TopLevel detects current git repository's top level directory
+func TopLevel() (string, error) {
+	out, err := exec.Command(
+		"git",
+		"rev-parse",
+		"--show-toplevel",
+	).Output()
+	if err != nil {
+		return "", errors.Wrap(err, "parsing top level dir")
+	}
+	return strings.TrimSuffix(string(out), "\n"), nil
+}
