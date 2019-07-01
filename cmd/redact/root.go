@@ -40,6 +40,15 @@ func setupLogging(cmd *cobra.Command, args []string) {
 			log.Log().Debugf("Setting log level to %s", logLevel)
 		}
 	}
+	logFile := viper.GetString("logfile")
+	if logFile != "" {
+		writer, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			log.Log().Warnf("cannot open log file: %v", err)
+		} else {
+			log.Log().SetOutput(writer)
+		}
+	}
 }
 
 func init() {
@@ -52,7 +61,9 @@ func init() {
 		"config file (default: ~/"+configName+".yaml)",
 	)
 	flags.StringP("verbosity", "v", "info", "Verbosity (possible values: debug, info, warn, error, fatal)")
+	flags.String("logfile", "", "log file (empty for standard out)")
 	viper.BindPFlag("verbosity", flags.Lookup("verbosity"))
+	viper.BindPFlag("logfile", flags.Lookup("logfile"))
 }
 
 func initConfig() {
@@ -66,7 +77,7 @@ func initConfig() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	if err := viper.ReadInConfig(); err == nil {
-		log.Log().Infof("Using config file: %s", viper.ConfigFileUsed())
+		// log.Log().Infof("Using config file: %s", viper.ConfigFileUsed())
 	}
 }
 
@@ -91,6 +102,7 @@ func saveGitSettings() error {
 		); err != nil {
 			return err
 		}
+		log.Log().Debugf("Setting up filter/diff of %s to %s", AttrName, argv0)
 	}
 	return nil
 }
