@@ -27,22 +27,24 @@ is calculated from the plaintext's HMAC key, taking the first 96 bits. Encrypted
 
 ## Subcommands
 
-* key: master key commands:
-  * init: initializes master key
-  * generate: generates new master key
-  * info (default): shows master key info
-  * list: lists all keys
-* lock: deletes local key
-* unlock: unlocks repository with local key
-* access: key exchange commands
-  * ls/list: list user access
-  * grant: add GPG key access
-  * revoke: remove GPG key access
-* git: git filter commands
-  * clean: acts as clean filter for git
-  * diff: acts as diff filter for git
-  * smudge: acts as smudge filter for git
-* ls/list: list files' encryption status
+* [x] key: master key commands:
+  * [x] init: initializes master key
+  * [x] generate: generates new master key
+  * [x] info (default): shows master key info
+  * [x] list: lists all keys
+* [ ] lock: locks repository (deletes local key and removes diff/filter configs)
+* [ ] unlock: unlocks repository with local key
+* [ ] access: key exchange commands
+  * [ ] ls/list: list user access
+  * [ ] grant: add GPG key access
+  * [ ] revoke: remove GPG key access
+* [x] git: git filter commands
+  * [x] clean: acts as clean filter for git
+  * [x] diff: acts as diff filter for git
+  * [x] smudge: acts as smudge filter for git
+* [x] status: list files' encryption status
+
+See [the to do](TODO.md) file for details.
 
 ## Revoke access
 
