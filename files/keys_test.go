@@ -16,7 +16,7 @@ const (
 
 func genGitRepo(t *testing.T) *MasterKey {
 	k := &MasterKey{Fs: afero.NewMemMapFs(), KeyDir: "/.git/test"}
-	err := k.Fs.Mkdir(k.KeyDir, 0700)
+	err := k.Mkdir(k.KeyDir, 0700)
 	if err != nil {
 		t.Errorf("cannot create key dir %s: %v", k.KeyDir, err)
 		return nil
@@ -26,7 +26,7 @@ func genGitRepo(t *testing.T) *MasterKey {
 
 func prebuild(t *testing.T, k *MasterKey) bool {
 	keyfile := buildKeyFileName(k.KeyDir)
-	fd, err := k.Fs.OpenFile(keyfile, os.O_CREATE|os.O_WRONLY, 0600)
+	fd, err := k.OpenFile(keyfile, os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		t.Errorf("cannot open key file %s for writing: %v", keyfile, err)
 		return false
@@ -159,7 +159,7 @@ func TestSave(t *testing.T) {
 			if !checkError(t, tc.expectedError, err) {
 				return
 			}
-			finfo, err := k.Fs.Stat("/.git/test/key")
+			finfo, err := k.Stat("/.git/test/key")
 			if err != nil {
 				t.Errorf("key not created: %v", err)
 				return

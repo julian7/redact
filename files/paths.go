@@ -50,13 +50,13 @@ func ExchangeDir(toplevel string) string {
 }
 
 func (k *MasterKey) ensureExchangeDir(kxdir string) error {
-	st, err := k.Fs.Stat(kxdir)
+	st, err := k.Stat(kxdir)
 	if err != nil {
-		err = k.Fs.Mkdir(kxdir, 0755)
+		err = k.Mkdir(kxdir, 0755)
 		if err != nil {
 			return errors.Wrap(err, "creating key exchange dir")
 		}
-		st, err = k.Fs.Stat(kxdir)
+		st, err = k.Stat(kxdir)
 	}
 	if err != nil {
 		return errors.Wrap(err, "stat key exchange dir")
@@ -67,10 +67,23 @@ func (k *MasterKey) ensureExchangeDir(kxdir string) error {
 	return k.ensureExchangeGitAttributes(kxdir)
 }
 
+// ExchangeDir returns key exchange directory if exists
+func (k *MasterKey) ExchangeDir(toplevel string) (string, error) {
+	kxdir := ExchangeDir(toplevel)
+	st, err := k.Stat(kxdir)
+	if err != nil {
+		return "", errors.Wrap(err, "stat key exchange dir")
+	}
+	if !st.IsDir() {
+		return "", errors.New("key exchange is not a directory")
+	}
+	return kxdir, nil
+}
+
 func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
 	var data []byte
 	gaFileName := filepath.Join(kxdir, gitAttributesFile)
-	st, err := k.Fs.Stat(gaFileName)
+	st, err := k.Stat(gaFileName)
 	if err == nil {
 		if st.IsDir() {
 			return errors.Errorf("%s is not a normal file: %+v", gaFileName, st)

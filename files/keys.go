@@ -104,7 +104,7 @@ func (k *MasterKey) Load() error {
 		return err
 	}
 	keyfile := buildKeyFileName(k.KeyDir)
-	fs, err := k.Fs.Stat(keyfile)
+	fs, err := k.Stat(keyfile)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (k *MasterKey) Load() error {
 	if err != nil {
 		return err
 	}
-	f, err := k.Fs.OpenFile(keyfile, os.O_RDONLY, 0600)
+	f, err := k.OpenFile(keyfile, os.O_RDONLY, 0600)
 	if err != nil {
 		return errors.Wrap(err, "opening key file for reading")
 	}
@@ -127,7 +127,7 @@ func (k *MasterKey) Save() error {
 		return err
 	}
 	keyfile := buildKeyFileName(k.KeyDir)
-	f, err := k.Fs.OpenFile(keyfile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	f, err := k.OpenFile(keyfile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err != nil {
 		return errors.Wrap(err, "saving key file")
 	}
@@ -174,10 +174,10 @@ func (k *MasterKey) ensureKeys() {
 }
 
 func (k *MasterKey) getOrCreateKeyDir() error {
-	fs, err := k.Fs.Stat(k.KeyDir)
+	fs, err := k.Stat(k.KeyDir)
 	if err != nil {
-		k.Fs.Mkdir(k.KeyDir, 0700)
-		fs, err = k.Fs.Stat(k.KeyDir)
+		k.Mkdir(k.KeyDir, 0700)
+		fs, err = k.Stat(k.KeyDir)
 	}
 	if err != nil {
 		return errors.Wrap(err, "keydir not available")
@@ -189,7 +189,7 @@ func (k *MasterKey) getOrCreateKeyDir() error {
 }
 
 func (k *MasterKey) checkKeyDir() error {
-	fs, err := k.Fs.Stat(k.KeyDir)
+	fs, err := k.Stat(k.KeyDir)
 	if err != nil {
 		return errors.Wrap(err, "keydir not available")
 	}

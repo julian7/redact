@@ -61,7 +61,7 @@ func unlockDo(cmd *cobra.Command, args []string) {
 			return
 		}
 		pubkeyFilename := files.ExchangePubKeyFile(stub)
-		st, err := masterkey.Fs.Stat(pubkeyFilename)
+		st, err := masterkey.Stat(pubkeyFilename)
 		if err != nil || st.IsDir() {
 			continue
 		}
