@@ -8,7 +8,7 @@ The project is very similar to [git-crypt](https://github.com/AGWA/git-crypt), [
 
 ## WARNING
 
-In nominal cases, you should never store your secrets in a git repository. Use a different tool for that. However, when secrets are integral part of the repo (like if it is all about storing secret information), it's a nice touch to have an extra layer of security on top of what a git service can provide.
+In nominal cases, you should never store your secrets in a git repository. Use a different tool for that. However, when the sensitivity levels of secret / plaintext files are not too far away (like general and specific settings for a closed source application), it's a nice touch to have an extra layer of security on top of what a git service can provide.
 
 ## What Redact provides, what other tools don't?
 
@@ -54,7 +54,7 @@ When you lose trust of someone, there is one thing we can't do: we can't revoke
 historical access to secrets stored in the repository. We can do something about the future though:
 
 * remove encrypted key from the key exchange folder. This will stop the user from recreating the master key in the future.
-* rekey: rotate master key. It implies re-encrypting all the secret files with the new key. This will enforce everyone to recreate the master key from key exchange, but the one we've removed won't be able to unlock the new key.
+* generate a new key: rotate master key. You can re-encrypt secret files as they are, but since usually the untrusted party already knows about the secrets, they can easily figure out the newly encrypted files are indeed having the same content. This can possibly help them learning about the new secret key.
 * replacing secrets: when encrypted files are supposed to be exposed, the best thing we can do is not just replacing their encryptions, but replacing secrets too. For example, if encrypted files are secret parts of key pairs (like a TLS certificate), we might want to revoke the full certificate altogether, generating new ones.
 
 As always, play safe, and revoke all secrets if there is any chance it can cause damage.
