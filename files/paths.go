@@ -2,6 +2,7 @@ package files
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -24,6 +25,8 @@ const (
 *.gpg binary
 `
 )
+
+var cache map[string]string
 
 func buildKeyDir(gitdir string) string {
 	return filepath.Join(gitdir, DefaultKeyDir)
@@ -50,6 +53,10 @@ func ExchangeDir(toplevel string) string {
 }
 
 func (k *MasterKey) ensureExchangeDir(kxdir string) error {
+	key := fmt.Sprintf("kxdir_ensure:%s", k.String())
+	if _, ok := cache[key]; ok {
+		return nil
+	}
 	st, err := k.Stat(kxdir)
 	if err != nil {
 		err = k.Mkdir(kxdir, 0755)
@@ -64,11 +71,19 @@ func (k *MasterKey) ensureExchangeDir(kxdir string) error {
 	if !st.IsDir() {
 		return errors.New("key exchange is not a directory")
 	}
-	return k.ensureExchangeGitAttributes(kxdir)
+	if err := k.ensureExchangeGitAttributes(kxdir); err != nil {
+		return err
+	}
+	cache[key] = kxdir
+	return nil
 }
 
 // ExchangeDir returns key exchange directory if exists
 func (k *MasterKey) ExchangeDir(toplevel string) (string, error) {
+	key := fmt.Sprintf("kxdir:%s", k.String())
+	if val, ok := cache[key]; ok {
+		return val, nil
+	}
 	kxdir := ExchangeDir(toplevel)
 	st, err := k.Stat(kxdir)
 	if err != nil {
@@ -77,10 +92,15 @@ func (k *MasterKey) ExchangeDir(toplevel string) (string, error) {
 	if !st.IsDir() {
 		return "", errors.New("key exchange is not a directory")
 	}
+	cache[key] = kxdir
 	return kxdir, nil
 }
 
 func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
+	key := fmt.Sprintf("kxgitattrs:%s", k.String())
+	if _, ok := cache[key]; ok {
+		return nil
+	}
 	var data []byte
 	gaFileName := filepath.Join(kxdir, gitAttributesFile)
 	st, err := k.Stat(gaFileName)
@@ -97,8 +117,10 @@ func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
 		}
 		log.Log().Warn("rewriting .gitattributes file in key exchange dir")
 	}
-	return errors.Wrap(
-		ioutil.WriteFile(gaFileName, []byte(kxGitAttributesContents), 0644),
-		"writing .gitattributes file in key exchange dir",
-	)
+	if err := ioutil.WriteFile(gaFileName, []byte(kxGitAttributesContents), 0644); err != nil {
+		return errors.Wrap(err, "writing .gitattributes file in key exchange dir")
+	}
+
+	cache[key] = kxdir
+	return nil
 }
