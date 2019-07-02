@@ -77,16 +77,19 @@ func LoadPubKey(reader io.Reader, armor bool) (openpgp.EntityList, error) {
 }
 
 // SavePubKey saves a public keys from an entity to a stream
-func SavePubKey(writer io.Writer, key *openpgp.Entity, isArmor bool) error {
-	arm := writer
+func SavePubKey(raw io.Writer, key *openpgp.Entity, isArmor bool) error {
+	var writer io.Writer
 	if isArmor {
-		arm, err := armor.Encode(writer, openpgp.PublicKeyType, make(map[string]string))
+		arm, err := armor.Encode(raw, openpgp.PublicKeyType, make(map[string]string))
 		if err != nil {
 			return errors.Wrap(err, "creating armor stream")
 		}
 		defer arm.Close()
+		writer = arm
+	} else {
+		writer = raw
 	}
-	if err := key.Serialize(arm); err != nil {
+	if err := key.Serialize(writer); err != nil {
 		return errors.Wrap(err, "serializing public key to exchange store")
 	}
 	return nil
