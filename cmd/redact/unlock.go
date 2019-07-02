@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/julian7/redact/files"
-	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/log"
 	"github.com/julian7/redact/sdk"
@@ -32,11 +31,6 @@ type keyFound struct {
 }
 
 func unlockDo(cmd *cobra.Command, args []string) {
-	toplevel, err := gitutil.TopLevel()
-	if err != nil {
-		cmdErrHandler(err)
-		return
-	}
 	masterkey, err := files.NewMasterKey()
 	if err != nil {
 		cmdErrHandler(errors.Wrap(err, "building master key"))
@@ -50,7 +44,7 @@ func unlockDo(cmd *cobra.Command, args []string) {
 	availableKeys := []*keyFound{}
 
 	for _, key := range keys {
-		stub, err := masterkey.GetExchangeFilenameStubFor(toplevel, key)
+		stub, err := masterkey.GetExchangeFilenameStubFor(key)
 		if err != nil {
 			cmdErrHandler(err)
 			return

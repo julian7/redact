@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"github.com/julian7/redact/files"
-	"github.com/julian7/redact/gitutil"
 	"github.com/pkg/errors"
 )
 
@@ -26,12 +25,7 @@ func RedactRepo() (*files.MasterKey, error) {
 	}
 	err = masterkey.Load()
 	if err != nil {
-		toplevel, err2 := gitutil.TopLevel()
-		if err2 != nil {
-			return nil, errors.Wrap(err, "detecting top level directory")
-		}
-		_, err2 = masterkey.ExchangeDir(toplevel)
-		if err2 != nil {
+		if _, err2 := masterkey.ExchangeDir(); err2 != nil {
 			return nil, errors.New("repository is not using redact")
 		}
 		return nil, errors.New("repository is locked")

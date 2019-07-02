@@ -24,28 +24,30 @@ const (
 	StatusOther = '?'
 )
 
-// GitDir detects current git repository's git repo directory
-func GitDir() (string, error) {
-	out, err := exec.Command(
-		"git",
-		"rev-parse",
-		"--git-common-dir",
-	).Output()
-	if err != nil {
-		return "", errors.Wrap(err, "parsing git dir")
-	}
-	return strings.TrimSuffix(string(out), "\n"), nil
+// GitRepoInfo provides the most basic information about a git repository
+type GitRepoInfo struct {
+	// Common contains internal git dir inside a workspace
+	Common string
+	// TopLevel contains a full path of the top level directory of the git repo
+	Toplevel string
 }
 
-// TopLevel detects current git repository's top level directory
-func TopLevel() (string, error) {
+// GitDir detects current git repository's top level and common directories
+func GitDir(info *GitRepoInfo) error {
 	out, err := exec.Command(
 		"git",
 		"rev-parse",
 		"--show-toplevel",
+		"--git-common-dir",
 	).Output()
 	if err != nil {
-		return "", errors.Wrap(err, "parsing top level dir")
+		return errors.Wrap(err, "retrieving git rev-parse output")
 	}
-	return strings.TrimSuffix(string(out), "\n"), nil
+	data := strings.Split(string(out), "\n")
+	if len(data) != 3 {
+		return errors.New("error parsing git rev-parse")
+	}
+	info.Toplevel = data[0]
+	info.Common = data[1]
+	return nil
 }

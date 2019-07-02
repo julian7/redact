@@ -12,10 +12,6 @@ import (
 
 // TouchUp touches and checks out encrypted files, generally fixing them.
 func TouchUp(masterkey *files.MasterKey) error {
-	toplevel, err := gitutil.TopLevel()
-	if err != nil {
-		return errors.Wrap(err, "top level dir")
-	}
 	files, err := gitutil.LsFiles(nil)
 	if err != nil {
 		return errors.Wrap(err, "list git files")
@@ -29,7 +25,7 @@ func TouchUp(masterkey *files.MasterKey) error {
 	affectedFiles := make([]string, 0, len(files))
 	for _, entry := range files {
 		if entry.Filter == AttrName && entry.Status != gitutil.StatusOther {
-			fullpath := filepath.Join(toplevel, entry.Name)
+			fullpath := filepath.Join(masterkey.RepoInfo.Toplevel, entry.Name)
 			err = masterkey.Chtimes(fullpath, touchTime, touchTime)
 			if err != nil {
 				l.Warnf("cannot touch %s: %v", entry.Name, err)

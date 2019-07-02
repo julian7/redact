@@ -23,6 +23,7 @@ const (
 // MasterKey contains master key in a git repository
 type MasterKey struct {
 	afero.Fs
+	RepoInfo  gitutil.GitRepoInfo
 	KeyDir    string
 	Keys      map[uint32]KeyHandler
 	LatestKey uint32
@@ -30,13 +31,14 @@ type MasterKey struct {
 
 // NewMasterKey generates a new repo key in the OS' filesystem
 func NewMasterKey() (*MasterKey, error) {
-	gitdir, err := gitutil.GitDir()
+	var masterkey MasterKey
+	err := gitutil.GitDir(&masterkey.RepoInfo)
 	if err != nil {
 		return nil, errors.New("not a git repository")
 	}
 	return &MasterKey{
 		Fs:     afero.NewOsFs(),
-		KeyDir: buildKeyDir(gitdir),
+		KeyDir: buildKeyDir(masterkey.RepoInfo.Common),
 	}, nil
 }
 

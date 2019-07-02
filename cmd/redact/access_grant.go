@@ -2,10 +2,10 @@ package main
 
 import (
 	"bytes"
+	"io"
 	"os"
 
 	"github.com/julian7/redact/files"
-	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/log"
 	"github.com/julian7/redact/sdk"
@@ -76,14 +76,10 @@ func accessGrantDo(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		cmdErrHandler(err)
 	}
-	toplevel, err := gitutil.TopLevel()
-	if err != nil {
-		cmdErrHandler(err)
-	}
 
 	saved := 0
 	for _, key := range keyEntries {
-		if err = saveKey(masterkey, key, toplevel); err != nil {
+		if err = saveKey(masterkey, key); err != nil {
 			log.Log().Warnf("cannot save key: %v", err)
 			continue
 		}
@@ -98,28 +94,24 @@ func accessGrantDo(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func saveKey(masterkey *files.MasterKey, key *openpgp.Entity, toplevel string) error {
+func saveKey(masterkey *files.MasterKey, key *openpgp.Entity) error {
 	gpgutil.PrintKey(key)
-	kxstub, err := masterkey.GetExchangeFilenameStubFor(toplevel, key.PrimaryKey.Fingerprint)
-	if err != nil {
+	if err := saveMasterExchange(masterkey, key); err != nil {
 		return err
 	}
-	if err := saveMasterExchange(masterkey, kxstub, key); err != nil {
-		return err
-	}
-	if err := savePubkeyExchange(masterkey, kxstub, key); err != nil {
+	if err := savePubkeyExchange(masterkey, key); err != nil {
 		return err
 	}
 	return nil
 }
 
-func saveMasterExchange(masterkey *files.MasterKey, kxstub string, key *openpgp.Entity) error {
-	masterName := files.ExchangeMasterKeyFile(kxstub)
-	masterKeyReader, err := os.Open(masterkey.KeyFile())
+func saveMasterExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
+	kxstub, err := masterkey.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
 	if err != nil {
 		return errors.Wrap(err, "opening master key file")
 	}
 	defer masterKeyReader.Close()
+	masterName := files.ExchangeMasterKeyFile(kxstub)
 	masterWriter, err := os.OpenFile(masterName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return errors.Wrap(err, "opening exchange master key")
@@ -128,7 +120,11 @@ func saveMasterExchange(masterkey *files.MasterKey, kxstub string, key *openpgp.
 	return gpgutil.Encrypt(masterKeyReader, masterWriter, key)
 }
 
-func savePubkeyExchange(masterkey *files.MasterKey, kxstub string, key *openpgp.Entity) error {
+func savePubkeyExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
+	kxstub, err := masterkey.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
+	if err != nil {
+		return err
+	}
 	pubkeyName := files.ExchangePubKeyFile(kxstub)
 	pubkeyWriter, err := os.OpenFile(pubkeyName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {

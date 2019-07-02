@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/julian7/redact/files"
-	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/log"
 	"github.com/julian7/redact/sdk"
@@ -28,11 +27,10 @@ func accessListDo(cmd *cobra.Command, args []string) {
 	if err != nil {
 		cmdErrHandler(err)
 	}
-	toplevel, err := gitutil.TopLevel()
+	kxdir, err := masterkey.ExchangeDir()
 	if err != nil {
 		cmdErrHandler(err)
 	}
-	kxdir := files.ExchangeDir(toplevel)
 	afero.Walk(masterkey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil

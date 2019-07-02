@@ -79,12 +79,12 @@ func (k *MasterKey) ensureExchangeDir(kxdir string) error {
 }
 
 // ExchangeDir returns key exchange directory if exists
-func (k *MasterKey) ExchangeDir(toplevel string) (string, error) {
+func (k *MasterKey) ExchangeDir() (string, error) {
 	key := fmt.Sprintf("kxdir:%s", k.String())
 	if val, ok := cache[key]; ok {
 		return val, nil
 	}
-	kxdir := ExchangeDir(toplevel)
+	kxdir := ExchangeDir(k.RepoInfo.Toplevel)
 	st, err := k.Stat(kxdir)
 	if err != nil {
 		return "", errors.Wrap(err, "stat key exchange dir")
