@@ -54,7 +54,6 @@ func unlockDo(cmd *cobra.Command, args []string) {
 		masterFilename := files.ExchangeMasterKeyFile(stub)
 		st, err := masterkey.Stat(masterFilename)
 		if err != nil || st.IsDir() {
-			l.Warnf("key exchange file %s is not a file (error: %v)", masterFilename, err)
 			continue
 		}
 
