@@ -27,6 +27,7 @@ type MasterKey struct {
 	KeyDir    string
 	Keys      map[uint32]KeyHandler
 	LatestKey uint32
+	cache     map[string]string
 }
 
 // NewMasterKey generates a new repo key in the OS' filesystem
@@ -39,6 +40,7 @@ func NewMasterKey() (*MasterKey, error) {
 	return &MasterKey{
 		Fs:     afero.NewOsFs(),
 		KeyDir: buildKeyDir(masterkey.RepoInfo.Common),
+		cache:  make(map[string]string),
 	}, nil
 }
 

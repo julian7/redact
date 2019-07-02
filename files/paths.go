@@ -2,7 +2,6 @@ package files
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -25,8 +24,6 @@ const (
 *.gpg binary
 `
 )
-
-var cache map[string]string
 
 func buildKeyDir(gitdir string) string {
 	return filepath.Join(gitdir, DefaultKeyDir)
@@ -53,8 +50,8 @@ func ExchangeDir(toplevel string) string {
 }
 
 func (k *MasterKey) ensureExchangeDir(kxdir string) error {
-	key := fmt.Sprintf("kxdir_ensure:%s", k.String())
-	if _, ok := cache[key]; ok {
+	key := "kxdir_ensure"
+	if _, ok := k.cache[key]; ok {
 		return nil
 	}
 	st, err := k.Stat(kxdir)
@@ -74,14 +71,14 @@ func (k *MasterKey) ensureExchangeDir(kxdir string) error {
 	if err := k.ensureExchangeGitAttributes(kxdir); err != nil {
 		return err
 	}
-	cache[key] = kxdir
+	k.cache[key] = kxdir
 	return nil
 }
 
 // ExchangeDir returns key exchange directory if exists
 func (k *MasterKey) ExchangeDir() (string, error) {
-	key := fmt.Sprintf("kxdir:%s", k.String())
-	if val, ok := cache[key]; ok {
+	key := "kxdir"
+	if val, ok := k.cache[key]; ok {
 		return val, nil
 	}
 	kxdir := ExchangeDir(k.RepoInfo.Toplevel)
@@ -92,13 +89,13 @@ func (k *MasterKey) ExchangeDir() (string, error) {
 	if !st.IsDir() {
 		return "", errors.New("key exchange is not a directory")
 	}
-	cache[key] = kxdir
+	k.cache[key] = kxdir
 	return kxdir, nil
 }
 
 func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
-	key := fmt.Sprintf("kxgitattrs:%s", k.String())
-	if _, ok := cache[key]; ok {
+	key := "kxgitattrs"
+	if _, ok := k.cache[key]; ok {
 		return nil
 	}
 	var data []byte
@@ -121,6 +118,6 @@ func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
 		return errors.Wrap(err, "writing .gitattributes file in key exchange dir")
 	}
 
-	cache[key] = kxdir
+	k.cache[key] = kxdir
 	return nil
 }
