@@ -32,7 +32,7 @@ type MasterKey struct {
 func NewMasterKey() (*MasterKey, error) {
 	gitdir, err := gitutil.GitDir()
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot build repo key")
+		return nil, errors.New("not a git repository")
 	}
 	return &MasterKey{
 		Fs:     afero.NewOsFs(),
