@@ -124,6 +124,27 @@ func (k *MasterKey) Load() error {
 	return k.Read(f)
 }
 
+// SaveTo saves master key into IO stream
+func (k *MasterKey) SaveTo(writer io.Writer) error {
+	_, err := writer.Write([]byte(KeyMagic))
+	if err != nil {
+		return errors.Wrap(err, "writing key preamble")
+	}
+	typeData := make([]byte, 4)
+	binary.BigEndian.PutUint32(typeData, KeyCurrentType)
+	_, err = writer.Write(typeData)
+	if err != nil {
+		return errors.Wrap(err, "writing key type header")
+	}
+	for _, key := range k.Keys {
+		err = binary.Write(writer, binary.BigEndian, key)
+		if err != nil {
+			return errors.Wrap(err, "writing key contents")
+		}
+	}
+	return nil
+}
+
 // Save saves key
 func (k *MasterKey) Save() error {
 	err := k.getOrCreateKeyDir()
@@ -136,23 +157,7 @@ func (k *MasterKey) Save() error {
 		return errors.Wrap(err, "saving key file")
 	}
 	defer f.Close()
-	_, err = f.WriteString(KeyMagic)
-	if err != nil {
-		return errors.Wrap(err, "writing key preamble")
-	}
-	typeData := make([]byte, 4)
-	binary.BigEndian.PutUint32(typeData, KeyCurrentType)
-	_, err = f.Write(typeData)
-	if err != nil {
-		return errors.Wrap(err, "writing key type header")
-	}
-	for _, key := range k.Keys {
-		err = binary.Write(f, binary.BigEndian, key)
-		if err != nil {
-			return errors.Wrap(err, "writing key contents")
-		}
-	}
-	return nil
+	return k.SaveTo(f)
 }
 
 // Key returns the a key handler with a certain epoch. If epoch is 0,

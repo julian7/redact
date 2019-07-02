@@ -108,16 +108,20 @@ func saveKey(masterkey *files.MasterKey, key *openpgp.Entity) error {
 func saveMasterExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
 	kxstub, err := masterkey.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
 	if err != nil {
-		return errors.Wrap(err, "opening master key file")
+		return err
 	}
-	defer masterKeyReader.Close()
 	masterName := files.ExchangeMasterKeyFile(kxstub)
 	masterWriter, err := os.OpenFile(masterName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return errors.Wrap(err, "opening exchange master key")
 	}
 	defer masterWriter.Close()
-	return gpgutil.Encrypt(masterKeyReader, masterWriter, key)
+	r, w := io.Pipe()
+	go func(writer io.WriteCloser) {
+		masterkey.SaveTo(writer)
+		writer.Close()
+	}(w)
+	return gpgutil.Encrypt(r, masterWriter, key)
 }
 
 func savePubkeyExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
