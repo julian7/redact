@@ -1,12 +1,16 @@
 package sdk
 
 import (
+	"encoding/hex"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 	"golang.org/x/crypto/openpgp"
 )
 
@@ -80,4 +84,38 @@ func SavePubkeyExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
 		return errors.Wrap(err, "serializing public key to exchange store")
 	}
 	return nil
+}
+
+// UpdateMasterExchangeKeys updates all key exchange master keys with new data
+func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
+	kxdir, err := masterkey.ExchangeDir()
+	if err != nil {
+		return 0, errors.Wrap(err, "fetching key exchange dir")
+	}
+	updated := 0
+	afero.Walk(masterkey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
+		var fingerprint [20]byte
+		if err != nil {
+			return nil
+		}
+		if !strings.HasSuffix(path, files.ExtKeyArmor) {
+			return nil
+		}
+		fingerprintText := strings.TrimRight(filepath.Base(path), files.ExtKeyArmor)
+		fingerprintData, err := hex.DecodeString(fingerprintText)
+		if err != nil {
+			return nil
+		}
+		copy(fingerprint[:], fingerprintData)
+		keys, err := LoadPubkeysFromExchange(masterkey, fingerprint)
+		if err != nil {
+			return errors.Wrapf(err, "loading public key for %s", fingerprintText)
+		}
+		if len(keys) != 1 {
+			return errors.Errorf("key %s has %d public keys", fingerprintText, len(keys))
+		}
+		updated++
+		return errors.Wrapf(SaveMasterExchange(masterkey, keys[0]), "saving master key encrypted with key %s", fingerprintText)
+	})
+	return updated, nil
 }
