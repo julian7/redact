@@ -41,32 +41,32 @@ func unlockDo(cmd *cobra.Command, args []string) {
 		cmdErrHandler(err)
 		return
 	}
-	availableKeys := []*keyFound{}
+	availableKeys := make([]int, 0, len(keys))
 
-	for _, key := range keys {
+	l := log.Log()
+
+	for idx, key := range keys {
 		stub, err := masterkey.GetExchangeFilenameStubFor(key)
 		if err != nil {
-			cmdErrHandler(err)
-			return
-		}
-		pubkeyFilename := files.ExchangePubKeyFile(stub)
-		st, err := masterkey.Stat(pubkeyFilename)
-		if err != nil || st.IsDir() {
+			l.Warnf("cannot get exchange filename for %x: %v", key, err)
 			continue
 		}
-		item := &keyFound{stub: stub}
-		copy(item.key[:], key[:])
+		masterFilename := files.ExchangeMasterKeyFile(stub)
+		st, err := masterkey.Stat(masterFilename)
+		if err != nil || st.IsDir() {
+			l.Warnf("key exchange file %s is not a file (error: %v)", masterFilename, err)
+			continue
+		}
 
-		availableKeys = append(availableKeys, item)
+		availableKeys = append(availableKeys, idx)
 	}
 
 	if len(availableKeys) > 2 {
-		l := log.Log()
 		fmt.Println("Multiple keys found. Please specify one:")
-		for _, key := range availableKeys {
-			pubKey, err := gpgutil.LoadPubKeyFromFile(files.ExchangePubKeyFile(key.stub), true)
+		for _, idx := range availableKeys {
+			pubKey, err := sdk.LoadPubkeysFromExchange(masterkey, keys[idx])
 			if err != nil {
-				l.Warnf("error loading public key for %x: %v", key.key, err)
+				l.Warnf("%v", err)
 				continue
 			}
 			for _, entity := range pubKey {
@@ -78,16 +78,7 @@ func unlockDo(cmd *cobra.Command, args []string) {
 		cmdErrHandler(errors.New("no appropriate key found for unlock"))
 		return
 	}
-	reader, err := gpgutil.DecryptWithKey(files.ExchangeMasterKeyFile(availableKeys[0].stub), availableKeys[0].key)
-	if err != nil {
-		cmdErrHandler(err)
-		return
-	}
-	defer reader.Close()
-	if err := masterkey.Read(reader); err != nil {
-		cmdErrHandler(err)
-	}
-	if err := masterkey.Save(); err != nil {
+	if err := sdk.LoadMasterKeyFromExchange(masterkey, keys[availableKeys[0]]); err != nil {
 		cmdErrHandler(err)
 	}
 	if err := sdk.SaveGitSettings(); err != nil {
