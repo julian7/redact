@@ -2,13 +2,12 @@ package main
 
 import (
 	"fmt"
-	"path/filepath"
-	"time"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/log"
+	"github.com/julian7/redact/sdk"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -102,36 +101,11 @@ func unlockDo(cmd *cobra.Command, args []string) {
 	if err := masterkey.Save(); err != nil {
 		cmdErrHandler(err)
 	}
-	if err := saveGitSettings(); err != nil {
+	if err := sdk.SaveGitSettings(); err != nil {
 		cmdErrHandler(err)
 	}
-	files, err := gitutil.LsFiles(nil)
-	if err != nil {
+	if err := sdk.TouchUp(masterkey); err != nil {
 		cmdErrHandler(err)
-		return
 	}
-	err = files.CheckAttrs()
-	if err != nil {
-		cmdErrHandler(err)
-		return
-	}
-	touchTime := time.Now()
-	l := log.Log()
-	affectedFiles := make([]string, 0, len(files))
-	for _, entry := range files {
-		if entry.Filter == AttrName && entry.Status != gitutil.StatusOther {
-			fullpath := filepath.Join(toplevel, entry.Name)
-			err = masterkey.Fs.Chtimes(fullpath, touchTime, touchTime)
-			if err != nil {
-				l.Warnf("cannot touch %s: %v", entry.Name, err)
-				continue
-			}
-			affectedFiles = append(affectedFiles, fullpath)
-		}
-	}
-	if len(affectedFiles) > 0 {
-		err = gitutil.Checkout(affectedFiles)
-	}
-
 	fmt.Println("Key is unlocked.")
 }

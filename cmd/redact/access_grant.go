@@ -8,6 +8,7 @@ import (
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/log"
+	"github.com/julian7/redact/sdk"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -71,7 +72,7 @@ func accessGrantDo(cmd *cobra.Command, args []string) error {
 		return errors.New("nobody to grant access to")
 	}
 
-	masterkey, err := basicDo()
+	masterkey, err := sdk.RedactRepo()
 	if err != nil {
 		cmdErrHandler(err)
 	}

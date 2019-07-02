@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/julian7/redact/sdk"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -19,11 +20,11 @@ func init() {
 }
 
 func generateDo(cmd *cobra.Command, args []string) {
-	masterkey, err := basicDo()
+	masterkey, err := sdk.RedactRepo()
 	if err != nil {
 		cmdErrHandler(err)
 	}
-	err = saveGitSettings()
+	err = sdk.SaveGitSettings()
 	if err != nil {
 		cmdErrHandler(errors.Wrap(err, "setting git config"))
 		return

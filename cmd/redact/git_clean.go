@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/julian7/redact/encoder"
+	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -24,7 +25,7 @@ func init() {
 
 func gitCleanDo(cmd *cobra.Command, args []string) {
 	var keyEpoch uint32
-	masterkey, err := basicDo()
+	masterkey, err := sdk.RedactRepo()
 	if err != nil {
 		cmdErrHandler(err)
 		return

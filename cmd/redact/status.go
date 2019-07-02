@@ -7,6 +7,7 @@ import (
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
+	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -48,7 +49,7 @@ func statusDo(cmd *cobra.Command, args []string) {
 		cmdErrHandler(err)
 		return
 	}
-	masterKey, err := basicDo()
+	masterKey, err := sdk.RedactRepo()
 	if err != nil {
 		cmdErrHandler(err)
 	}
@@ -64,7 +65,7 @@ func statusDo(cmd *cobra.Command, args []string) {
 		return
 	}
 	for _, entry := range files {
-		if entry.Filter == AttrName && entry.Status != gitutil.StatusOther {
+		if entry.Filter == sdk.AttrName && entry.Status != gitutil.StatusOther {
 			if opts.encOnly || !opts.plainOnly {
 				opts.handleFileEntry(entry, true)
 			}

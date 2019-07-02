@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +18,7 @@ func init() {
 }
 
 func listDo(cmd *cobra.Command, args []string) {
-	masterkey, err := basicDo()
+	masterkey, err := sdk.RedactRepo()
 	if err != nil {
 		cmdErrHandler(err)
 		return

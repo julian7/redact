@@ -8,6 +8,7 @@ import (
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/log"
+	"github.com/julian7/redact/sdk"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +24,7 @@ func init() {
 }
 
 func accessListDo(cmd *cobra.Command, args []string) {
-	masterkey, err := basicDo()
+	masterkey, err := sdk.RedactRepo()
 	if err != nil {
 		cmdErrHandler(err)
 	}

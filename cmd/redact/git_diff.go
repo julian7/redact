@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/julian7/redact/sdk"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -19,7 +20,7 @@ func init() {
 }
 
 func gitDiffDo(cmd *cobra.Command, args []string) {
-	masterkey, err := basicDo()
+	masterkey, err := sdk.RedactRepo()
 	if err != nil {
 		cmdErrHandler(err)
 		return
