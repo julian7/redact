@@ -34,12 +34,13 @@ File encoding uses AES256-GCM96 encoding. Encryption nonce is calculated from th
   * [x] generate: generates new master key
   * [x] info (default): shows master key info
   * [x] list: lists all keys
-* [ ] lock: locks repository (deletes local key and removes diff/filter configs)
+* [x] lock: locks repository (deletes local key and removes diff/filter configs)
 * [x] unlock: unlocks repository with local key
 * [o] access: key exchange commands
   * [x] ls/list: list user access
-  * [x] grant: add GPG key access
-  * [ ] revoke: remove GPG key access
+  * [x] grant: add OpenPGP key access
+  * [x] update: re-encrypt master key with OpenPGP keys
+  * [ ] revoke: remove OpenPGP key access
 * [x] git: git filter commands
   * [x] clean: acts as clean filter for git
   * [x] diff: acts as diff filter for git
