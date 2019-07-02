@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cobra"
 )
@@ -24,7 +25,8 @@ func listDo(cmd *cobra.Command, args []string) {
 		return
 	}
 	fmt.Printf("repo key: %v\n", masterkey)
-	for _, key := range masterkey.Keys {
+	files.EachKey(masterkey.Keys, func(idx uint32, key files.KeyHandler) error {
 		fmt.Printf(" - %s\n", key)
-	}
+		return nil
+	})
 }

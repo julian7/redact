@@ -136,11 +136,11 @@ func (k *MasterKey) SaveTo(writer io.Writer) error {
 	if err != nil {
 		return errors.Wrap(err, "writing key type header")
 	}
-	for _, key := range k.Keys {
-		err = binary.Write(writer, binary.BigEndian, key)
-		if err != nil {
-			return errors.Wrap(err, "writing key contents")
-		}
+	err = EachKey(k.Keys, func(idx uint32, key KeyHandler) error {
+		return binary.Write(writer, binary.BigEndian, key)
+	})
+	if err != nil {
+		return errors.Wrap(err, "writing key contents")
 	}
 	return nil
 }
