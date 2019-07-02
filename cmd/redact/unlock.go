@@ -15,7 +15,7 @@ import (
 
 var unlockCmd = &cobra.Command{
 	Use:   "unlock",
-	Short: "Unlock repository",
+	Short: "Unlocks repository",
 	Run:   unlockDo,
 }
 
@@ -41,11 +41,6 @@ func unlockDo(cmd *cobra.Command, args []string) {
 	if err != nil {
 		cmdErrHandler(errors.Wrap(err, "building master key"))
 		return
-	}
-	err = masterkey.Load()
-	if err == nil {
-		//cmdErrHandler(errors.New("repo already unlocked"))
-		//return
 	}
 	keys, err := gpgutil.GetSecretKeys(viper.GetString("gpgkey"))
 	if err != nil {
