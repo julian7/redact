@@ -77,7 +77,6 @@ func (k *MasterKey) Read(f io.Reader) error {
 	if keyType != KeyCurrentType {
 		return errors.New("invalid key type")
 	}
-	epoch := uint32(0)
 	k.ensureKeys()
 	for {
 		key := new(keyV0.KeyV0)
@@ -88,16 +87,17 @@ func (k *MasterKey) Read(f io.Reader) error {
 			}
 			return errors.Wrap(err, "reading key data")
 		}
-		if epoch >= key.Version() {
+		epoch := key.Version()
+		if _, ok := k.Keys[epoch]; ok {
 			return errors.Errorf(
-				"invalid epoch in keys: %d (previous: %d)",
-				key.Version(),
+				"invalid key: duplicate epoch number (%d)",
 				epoch,
 			)
 		}
-		epoch = key.Version()
 		k.Keys[epoch] = key
-		k.LatestKey = epoch
+		if epoch > k.LatestKey {
+			k.LatestKey = epoch
+		}
 	}
 }
 
