@@ -23,27 +23,35 @@ func init() {
 	flags.BoolP("repo", "r", false, "Show repo status only")
 	flags.BoolP("encrypted", "e", false, "Show encrypted files only")
 	flags.BoolP("unencrypted", "u", false, "Show plaintext files only")
-	flags.BoolP("fix", "f", false, "Fix problems")
+	flags.BoolP("quiet", "q", false, "Quiet mode (report only issues)")
+	flags.BoolP("fix", "f", false, "Fix problems (doesn't affect files encrypted with older keys)")
+	flags.BoolP("rekey", "R", false, "Rekey files (update for latest encryption key)")
 	viper.BindPFlags(flags)
 	rootCmd.AddCommand(statusCmd)
 }
 
 type statusOptions struct {
-	repoOnly  bool
-	encOnly   bool
-	plainOnly bool
-	fixRepo   bool
-	key       *files.MasterKey
-	args      []string
+	repoOnly   bool
+	encOnly    bool
+	plainOnly  bool
+	quiet      bool
+	fixRepo    bool
+	rekeyFiles bool
+	key        *files.MasterKey
+	args       []string
+	toFix      []string
+	toRekey    []string
 }
 
 func statusDo(cmd *cobra.Command, args []string) {
 	opts := statusOptions{
-		repoOnly:  viper.GetBool("repo"),
-		encOnly:   viper.GetBool("encrypted"),
-		plainOnly: viper.GetBool("unencrypted"),
-		fixRepo:   viper.GetBool("fix"),
-		args:      args,
+		repoOnly:   viper.GetBool("repo"),
+		encOnly:    viper.GetBool("encrypted"),
+		plainOnly:  viper.GetBool("unencrypted"),
+		quiet:      viper.GetBool("quiet"),
+		fixRepo:    viper.GetBool("fix"),
+		rekeyFiles: viper.GetBool("rekey"),
+		args:       args,
 	}
 	if err := opts.validate(); err != nil {
 		cmdErrHandler(err)
@@ -75,9 +83,34 @@ func statusDo(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
+	var msgFix string
+	if opts.fixRepo {
+		if err != sdk.TouchUpFiles(masterKey, opts.toFix) {
+			cmdErrHandler(err)
+			return
+		}
+		msgFix = "Fixed %d file%s.\n"
+	} else {
+		msgFix = "There are %d file%s to be fixed.\n"
+	}
+	l := len(opts.toFix)
+	fmt.Printf(msgFix, l, map[bool]string{false: "s", true: ""}[l == 1])
+
+	var msgRekey string
+	if opts.rekeyFiles {
+		if err != sdk.TouchUpFiles(masterKey, opts.toRekey) {
+			cmdErrHandler(err)
+			return
+		}
+		msgRekey = "Re-encrypted %d file%s.\n"
+	} else {
+		msgRekey = "There are %d file%s to be re-encrypted.\n"
+	}
+	l = len(opts.toRekey)
+	fmt.Printf(msgRekey, l, map[bool]string{false: "s", true: ""}[l == 1])
 }
 
-func (opts statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEncrypted bool) {
+func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEncrypted bool) {
 	var isEncrypted bool
 	var encKeyVersion uint32
 
@@ -91,6 +124,7 @@ func (opts statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEncr
 	if strings.HasPrefix(entry.Name, files.DefaultKeyExchangeDir+"/") {
 		if isEncrypted {
 			msg = append(msg, "should NEVER be encrypted")
+			opts.toFix = append(opts.toFix, entry.Name)
 			shouldBeEncrypted = false
 		}
 	} else if isEncrypted != shouldBeEncrypted {
@@ -99,17 +133,21 @@ func (opts statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEncr
 		} else {
 			msg = append(msg, "should be encrypted")
 		}
+		opts.toFix = append(opts.toFix, entry.Name)
 	}
 	if isEncrypted {
 		if encKeyVersion != opts.key.LatestKey {
 			msg = append(msg, fmt.Sprintf("encrypted with key epoch %d, update to %d", encKeyVersion, opts.key.LatestKey))
+			opts.toRekey = append(opts.toRekey, entry.Name)
 		}
 		_, err := opts.key.Key(encKeyVersion)
 		if err != nil {
 			msg = append(msg, err.Error())
 		}
 	}
-	printFileEntry(entry, shouldBeEncrypted, strings.Join(msg, "; "))
+	if !opts.quiet || len(msg) > 0 {
+		printFileEntry(entry, shouldBeEncrypted, strings.Join(msg, "; "))
+	}
 }
 
 func printFileEntry(entry *gitutil.FileEntry, shouldBeEncrypted bool, msg string) {
