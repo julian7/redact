@@ -12,6 +12,7 @@ import (
 var (
 	cfgFile    string
 	configName = ".redact"
+	version    = "SNAPSHOT"
 	rootCmd    = &cobra.Command{
 		Use:              "redact",
 		Short:            "encrypts files in a git repository",
@@ -41,6 +42,7 @@ func setupLogging(cmd *cobra.Command, args []string) {
 }
 
 func init() {
+	rootCmd.Version = version
 	cobra.OnInitialize(initConfig)
 	flags := rootCmd.PersistentFlags()
 	flags.StringVar(
