@@ -141,3 +141,7 @@ historical access to secrets stored in the repository. We can do something about
 * replacing secrets: when encrypted files are supposed to be exposed, the best thing we can do is not just replacing their encryptions, but replacing secrets too. For example, if encrypted files are secret parts of key pairs (like a TLS certificate), we might want to revoke the full certificate altogether, generating new ones.
 
 As always, play safe, and revoke all secrets if there is any chance it can cause damage.
+
+## Any issues?
+
+Open a ticket, perhaps a pull request. We support [GitHub Flow](https://guides.github.com/introduction/flow/). You might want to [fork](https://guides.github.com/activities/forking/) this project first.
