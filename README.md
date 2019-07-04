@@ -21,7 +21,7 @@ New repo key created: .git/redact (#1 c90014bb)
 
 This creates a secret key into `.git/redact` directory, and it also sets up diff / filter attributes for later use.
 
-Then, tell the repo which files are going to be encrypted. Create a `.gitignore` file like this one:
+Then, tell the repo which files are going to be encrypted. Create a `.gitattributes` file like this one:
 
 ```text
 *.key filter=redact diff=redact
