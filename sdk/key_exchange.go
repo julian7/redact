@@ -25,6 +25,9 @@ func LoadMasterKeyFromExchange(masterkey *files.MasterKey, fingerprint [20]byte)
 		files.ExchangeMasterKeyFile(stub),
 		fingerprint,
 	)
+	if err != nil {
+		return errors.Wrap(err, "decrypt master key from exchange dir")
+	}
 	defer reader.Close()
 	if err := masterkey.Read(reader); err != nil {
 		return errors.Wrap(err, "reading unencrypted master key")
@@ -49,7 +52,7 @@ func SaveMasterExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
 	defer masterWriter.Close()
 	r, w := io.Pipe()
 	go func(writer io.WriteCloser) {
-		masterkey.SaveTo(writer)
+		_ = masterkey.SaveTo(writer)
 		writer.Close()
 	}(w)
 	return gpgutil.Encrypt(r, masterWriter, key)
@@ -93,7 +96,7 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 		return 0, errors.Wrap(err, "fetching key exchange dir")
 	}
 	updated := 0
-	afero.Walk(masterkey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
+	err = afero.Walk(masterkey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
 		var fingerprint [20]byte
 		if err != nil {
 			return nil
@@ -117,5 +120,8 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 		updated++
 		return errors.Wrapf(SaveMasterExchange(masterkey, keys[0]), "saving master key encrypted with key %s", fingerprintText)
 	})
+	if err != nil {
+		return 0, errors.Wrap(err, "updating master key in exchange dir")
+	}
 	return updated, nil
 }

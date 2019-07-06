@@ -50,7 +50,7 @@ func (e FileEntries) CheckAttrs() error {
 
 func (e FileEntries) feedWithFileNames(writer io.WriteCloser) {
 	for _, entry := range e {
-		writer.Write([]byte(entry.Name + "\n"))
+		writer.Write([]byte(entry.Name + "\n")) // nolint:errcheck
 	}
 	writer.Close()
 }
@@ -70,7 +70,8 @@ func (e FileEntries) readCheckAttrs(reader io.ReadCloser) error {
 	}
 	outbuf := bytes.NewBuffer(out)
 	for {
-		line, err := outbuf.ReadString('\n')
+		var line string
+		line, err = outbuf.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
 				err = nil

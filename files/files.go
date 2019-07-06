@@ -91,7 +91,7 @@ func (k *MasterKey) readHeader(reader io.Reader, header *fileHeader) error {
 	if err != nil {
 		return errors.Wrap(err, "reading file header")
 	}
-	if bytes.Compare(header.Preamble[:], []byte(FileMagic)) != 0 {
+	if !bytes.Equal(header.Preamble[:], []byte(FileMagic)) {
 		return errors.New("invalid file preamble")
 	}
 	return nil

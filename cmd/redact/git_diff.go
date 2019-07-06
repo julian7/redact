@@ -39,7 +39,7 @@ func gitDiffDo(cmd *cobra.Command, args []string) {
 	if err == nil {
 		return
 	}
-	n, err := reader.Seek(0, os.SEEK_SET)
+	n, err := reader.Seek(0, io.SeekStart)
 	if err != nil {
 		cmdErrHandler(errors.Wrap(err, "re-reading file from beginning"))
 	}

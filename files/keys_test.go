@@ -44,10 +44,6 @@ func prebuild(t *testing.T, k *MasterKey) bool {
 		t.Errorf("cannot write key file %s: %v", keyfile, err)
 		return false
 	}
-	if err != nil {
-		t.Errorf("cannot write key file %s: %v", keyfile, err)
-		return false
-	}
 	return true
 }
 
@@ -126,7 +122,7 @@ func TestLoad(t *testing.T) {
 				return
 			}
 			received := key.AES()
-			if bytes.Compare(received, []byte(sampleAES)) != 0 {
+			if !bytes.Equal(received, []byte(sampleAES)) {
 				t.Errorf(`Wrong AES key\nExpected: "%s"\nReceived: "%s"`, sampleAES, received)
 			}
 		})

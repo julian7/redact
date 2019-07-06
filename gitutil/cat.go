@@ -20,6 +20,8 @@ func Cat(objectID []byte) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "getting git command output pipe")
 	}
-	cmd.Start()
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
 	return out, nil
 }

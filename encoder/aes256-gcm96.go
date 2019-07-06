@@ -59,7 +59,7 @@ func (enc AES256GCM96) Decode(ciphertext []byte) ([]byte, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "calculating HMAC")
 	}
-	if bytes.Compare(hmacSum[:gcm.NonceSize()], nonce) != 0 {
+	if !bytes.Equal(hmacSum[:gcm.NonceSize()], nonce) {
 		return nil, errors.New("HMAC checksum invalid")
 	}
 	return plaintext, nil
@@ -82,6 +82,8 @@ func calculateHMAC(key, value []byte) ([]byte, error) {
 		return nil, errors.New("HMAC key is empty")
 	}
 	nonceHMAC := hmac.New(sha256.New, key)
-	nonceHMAC.Write(value)
+	if _, err := nonceHMAC.Write(value); err != nil {
+		return nil, err
+	}
 	return nonceHMAC.Sum(nil), nil
 }

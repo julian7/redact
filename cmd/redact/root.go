@@ -69,7 +69,7 @@ func initConfig() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	if err := viper.ReadInConfig(); err == nil {
-		// log.Log().Infof("Using config file: %s", viper.ConfigFileUsed())
+		log.Log().Debugf("Using config file: %s", viper.ConfigFileUsed())
 	}
 }
 

@@ -66,7 +66,7 @@ func (k *MasterKey) Read(f io.Reader) error {
 	if err != nil {
 		return errors.Wrap(err, "reading preamble from key file")
 	}
-	if bytes.Compare(readbuf, []byte(KeyMagic)) != 0 {
+	if !bytes.Equal(readbuf, []byte(KeyMagic)) {
 		return errors.New("invalid key file preamble")
 	}
 	var keyType uint32
@@ -185,7 +185,7 @@ func (k *MasterKey) ensureKeys() {
 func (k *MasterKey) getOrCreateKeyDir() error {
 	fs, err := k.Stat(k.KeyDir)
 	if err != nil {
-		k.Mkdir(k.KeyDir, 0700)
+		k.Mkdir(k.KeyDir, 0700) // nolint:errcheck
 		fs, err = k.Stat(k.KeyDir)
 	}
 	if err != nil {
