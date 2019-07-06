@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 * Typo fix in README.md
+* `redact status` honors --repo option (to be even more quiet than --quiet)
+* Added a lot of error checks to surely catch all errors
 
 ## [v0.1.0]: July 3, 2019
 

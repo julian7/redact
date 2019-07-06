@@ -147,7 +147,7 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 			msg = append(msg, err.Error())
 		}
 	}
-	if !opts.quiet || len(msg) > 0 {
+	if !opts.repoOnly && (!opts.quiet || len(msg) > 0) {
 		printFileEntry(entry, shouldBeEncrypted, strings.Join(msg, "; "))
 	}
 }
