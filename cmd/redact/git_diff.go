@@ -47,17 +47,8 @@ func gitDiffDo(cmd *cobra.Command, args []string) {
 		cmdErrHandler(errors.Errorf("cannot return to beginning of file: returned to position %d instead", n))
 		return
 	}
-	readbuf := make([]byte, 1024)
-	for {
-		n, err := reader.Read(readbuf)
-		if err != nil {
-			if err == io.EOF {
-				return
-			}
-			cmdErrHandler(errors.Wrap(err, "reading file"))
-			return
-		}
-		os.Stdout.Write(readbuf[:n])
+	if _, err := io.Copy(os.Stdout, reader); err != nil {
+		cmdErrHandler(errors.Wrap(err, "reading file"))
+		return
 	}
-
 }

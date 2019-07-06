@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 * `redact status` honors --repo option (to be even more quiet than --quiet)
 * Added a lot of error checks to surely catch all errors
 * Replace shell-based compile script with [magefile](https://magefile.org/)
+* More stdlib use
 
 ## [v0.1.0]: July 3, 2019
 
