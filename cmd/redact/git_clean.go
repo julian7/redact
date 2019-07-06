@@ -19,8 +19,10 @@ var gitCleanCmd = &cobra.Command{
 func init() {
 	flags := gitCleanCmd.Flags()
 	flags.Uint32P("epoch", "e", 0, "Use specific key epoch (by default it uses the latest key)")
-	viper.BindPFlags(flags)
 	gitCmd.AddCommand(gitCleanCmd)
+	if err := viper.BindPFlags(flags); err != nil {
+		panic(err)
+	}
 }
 
 func gitCleanDo(cmd *cobra.Command, args []string) {

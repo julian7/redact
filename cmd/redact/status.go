@@ -26,8 +26,10 @@ func init() {
 	flags.BoolP("quiet", "q", false, "Quiet mode (report only issues)")
 	flags.BoolP("fix", "f", false, "Fix problems (doesn't affect files encrypted with older keys)")
 	flags.BoolP("rekey", "R", false, "Rekey files (update for latest encryption key)")
-	viper.BindPFlags(flags)
 	rootCmd.AddCommand(statusCmd)
+	if err := viper.BindPFlags(flags); err != nil {
+		panic(err)
+	}
 }
 
 type statusOptions struct {

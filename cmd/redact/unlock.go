@@ -22,12 +22,9 @@ func init() {
 	flags := unlockCmd.Flags()
 	flags.StringP("gpgkey", "k", "", "Use specific GPG key")
 	rootCmd.AddCommand(unlockCmd)
-	viper.BindPFlags(flags)
-}
-
-type keyFound struct {
-	key  [20]byte
-	stub string
+	if err := viper.BindPFlags(flags); err != nil {
+		panic(err)
+	}
 }
 
 func unlockDo(cmd *cobra.Command, args []string) {

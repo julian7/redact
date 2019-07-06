@@ -24,7 +24,9 @@ func init() {
 	flags.StringSliceP("openpgp", "p", nil, "import from OpenPGP file instead of gpg keyring")
 	flags.StringSliceP("openpgp-armor", "a", nil, "import from OpenPGP ASCII Armored file instead of gpg keyring")
 	accessCmd.AddCommand(accessGrantCmd)
-	viper.BindPFlags(flags)
+	if err := viper.BindPFlags(flags); err != nil {
+		panic(err)
+	}
 }
 
 func accessGrantDo(cmd *cobra.Command, args []string) error {

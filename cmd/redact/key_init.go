@@ -37,15 +37,15 @@ func initDo(cmd *cobra.Command, args []string) {
 		cmdErrHandler(err)
 		return
 	}
-	err = masterkey.Load()
-	if err == nil {
+	if err := masterkey.Load(); err == nil {
 		cmdErrHandler(errors.Errorf("repo already has master key: %s", masterkey))
 		return
 	}
-	masterkey.Generate()
+	if err := masterkey.Generate(); err != nil {
+		cmdErrHandler(errors.Wrap(err, "generating master key"))
+	}
 	fmt.Printf("New repo key created: %v\n", masterkey)
-	err = masterkey.Save()
-	if err != nil {
+	if err := masterkey.Save(); err != nil {
 		cmdErrHandler(errors.Wrap(err, "saving master key"))
 	}
 }

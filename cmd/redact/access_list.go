@@ -31,7 +31,7 @@ func accessListDo(cmd *cobra.Command, args []string) {
 	if err != nil {
 		cmdErrHandler(err)
 	}
-	afero.Walk(masterkey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
+	err = afero.Walk(masterkey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -50,4 +50,7 @@ func accessListDo(cmd *cobra.Command, args []string) {
 		gpgutil.PrintKey(entities[0])
 		return nil
 	})
+	if err != nil {
+		cmdErrHandler(err)
+	}
 }

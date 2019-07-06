@@ -25,12 +25,13 @@ func generateDo(cmd *cobra.Command, args []string) {
 	if err != nil {
 		cmdErrHandler(err)
 	}
-	err = sdk.SaveGitSettings()
-	if err != nil {
+	if err := sdk.SaveGitSettings(); err != nil {
 		cmdErrHandler(errors.Wrap(err, "setting git config"))
 		return
 	}
-	masterkey.Generate()
+	if err := masterkey.Generate(); err != nil {
+		cmdErrHandler(errors.Wrap(err, "generating master key"))
+	}
 	fmt.Printf("New repo key created: %v\n", masterkey)
 	if err := masterkey.Save(); err != nil {
 		cmdErrHandler(errors.Wrap(err, "saving master key"))

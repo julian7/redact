@@ -53,8 +53,9 @@ func init() {
 	)
 	flags.StringP("verbosity", "v", "info", "Verbosity (possible values: debug, info, warn, error, fatal)")
 	flags.String("logfile", "", "log file (empty for standard out)")
-	viper.BindPFlag("verbosity", flags.Lookup("verbosity"))
-	viper.BindPFlag("logfile", flags.Lookup("logfile"))
+	if err := viper.BindPFlags(flags); err != nil {
+		panic(err)
+	}
 }
 
 func initConfig() {

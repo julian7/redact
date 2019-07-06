@@ -25,8 +25,11 @@ func listDo(cmd *cobra.Command, args []string) {
 		return
 	}
 	fmt.Printf("repo key: %v\n", masterkey)
-	files.EachKey(masterkey.Keys, func(idx uint32, key files.KeyHandler) error {
+	err = files.EachKey(masterkey.Keys, func(idx uint32, key files.KeyHandler) error {
 		fmt.Printf(" - %s\n", key)
 		return nil
 	})
+	if err != nil {
+		cmdErrHandler(err)
+	}
 }
