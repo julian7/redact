@@ -1,51 +1,12 @@
-package files
+package files_test
 
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"testing"
 
-	"github.com/spf13/afero"
+	"github.com/julian7/redact/files"
 )
-
-const (
-	sampleAES  = "0123456789abcdefghijklmnopqrstuv"
-	sampleHMAC = "0123456789abcdefghijklmnopqrstuv0123456789abcdefghijklmnopqrstuv"
-)
-
-func genGitRepo(t *testing.T) *MasterKey {
-	k := &MasterKey{Fs: afero.NewMemMapFs(), KeyDir: "/.git/test"}
-	err := k.Mkdir(k.KeyDir, 0700)
-	if err != nil {
-		t.Errorf("cannot create key dir %s: %v", k.KeyDir, err)
-		return nil
-	}
-	return k
-}
-
-func prebuild(t *testing.T, k *MasterKey) bool {
-	keyfile := buildKeyFileName(k.KeyDir)
-	fd, err := k.OpenFile(keyfile, os.O_CREATE|os.O_WRONLY, 0600)
-	if err != nil {
-		t.Errorf("cannot open key file %s for writing: %v", keyfile, err)
-		return false
-	}
-	defer fd.Close()
-	_, err = fd.WriteString(
-		"\000REDACT\000" + // preamble
-			"\000\000\000\000" + // key type == 0
-			"\000\000\000\001" + // first key epoch
-			sampleAES + sampleHMAC + // sample key
-			"\000\000\000\002" + // second key epoch
-			sampleAES + sampleHMAC, // sample key
-	)
-	if err != nil {
-		t.Errorf("cannot write key file %s: %v", keyfile, err)
-		return false
-	}
-	return true
-}
 
 func TestGenerate(t *testing.T) {
 	k := genGitRepo(t)
@@ -62,10 +23,10 @@ func TestGenerate(t *testing.T) {
 	}
 	tt := []struct {
 		name    string
-		keyfunc func(KeyHandler) []byte
+		keyfunc func(files.KeyHandler) []byte
 	}{
-		{"AES", (KeyHandler).AES},
-		{"HMAC", (KeyHandler).HMAC},
+		{"AES", (files.KeyHandler).AES},
+		{"HMAC", (files.KeyHandler).HMAC},
 	}
 	for idx, name := range []string{"latest", "first", "second"} {
 		t.Run(fmt.Sprintf("%s key", name), func(t *testing.T) {
@@ -101,14 +62,14 @@ func TestLoad(t *testing.T) {
 		hasKey        bool
 		expectedError string
 	}{
-		{"uninitialized", false, "open /.git/test/key: file does not exist"},
+		{"uninitialized", false, "open /git/repo/.git/test/key: file does not exist"},
 		{"initialized", true, ""},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			k := genGitRepo(t)
 			if tc.hasKey {
-				if !prebuild(t, k) {
+				if !writeKey(t, k) {
 					return
 				}
 			}
@@ -142,7 +103,7 @@ func TestSave(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			k := genGitRepo(t)
 			if tc.hasKey {
-				if !prebuild(t, k) {
+				if !writeKey(t, k) {
 					return
 				}
 			}
@@ -155,7 +116,7 @@ func TestSave(t *testing.T) {
 			if !checkError(t, tc.expectedError, err) {
 				return
 			}
-			finfo, err := k.Stat("/.git/test/key")
+			finfo, err := k.Stat("/git/repo/.git/test/key")
 			if err != nil {
 				t.Errorf("key not created: %v", err)
 				return

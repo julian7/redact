@@ -51,7 +51,7 @@ func ExchangeDir(toplevel string) string {
 
 func (k *MasterKey) ensureExchangeDir(kxdir string) error {
 	key := "kxdir_ensure"
-	if _, ok := k.cache[key]; ok {
+	if _, ok := k.Cache[key]; ok {
 		return nil
 	}
 	st, err := k.Stat(kxdir)
@@ -71,14 +71,14 @@ func (k *MasterKey) ensureExchangeDir(kxdir string) error {
 	if err := k.ensureExchangeGitAttributes(kxdir); err != nil {
 		return err
 	}
-	k.cache[key] = kxdir
+	k.Cache[key] = kxdir
 	return nil
 }
 
 // ExchangeDir returns key exchange directory if exists
 func (k *MasterKey) ExchangeDir() (string, error) {
 	key := "kxdir"
-	if val, ok := k.cache[key]; ok {
+	if val, ok := k.Cache[key]; ok {
 		return val, nil
 	}
 	kxdir := ExchangeDir(k.RepoInfo.Toplevel)
@@ -89,13 +89,13 @@ func (k *MasterKey) ExchangeDir() (string, error) {
 	if !st.IsDir() {
 		return "", errors.New("key exchange is not a directory")
 	}
-	k.cache[key] = kxdir
+	k.Cache[key] = kxdir
 	return kxdir, nil
 }
 
 func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
 	key := "kxgitattrs"
-	if _, ok := k.cache[key]; ok {
+	if _, ok := k.Cache[key]; ok {
 		return nil
 	}
 	var data []byte
@@ -105,7 +105,12 @@ func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
 		if st.IsDir() {
 			return errors.Errorf("%s is not a normal file: %+v", gaFileName, st)
 		}
-		data, err = ioutil.ReadFile(gaFileName)
+		f, err := k.Open(gaFileName)
+		if err != nil {
+			return errors.Wrap(err, "opening .gitattributes file inside exchange dir")
+		}
+		defer f.Close()
+		data, err = ioutil.ReadAll(f)
 		if err != nil {
 			return errors.Wrap(err, "reading .gitattributes file in key exchange dir")
 		}
@@ -118,6 +123,6 @@ func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
 		return errors.Wrap(err, "writing .gitattributes file in key exchange dir")
 	}
 
-	k.cache[key] = kxdir
+	k.Cache[key] = kxdir
 	return nil
 }
