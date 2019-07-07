@@ -41,3 +41,12 @@ func RegisterEncoder(encType int, factory EncoderFactory) error {
 	encoders[encType] = factory
 	return nil
 }
+
+// UnregisterEncoder removes an encoder
+func UnregisterEncoder(encType int) error {
+	if _, ok := encoders[encType]; !ok {
+		return errors.Errorf("encoder type %d doesn't exist", encType)
+	}
+	delete(encoders, encType)
+	return nil
+}
