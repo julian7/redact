@@ -2,6 +2,8 @@ package files_test
 
 import (
 	"testing"
+
+	"github.com/julian7/redact/files"
 )
 
 func TestGetExchangeFilenameStubFor(t *testing.T) {
@@ -44,5 +46,17 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestExchangePubKeyFile(t *testing.T) {
+	if err := checkString("stub.asc", files.ExchangePubKeyFile("stub")); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestExchangeMasterKeyFile(t *testing.T) {
+	if err := checkString("stub.key", files.ExchangeMasterKeyFile("stub")); err != nil {
+		t.Error(err)
 	}
 }
