@@ -18,14 +18,26 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var fingerprint [20]byte
 			copy(fingerprint[:], []byte("deadbeefdeadbeefdead"))
-			mk := genGitRepo(t)
-			writeKey(t, mk)
+			mk, err := genGitRepo()
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			if err := writeKey(mk); err != nil {
+				t.Error(err)
+				return
+			}
 			if tc.preload {
-				writeKX(t, mk)
+				if err := writeKX(mk); err != nil {
+					t.Error(err)
+					return
+				}
 			}
 			ret, err := mk.GetExchangeFilenameStubFor(fingerprint)
 			if err != nil {
-				checkError(t, tc.expErr, err)
+				if err2 := checkError(tc.expErr, err); err2 != nil {
+					t.Error(err2)
+				}
 			} else {
 				if ret != tc.expected {
 					t.Errorf(

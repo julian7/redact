@@ -3,7 +3,8 @@ package files_test
 import (
 	"os"
 	"path/filepath"
-	"testing"
+
+	"github.com/pkg/errors"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
@@ -15,7 +16,7 @@ const (
 	sampleHMAC = "0123456789abcdefghijklmnopqrstuv0123456789abcdefghijklmnopqrstuv"
 )
 
-func genGitRepo(t *testing.T) *files.MasterKey {
+func genGitRepo() (*files.MasterKey, error) {
 	k := &files.MasterKey{
 		Fs: afero.NewMemMapFs(),
 		RepoInfo: gitutil.GitRepoInfo{
@@ -27,15 +28,13 @@ func genGitRepo(t *testing.T) *files.MasterKey {
 	}
 	err := k.Mkdir(k.KeyDir, 0700)
 	if err != nil {
-		t.Errorf("cannot create key dir %s: %v", k.KeyDir, err)
-		return nil
+		return nil, errors.Wrapf(err, "creating key dir %s", k.KeyDir)
 	}
-	return k
+	return k, nil
 }
 
-func writeKey(t *testing.T, k *files.MasterKey) bool {
+func writeKey(k *files.MasterKey) error {
 	return writeFile(
-		t,
 		k,
 		filepath.Join(k.KeyDir, "key"),
 		0600,
@@ -48,14 +47,12 @@ func writeKey(t *testing.T, k *files.MasterKey) bool {
 	)
 }
 
-func writeKX(t *testing.T, k *files.MasterKey) bool {
+func writeKX(k *files.MasterKey) error {
 	kxdir := filepath.Join(k.RepoInfo.Toplevel, ".redact")
 	if err := k.MkdirAll(kxdir, 0755); err != nil {
-		t.Errorf("cannot create exchange dir: %v", err)
-		return false
+		return errors.Wrap(err, "creating exchange dir")
 	}
 	return writeFile(
-		t,
 		k,
 		filepath.Join(kxdir, ".gitattributes"),
 		0644,
@@ -63,43 +60,37 @@ func writeKX(t *testing.T, k *files.MasterKey) bool {
 	)
 }
 
-func writeFile(t *testing.T, k *files.MasterKey, fname string, perms os.FileMode, contents string) bool {
+func writeFile(k *files.MasterKey, fname string, perms os.FileMode, contents string) error {
 	of, err := k.OpenFile(fname, os.O_CREATE|os.O_WRONLY, perms)
 	if err != nil {
-		t.Errorf("cannot create %s file: %v", fname, err)
-		return false
+		return errors.Wrapf(err, "creating %s file", fname)
 	}
 	if _, err := of.WriteString(contents); err != nil {
-		t.Errorf("cannot write %s file: %v", fname, err)
-		return false
+		return errors.Wrapf(err, "writing %s file", fname)
 	}
 	if err := of.Close(); err != nil {
-		t.Errorf("cannot close %s file: %v", fname, err)
-		return false
+		return errors.Wrapf(err, "closing %s file", fname)
 	}
-	return true
+	return nil
 }
 
-func checkError(t *testing.T, expected string, receivedError error) bool {
+func checkError(expected string, receivedError error) error {
 	if receivedError != nil {
 		received := receivedError.Error()
 		if expected == "" {
-			t.Errorf("Unexpected error: %s", received)
-			return false
+			return errors.Errorf("Unexpected error: %s", received)
 		}
 		if received != expected {
-			t.Errorf(
+			return errors.Errorf(
 				`Unexpected error.
 Expected: "%s"
 Received: "%s"`,
 				expected,
 				received,
 			)
-			return false
 		}
 	} else if expected != "" {
-		t.Errorf("Unexpected success. Expected error: %s", expected)
-		return false
+		return errors.Errorf("Unexpected success. Expected error: %s", expected)
 	}
-	return true
+	return nil
 }
