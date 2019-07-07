@@ -39,14 +39,8 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 					t.Error(err2)
 				}
 			} else {
-				if ret != tc.expected {
-					t.Errorf(
-						`Unexpected result.
-Expected: "%s"
-Received: "%s"`,
-						tc.expected,
-						ret,
-					)
+				if err := checkString(tc.expected, ret); err != nil {
+					t.Error(err)
 				}
 			}
 		})

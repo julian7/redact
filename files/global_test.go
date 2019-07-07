@@ -94,3 +94,16 @@ Received: "%s"`,
 	}
 	return nil
 }
+
+func checkString(expected, received string) error {
+	if received != expected {
+		return errors.Errorf(
+			`Unexpected result.
+Expected: "%s"
+Received: "%s"`,
+			expected,
+			received,
+		)
+	}
+	return nil
+}
