@@ -99,8 +99,8 @@ func checkString(expected, received string) error {
 	if received != expected {
 		return errors.Errorf(
 			`Unexpected result.
-Expected: "%s"
-Received: "%s"`,
+Expected: %q
+Received: %q`,
 			expected,
 			received,
 		)

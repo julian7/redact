@@ -62,11 +62,11 @@ func (k *MasterKey) Decode(reader io.Reader, writer io.Writer) error {
 	}
 	enc, err := encoder.NewEncoder(int(header.Encoding), key.AES(), key.HMAC())
 	if err != nil {
-		return errors.Wrap(err, "retrieving encoder")
+		return errors.Wrap(err, "setting up encoder")
 	}
 	in, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return errors.Wrap(err, "reading file")
+		return errors.Wrap(err, "reading stream")
 	}
 	out, err := enc.Decode(in)
 	if err != nil {
