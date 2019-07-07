@@ -9,7 +9,11 @@ import (
 )
 
 func TestGenerate(t *testing.T) {
-	k := genGitRepo(t)
+	k, err := genGitRepo()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if k == nil {
 		t.Error("cannot generate git repo")
 		return
@@ -67,14 +71,23 @@ func TestLoad(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			k := genGitRepo(t)
+			k, err := genGitRepo()
+			if err != nil {
+				t.Error(err)
+				return
+			}
 			if tc.hasKey {
-				if !writeKey(t, k) {
+				if err := writeKey(k); err != nil {
+					t.Error(err)
 					return
 				}
 			}
-			err := k.Load()
-			if !checkError(t, tc.expectedError, err) || err != nil {
+			err = k.Load()
+			if err2 := checkError(tc.expectedError, err); err2 != nil {
+				t.Error(err2)
+				return
+			}
+			if err != nil {
 				return
 			}
 			key, err := k.Key(0)
@@ -101,19 +114,25 @@ func TestSave(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			k := genGitRepo(t)
+			k, err := genGitRepo()
+			if err != nil {
+				t.Error(err)
+				return
+			}
 			if tc.hasKey {
-				if !writeKey(t, k) {
+				if err := writeKey(k); err != nil {
+					t.Error(err)
 					return
 				}
 			}
-			err := k.Generate()
+			err = k.Generate()
 			if err != nil {
 				t.Errorf("Error generating keys: %v", err.Error())
 				return
 			}
 			err = k.Save()
-			if !checkError(t, tc.expectedError, err) {
+			if err2 := checkError(tc.expectedError, err); err2 != nil {
+				t.Error(err2)
 				return
 			}
 			finfo, err := k.Stat("/git/repo/.git/test/key")
