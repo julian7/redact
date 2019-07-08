@@ -139,10 +139,10 @@ func (k *MasterKey) SaveTo(writer io.Writer) error {
 		return errors.Wrap(err, "writing key type header")
 	}
 	err = EachKey(k.Keys, func(idx uint32, key KeyHandler) error {
-		return binary.Write(writer, binary.BigEndian, key)
+		return errors.Wrapf(binary.Write(writer, binary.BigEndian, key), "key #%d", idx)
 	})
 	if err != nil {
-		return errors.Wrap(err, "writing key contents")
+		return errors.Wrapf(err, "writing key contents")
 	}
 	return nil
 }

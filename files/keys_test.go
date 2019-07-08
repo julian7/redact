@@ -200,6 +200,14 @@ func (fs *noOpenFile) OpenFile(string, int, os.FileMode) (afero.File, error) {
 	return nil, errors.New("open file returns error")
 }
 
+type noMkdir struct {
+	afero.Fs
+}
+
+func (fs *noMkdir) Mkdir(string, os.FileMode) error {
+	return errors.New("Mkdir returns error")
+}
+
 func TestLoad(t *testing.T) {
 	tt := []struct {
 		name          string
@@ -285,14 +293,128 @@ func TestLoad(t *testing.T) {
 	}
 }
 
+func TestSaveTo(t *testing.T) {
+	tt := []struct {
+		name   string
+		writer io.Writer
+		keys   int
+		len    int
+		err    error
+	}{
+		{
+			name:   "success",
+			writer: bytes.NewBuffer(nil),
+			keys:   1,
+			len:    112,
+			err:    nil,
+		},
+		{
+			name:   "no keys",
+			writer: bytes.NewBuffer(nil),
+			keys:   0,
+			len:    12,
+			err:    nil,
+		},
+		{
+			name:   "5 keys",
+			writer: bytes.NewBuffer(nil),
+			keys:   5,
+			len:    512,
+			err:    nil,
+		},
+		{
+			name:   "write error 1",
+			writer: ioprobe.NewTimeoutWriter(bytes.NewBuffer(nil), 1),
+			keys:   1,
+			err:    errors.New("writing key preamble: unexpected EOF"),
+		},
+		{
+			name:   "write error 2",
+			writer: ioprobe.NewTimeoutWriter(bytes.NewBuffer(nil), 2),
+			keys:   1,
+			len:    -1,
+			err:    errors.New("writing key type header: unexpected EOF"),
+		},
+		{
+			name:   "write error 3",
+			writer: ioprobe.NewTimeoutWriter(bytes.NewBuffer(nil), 3),
+			keys:   1,
+			len:    -1,
+			err:    errors.New("writing key contents: key #1: unexpected EOF"),
+		},
+		{
+			name:   "write error 5",
+			writer: ioprobe.NewTimeoutWriter(bytes.NewBuffer(nil), 5),
+			keys:   3,
+			len:    -1,
+			err:    errors.New("writing key contents: key #3: unexpected EOF"),
+		},
+	}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			k := files.MasterKey{}
+			for i := 0; i < tc.keys; i++ {
+				err := k.Generate()
+				if err != nil {
+					t.Errorf("cannot generate key: %v", err)
+					return
+				}
+			}
+			received := k.SaveTo(tc.writer)
+			if err := tester.AssertError(tc.err, received); err != nil {
+				t.Error(err)
+			}
+			if received != nil || tc.len < 0 {
+				return
+			}
+			buf, ok := tc.writer.(*bytes.Buffer)
+			if !ok {
+				t.Errorf("invalid type (%T) for writer success check", tc.writer)
+			}
+			recvlen := len(buf.Bytes())
+			if recvlen != tc.len {
+				t.Errorf("invalid key length. Received: %d, expected: %d", recvlen, tc.len)
+			}
+		})
+	}
+}
+
 func TestSave(t *testing.T) {
 	tt := []struct {
-		name          string
-		hasKey        bool
-		expectedError error
+		name   string
+		hasKey bool
+		fsMods func(*files.MasterKey)
+		err    error
 	}{
-		{"uninitialized", false, nil},
-		{"initialized", false, nil},
+		{
+			"uninitialized",
+			false,
+			func(*files.MasterKey) {},
+			nil,
+		},
+		{
+			"initialized",
+			true,
+			func(*files.MasterKey) {},
+			nil,
+		},
+		{
+			"error getting keydir",
+			false,
+			func(k *files.MasterKey) {
+				_ = k.RemoveAll(k.KeyDir)
+				k.Fs = &noMkdir{Fs: k.Fs}
+			},
+			errors.New("keydir not available: open /git/repo/.git/test: file does not exist"),
+		},
+		{
+			"error writing key",
+			false,
+			func(k *files.MasterKey) {
+				k.Fs = &noOpenFile{Fs: k.Fs}
+			},
+			errors.New("saving key file: open file returns error"),
+		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
@@ -301,20 +423,24 @@ func TestSave(t *testing.T) {
 				t.Error(err)
 				return
 			}
+			err = k.Generate()
+			if err != nil {
+				t.Errorf("Error generating keys: %v", err.Error())
+				return
+			}
 			if tc.hasKey {
 				if err := writeKey(k); err != nil {
 					t.Error(err)
 					return
 				}
 			}
-			err = k.Generate()
-			if err != nil {
-				t.Errorf("Error generating keys: %v", err.Error())
+			tc.fsMods(k)
+			err = k.Save()
+			if err2 := tester.AssertError(tc.err, err); err2 != nil {
+				t.Error(err2)
 				return
 			}
-			err = k.Save()
-			if err2 := tester.AssertError(tc.expectedError, err); err2 != nil {
-				t.Error(err2)
+			if err != nil {
 				return
 			}
 			finfo, err := k.Stat("/git/repo/.git/test/key")
