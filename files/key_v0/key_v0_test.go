@@ -1,6 +1,10 @@
-package keyv0
+package keyv0_test
 
-import "testing"
+import (
+	"testing"
+
+	keyv0 "github.com/julian7/redact/files/key_v0"
+)
 
 const (
 	sampleAES  = "0123456789abcdefghijklmnopqrstuv"
@@ -9,7 +13,7 @@ const (
 
 func TestNewKey(t *testing.T) {
 	epoch := uint32(5)
-	key := NewKey(epoch)
+	key := keyv0.NewKey(epoch)
 	if key == nil {
 		t.Error("No key returned")
 		return
@@ -24,7 +28,7 @@ func TestNewKey(t *testing.T) {
 }
 
 func TestKeyVersion(t *testing.T) {
-	key := KeyV0{}
+	key := keyv0.KeyV0{}
 	expected := uint32(0)
 	if key.Version() != expected {
 		t.Errorf(
@@ -35,31 +39,38 @@ func TestKeyVersion(t *testing.T) {
 	}
 }
 
+func TestKeyType(t *testing.T) {
+	key := keyv0.KeyV0{}
+	if key.Type() != 0 {
+		t.Errorf("invalid key format type: %d", key.Type())
+	}
+}
+
 func TestGenerate(t *testing.T) {
-	key := KeyV0{Epoch: 1}
+	key := keyv0.KeyV0{Epoch: 1}
 	err := key.Generate()
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 		return
 	}
-	if len(key.AES()) != AESKeySize {
+	if len(key.AES()) != keyv0.AESKeySize {
 		t.Errorf(
 			"Invalid AES key size\nExpected: %d\nReceived: %d",
-			AESKeySize,
+			keyv0.AESKeySize,
 			len(key.AES()),
 		)
 	}
-	if len(key.HMAC()) != HMACKeySize {
+	if len(key.HMAC()) != keyv0.HMACKeySize {
 		t.Errorf(
 			"Invalid HMAC key size\nExpected: %d\nReceived: %d",
-			HMACKeySize,
+			keyv0.HMACKeySize,
 			len(key.HMAC()),
 		)
 	}
 }
 
 func TestString(t *testing.T) {
-	key := KeyV0{
+	key := keyv0.KeyV0{
 		Epoch: 1,
 	}
 	copy(key.AESData[:], sampleAES)
