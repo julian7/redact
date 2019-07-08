@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 * Added a lot of error checks to surely catch all errors
 * Replace shell-based compile script with [magefile](https://magefile.org/)
 * More stdlib use
+* Refactor most testing utility methods to [tester](https://github.com/julian7/tester) library
 
 ## [v0.1.0]: July 3, 2019
 

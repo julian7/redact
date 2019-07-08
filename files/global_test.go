@@ -74,27 +74,6 @@ func writeFile(k *files.MasterKey, fname string, perms os.FileMode, contents str
 	return nil
 }
 
-func checkError(expected string, receivedError error) error {
-	if receivedError != nil {
-		received := receivedError.Error()
-		if expected == "" {
-			return errors.Errorf("Unexpected error: %s", received)
-		}
-		if received != expected {
-			return errors.Errorf(
-				`Unexpected error.
-Expected: "%s"
-Received: "%s"`,
-				expected,
-				received,
-			)
-		}
-	} else if expected != "" {
-		return errors.Errorf("Unexpected success. Expected error: %s", expected)
-	}
-	return nil
-}
-
 func checkString(expected, received string) error {
 	if received != expected {
 		return errors.Errorf(

@@ -12,6 +12,8 @@ import (
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
+	"github.com/julian7/tester"
+	"github.com/julian7/tester/ioprobe"
 	"github.com/pkg/errors"
 )
 
@@ -72,30 +74,38 @@ func TestRead(t *testing.T) {
 	tt := []struct {
 		name   string
 		reader io.Reader
-		err    string
+		err    error
 	}{
-		{"read error", &failingReader{}, "reading preamble from key file: unexpected EOF"},
-		{"invalid preamble", bytes.NewReader([]byte(samplePlaintext)), "invalid key file preamble"},
+		{
+			"read error",
+			ioprobe.NewFailingReader(),
+			errors.New("reading preamble from key file: unexpected EOF"),
+		},
+		{
+			"invalid preamble",
+			bytes.NewReader([]byte(samplePlaintext)),
+			errors.New("invalid key file preamble"),
+		},
 		{
 			"read error 2",
-			TimeoutReader(
+			ioprobe.NewTimeoutReader(
 				bytes.NewReader(genKey(0, []key{{1, []byte(sampleAES), []byte(sampleHMAC)}})),
 				2,
 			),
-			"reading key type: unexpected EOF",
+			errors.New("reading key type: unexpected EOF"),
 		},
 		{
 			"invalid key type",
 			bytes.NewReader(genKey(5, []key{{1, []byte(sampleAES), []byte(sampleHMAC)}})),
-			"invalid key type",
+			errors.New("invalid key type"),
 		},
 		{
 			"read error 3",
-			TimeoutReader(
+			ioprobe.NewTimeoutReader(
 				bytes.NewReader(genKey(0, []key{{1, []byte(sampleAES), []byte(sampleHMAC)}})),
 				3,
 			),
-			"reading key data: unexpected EOF",
+			errors.New("reading key data: unexpected EOF"),
 		},
 		{
 			"duplicate epoch",
@@ -106,13 +116,23 @@ func TestRead(t *testing.T) {
 					{1, []byte(sampleAES), []byte(sampleHMAC)},
 				},
 			)),
-			"invalid key: duplicate epoch number (1)",
+			errors.New("invalid key: duplicate epoch number (1)"),
+		},
+		{
+			"success",
+			bytes.NewReader(genKey(
+				0,
+				[]key{
+					{1, []byte(sampleAES), []byte(sampleHMAC)},
+				},
+			)),
+			nil,
 		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			k := &files.MasterKey{}
-			if err := checkError(tc.err, k.Read(tc.reader)); err != nil {
+			if err := tester.AssertError(tc.err, k.Read(tc.reader)); err != nil {
 				t.Error(err)
 			}
 
@@ -180,28 +200,30 @@ func (fs *noOpenFile) OpenFile(string, int, os.FileMode) (afero.File, error) {
 	return nil, errors.New("open file returns error")
 }
 
-type noWrite struct {
-	afero.Fs
-}
-
-func (fs *noWrite) Write([]byte) (int, error) {
-	return 0, errors.New("write returns error")
-}
-
 func TestLoad(t *testing.T) {
 	tt := []struct {
 		name          string
 		hasKey        bool
 		fsMods        func(*files.MasterKey)
-		expectedError string
+		expectedError error
 	}{
-		{"uninitialized", false, func(*files.MasterKey) {}, "open /git/repo/.git/test/key: file does not exist"},
-		{"initialized", true, func(*files.MasterKey) {}, ""},
+		{
+			"uninitialized",
+			false,
+			func(*files.MasterKey) {},
+			errors.New("open /git/repo/.git/test/key: file does not exist"),
+		},
+		{
+			"initialized",
+			true,
+			func(*files.MasterKey) {},
+			nil,
+		},
 		{
 			"no key dir",
 			true,
 			func(k *files.MasterKey) { k.KeyDir = "/a/b/c" },
-			"keydir not available: open /a/b/c: file does not exist",
+			errors.New("keydir not available: open /a/b/c: file does not exist"),
 		},
 		{
 			"excessive rights",
@@ -209,7 +231,7 @@ func TestLoad(t *testing.T) {
 			func(k *files.MasterKey) {
 				_ = k.Chmod("/git/repo/.git/test/key", 0777)
 			},
-			"excessive rights on key file",
+			errors.New("excessive rights on key file"),
 		},
 		{
 			"restrictive rights",
@@ -217,7 +239,7 @@ func TestLoad(t *testing.T) {
 			func(k *files.MasterKey) {
 				_ = k.Chmod("/git/repo/.git/test/key", 0)
 			},
-			"insufficient rights on key file",
+			errors.New("insufficient rights on key file"),
 		},
 		{
 			"read error",
@@ -225,7 +247,7 @@ func TestLoad(t *testing.T) {
 			func(k *files.MasterKey) {
 				k.Fs = &noOpenFile{Fs: k.Fs}
 			},
-			"opening key file for reading: open file returns error",
+			errors.New("opening key file for reading: open file returns error"),
 		},
 	}
 	for _, tc := range tt {
@@ -243,7 +265,7 @@ func TestLoad(t *testing.T) {
 			}
 			tc.fsMods(k)
 			err = k.Load()
-			if err2 := checkError(tc.expectedError, err); err2 != nil {
+			if err2 := tester.AssertError(tc.expectedError, err); err2 != nil {
 				t.Error(err2)
 				return
 			}
@@ -267,10 +289,10 @@ func TestSave(t *testing.T) {
 	tt := []struct {
 		name          string
 		hasKey        bool
-		expectedError string
+		expectedError error
 	}{
-		{"uninitialized", false, ""},
-		{"initialized", false, ""},
+		{"uninitialized", false, nil},
+		{"initialized", false, nil},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
@@ -291,7 +313,7 @@ func TestSave(t *testing.T) {
 				return
 			}
 			err = k.Save()
-			if err2 := checkError(tc.expectedError, err); err2 != nil {
+			if err2 := tester.AssertError(tc.expectedError, err); err2 != nil {
 				t.Error(err2)
 				return
 			}

@@ -8,6 +8,8 @@ import (
 	"testing/iotest"
 
 	"github.com/julian7/redact/encoder"
+	"github.com/julian7/tester"
+	"github.com/julian7/tester/ioprobe"
 	"github.com/pkg/errors"
 )
 
@@ -44,6 +46,18 @@ var (
 		"\xfc\xc1\xa9D\\\xc7\xd4Bm\x01\b\x81t\x10v\x16\xef\xda\x14\xeb\n\x9b\x8f\xaaS\x17;\xdeM\xc8y\xeb"
 )
 
+type failingEncoder struct{}
+
+func (e *failingEncoder) Encode([]byte) ([]byte, error) {
+	return nil, errors.New("failing encoder error: cannot encode")
+}
+func (e *failingEncoder) Decode([]byte) ([]byte, error) {
+	return nil, errors.New("failing encoder error: cannot decode")
+}
+func newFailingEncoder(aes, hmac []byte) (encoder.Encoder, error) {
+	return &failingEncoder{}, nil
+}
+
 func genCiphertextHeader(encType, epoch int) []byte {
 	out := bytes.NewBuffer(nil)
 	_, _ = out.WriteString("\x00REDACTED\x00")
@@ -56,61 +70,6 @@ func ensureFailingEncoder() int {
 	failEncoderID := 50000
 	_ = encoder.RegisterEncoder(failEncoderID, newFailingEncoder)
 	return failEncoderID
-}
-
-type failingReader struct{}
-
-func (r *failingReader) Read(p []byte) (n int, err error) {
-	return 0, io.ErrUnexpectedEOF
-}
-
-type failingWriter struct{}
-
-func (r *failingWriter) Write(p []byte) (n int, err error) {
-	return 0, io.ErrUnexpectedEOF
-}
-
-func TimeoutReader(r io.Reader, failcount int) io.Reader { return &timeoutReader{r, 0, failcount} }
-
-type timeoutReader struct {
-	r     io.Reader
-	count int
-	fail  int
-}
-
-func (r *timeoutReader) Read(p []byte) (int, error) {
-	r.count++
-	if r.count == r.fail {
-		return 0, io.ErrUnexpectedEOF
-	}
-	return r.r.Read(p)
-}
-
-func TimeoutWriter(w io.Writer) io.Writer { return &timeoutWriter{w, 0} }
-
-type timeoutWriter struct {
-	w     io.Writer
-	count int
-}
-
-func (w *timeoutWriter) Write(p []byte) (int, error) {
-	w.count++
-	if w.count == 2 {
-		return 0, iotest.ErrTimeout
-	}
-	return w.w.Write(p)
-}
-
-type failingEncoder struct{}
-
-func (e *failingEncoder) Encode([]byte) ([]byte, error) {
-	return nil, errors.New("failing encoder error: cannot encode")
-}
-func (e *failingEncoder) Decode([]byte) ([]byte, error) {
-	return nil, errors.New("failing encoder error: cannot decode")
-}
-func newFailingEncoder(aes, hmac []byte) (encoder.Encoder, error) {
-	return &failingEncoder{}, nil
 }
 
 func TestEncode(t *testing.T) {
@@ -134,7 +93,7 @@ func TestEncode(t *testing.T) {
 		epoch   uint32
 		reader  io.Reader
 		writer  io.Writer
-		err     string
+		err     error
 		output  string
 	}{
 		{
@@ -143,7 +102,7 @@ func TestEncode(t *testing.T) {
 			epoch:   1,
 			reader:  bytes.NewReader([]byte(samplePlaintext)),
 			writer:  bytes.NewBuffer(nil),
-			err:     "setting up encoder: invalid encoding type 65535",
+			err:     errors.New("setting up encoder: invalid encoding type 65535"),
 			output:  "",
 		},
 		{
@@ -152,16 +111,16 @@ func TestEncode(t *testing.T) {
 			epoch:   65535,
 			reader:  bytes.NewReader([]byte(samplePlaintext)),
 			writer:  bytes.NewBuffer(nil),
-			err:     "encoding stream: key version 65535 not found",
+			err:     errors.New("encoding stream: key version 65535 not found"),
 			output:  "",
 		},
 		{
 			name:    "error reading",
 			enctype: 0,
 			epoch:   1,
-			reader:  &failingReader{},
+			reader:  ioprobe.NewFailingReader(),
 			writer:  bytes.NewBuffer(nil),
-			err:     "reading input stream: unexpected EOF",
+			err:     errors.New("reading input stream: unexpected EOF"),
 			output:  "",
 		},
 		{
@@ -170,7 +129,7 @@ func TestEncode(t *testing.T) {
 			epoch:   1,
 			reader:  bytes.NewReader([]byte(samplePlaintext)),
 			writer:  bytes.NewBuffer(nil),
-			err:     "encoding stream: failing encoder error: cannot encode",
+			err:     errors.New("encoding stream: failing encoder error: cannot encode"),
 			output:  "",
 		},
 		{
@@ -178,8 +137,8 @@ func TestEncode(t *testing.T) {
 			enctype: 0,
 			epoch:   1,
 			reader:  bytes.NewReader([]byte(samplePlaintext)),
-			writer:  &failingWriter{},
-			err:     "writing file header: unexpected EOF",
+			writer:  ioprobe.NewFailingWriter(),
+			err:     errors.New("writing file header: short write"),
 			output:  "",
 		},
 		{
@@ -187,8 +146,8 @@ func TestEncode(t *testing.T) {
 			enctype: 0,
 			epoch:   1,
 			reader:  bytes.NewReader([]byte(samplePlaintext)),
-			writer:  TimeoutWriter(bytes.NewBuffer(nil)),
-			err:     "writing encoded stream: timeout",
+			writer:  ioprobe.NewTimeoutWriter(bytes.NewBuffer(nil), 2),
+			err:     errors.New("writing encoded stream: unexpected EOF"),
 			output:  "",
 		},
 		{
@@ -197,14 +156,14 @@ func TestEncode(t *testing.T) {
 			epoch:   1,
 			reader:  bytes.NewReader([]byte(samplePlaintext)),
 			writer:  bytes.NewBuffer(nil),
-			err:     "",
+			err:     nil,
 			output:  sampleCiphertext,
 		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			err := k.Encode(tc.enctype, tc.epoch, tc.reader, tc.writer)
-			if testerr := checkError(tc.err, err); testerr != nil {
+			if testerr := tester.AssertError(tc.err, err); testerr != nil {
 				t.Error(testerr)
 			}
 			if err != nil {
@@ -242,70 +201,70 @@ func TestDecode(t *testing.T) {
 		name   string
 		reader io.Reader
 		writer io.Writer
-		err    string
+		err    error
 		output string
 	}{
 		{
 			name:   "unencrypted",
 			reader: bytes.NewReader([]byte(samplePlaintext)),
 			writer: bytes.NewBuffer(nil),
-			err:    "invalid file preamble",
+			err:    errors.New("invalid file preamble"),
 			output: "",
 		},
 		{
 			name:   "no key",
 			reader: bytes.NewReader(genCiphertextHeader(0, 65535)),
 			writer: bytes.NewBuffer(nil),
-			err:    "retrieving key: key version 65535 not found",
+			err:    errors.New("retrieving key: key version 65535 not found"),
 			output: "",
 		},
 		{
 			name:   "no encoder",
 			reader: bytes.NewReader(genCiphertextHeader(65535, 1)),
 			writer: bytes.NewBuffer(nil),
-			err:    "setting up encoder: invalid encoding type 65535",
+			err:    errors.New("setting up encoder: invalid encoding type 65535"),
 			output: "",
 		},
 		{
 			name:   "error reading preamble",
-			reader: &failingReader{},
+			reader: ioprobe.NewFailingReader(),
 			writer: bytes.NewBuffer(nil),
-			err:    "reading file header: unexpected EOF",
+			err:    errors.New("reading file header: unexpected EOF"),
 			output: "",
 		},
 		{
 			name:   "error reading body",
 			reader: iotest.TimeoutReader(bytes.NewReader([]byte(sampleCiphertext))),
 			writer: bytes.NewBuffer(nil),
-			err:    "reading stream: timeout",
+			err:    errors.New("reading stream: timeout"),
 			output: "",
 		},
 		{
 			name:   "decoder error",
 			reader: bytes.NewReader(genCiphertextHeader(failEncoderID, 1)),
 			writer: bytes.NewBuffer(nil),
-			err:    "decoding stream: failing encoder error: cannot decode",
+			err:    errors.New("decoding stream: failing encoder error: cannot decode"),
 			output: "",
 		},
 		{
 			name:   "error writing header",
 			reader: bytes.NewReader([]byte(sampleCiphertext)),
-			writer: &failingWriter{},
-			err:    "writing decoded stream: unexpected EOF",
+			writer: ioprobe.NewFailingWriter(),
+			err:    errors.New("writing decoded stream: short write"),
 			output: "",
 		},
 		{
 			name:   "successful",
 			reader: bytes.NewReader([]byte(sampleCiphertext)),
 			writer: bytes.NewBuffer(nil),
-			err:    "",
+			err:    nil,
 			output: samplePlaintext,
 		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			err := k.Decode(tc.reader, tc.writer)
-			if testerr := checkError(tc.err, err); testerr != nil {
+			if testerr := tester.AssertError(tc.err, err); testerr != nil {
 				t.Error(testerr)
 			}
 			if err != nil {
