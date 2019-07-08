@@ -20,6 +20,8 @@ const (
 	KeyCurrentType = 0
 )
 
+var GitDirFunc = gitutil.GitDir
+
 // MasterKey contains master key in a git repository
 type MasterKey struct {
 	afero.Fs
@@ -33,7 +35,7 @@ type MasterKey struct {
 // NewMasterKey generates a new repo key in the OS' filesystem
 func NewMasterKey() (*MasterKey, error) {
 	var masterkey MasterKey
-	err := gitutil.GitDir(&masterkey.RepoInfo)
+	err := GitDirFunc(&masterkey.RepoInfo)
 	if err != nil {
 		return nil, errors.New("not a git repository")
 	}

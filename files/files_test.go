@@ -70,19 +70,35 @@ func (r *failingWriter) Write(p []byte) (n int, err error) {
 	return 0, io.ErrUnexpectedEOF
 }
 
-func TimeoutWriter(r io.Writer) io.Writer { return &timeoutWriter{r, 0} }
+func TimeoutReader(r io.Reader, failcount int) io.Reader { return &timeoutReader{r, 0, failcount} }
+
+type timeoutReader struct {
+	r     io.Reader
+	count int
+	fail  int
+}
+
+func (r *timeoutReader) Read(p []byte) (int, error) {
+	r.count++
+	if r.count == r.fail {
+		return 0, io.ErrUnexpectedEOF
+	}
+	return r.r.Read(p)
+}
+
+func TimeoutWriter(w io.Writer) io.Writer { return &timeoutWriter{w, 0} }
 
 type timeoutWriter struct {
-	r     io.Writer
+	w     io.Writer
 	count int
 }
 
-func (r *timeoutWriter) Write(p []byte) (int, error) {
-	r.count++
-	if r.count == 2 {
+func (w *timeoutWriter) Write(p []byte) (int, error) {
+	w.count++
+	if w.count == 2 {
 		return 0, iotest.ErrTimeout
 	}
-	return r.r.Write(p)
+	return w.w.Write(p)
 }
 
 type failingEncoder struct{}
