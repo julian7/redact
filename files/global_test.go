@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	sampleAES  = "0123456789abcdefghijklmnopqrstuv"
-	sampleHMAC = "0123456789abcdefghijklmnopqrstuv0123456789abcdefghijklmnopqrstuv"
+	sampleCode = "0123456789abcdefghijklmnopqrstuv"
 )
 
 func genGitRepo() (*files.MasterKey, error) {
@@ -41,9 +40,9 @@ func writeKey(k *files.MasterKey) error {
 		"\000REDACT\000"+ // preamble
 			"\000\000\000\000"+ // key type == 0
 			"\000\000\000\001"+ // first key epoch
-			sampleAES+sampleHMAC+ // sample key
+			sampleCode+sampleCode+sampleCode+ // sample key
 			"\000\000\000\002"+ // second key epoch
-			sampleAES+sampleHMAC, // sample key
+			sampleCode+sampleCode+sampleCode, // sample key
 	)
 }
 

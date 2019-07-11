@@ -9,17 +9,14 @@ import (
 )
 
 const (
-	// AESKeySize key size of AES key (32 bytes for AEC SHA-256)
-	AESKeySize = 32
-	// HMACKeySize key size of HMAC key (64 bytes for HMAC SHA-256)
-	HMACKeySize = 64
+	// SecretSize is the size of a 32-byte AES and 64-byte HMAC key (for SHA-256 and HMAC SHA-256)
+	SecretSize = 96
 )
 
 // KeyV0 stores an AES-256 and a HMAC SHA-256 key
 type KeyV0 struct {
-	Epoch    uint32
-	AESData  [AESKeySize]byte
-	HMACData [HMACKeySize]byte
+	Epoch      uint32
+	SecretData [SecretSize]byte
 }
 
 // NewKey creates a new Key struct based on parameter input
@@ -38,40 +35,20 @@ func (k *KeyV0) Type() uint32 {
 	return 0
 }
 
-// AES returns AES key
-func (k *KeyV0) AES() []byte {
-	return k.AESData[:]
-}
-
-// HMAC returns HMAC key
-func (k *KeyV0) HMAC() []byte {
-	return k.HMACData[:]
+// Secret returns Secret key
+func (k *KeyV0) Secret() []byte {
+	return k.SecretData[:]
 }
 
 // Generate generates new keys to master key
 func (k *KeyV0) Generate() error {
-	_, err := rand.Read(k.AESData[:])
+	_, err := rand.Read(k.SecretData[:])
 	if err != nil {
-		return errors.Wrap(err, "generating AES key")
-	}
-	_, err = rand.Read(k.HMACData[:])
-	if err != nil {
-		return errors.Wrap(err, "generating HMAC key")
+		return errors.Wrap(err, "generating Secret key")
 	}
 	return nil
 }
 
 func (k *KeyV0) String() string {
-	return fmt.Sprintf("#%d %s", k.Epoch, k.hash()[:8])
-}
-
-func (k *KeyV0) hash() string {
-	return fmt.Sprintf(
-		"%x",
-		sha1.Sum(
-			[]byte(
-				fmt.Sprintf("%s|%s", string(k.AES()), string(k.HMAC())),
-			),
-		),
-	)
+	return fmt.Sprintf("#%d %s", k.Epoch, fmt.Sprintf("%x", sha1.Sum(k.Secret()))[:8])
 }

@@ -11,10 +11,8 @@ type KeyHandler interface {
 	// Generate creates a new key, which is completely out of control of
 	// the user. It is using secure random for generating the keys.
 	Generate() error
-	// AES returns the AES key
-	AES() []byte
-	// HMAC returns the HMAC key
-	HMAC() []byte
+	// Secret returns the Secret key
+	Secret() []byte
 	// String provides a string representation of the key. It is safe to show
 	// it publicly.
 	String() string

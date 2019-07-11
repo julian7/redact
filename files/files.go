@@ -27,7 +27,7 @@ func (k *MasterKey) Encode(encodingFormat uint32, epoch uint32, reader io.Reader
 	if err != nil {
 		return errors.Wrap(err, "encoding stream")
 	}
-	enc, err := encoder.NewEncoder(int(encodingFormat), key.AES(), key.HMAC())
+	enc, err := encoder.NewEncoder(int(encodingFormat), key.Secret())
 	if err != nil {
 		return errors.Wrap(err, "setting up encoder")
 	}
@@ -60,7 +60,7 @@ func (k *MasterKey) Decode(reader io.Reader, writer io.Writer) error {
 	if err != nil {
 		return errors.Wrap(err, "retrieving key")
 	}
-	enc, err := encoder.NewEncoder(int(header.Encoding), key.AES(), key.HMAC())
+	enc, err := encoder.NewEncoder(int(header.Encoding), key.Secret())
 	if err != nil {
 		return errors.Wrap(err, "setting up encoder")
 	}

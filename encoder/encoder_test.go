@@ -10,26 +10,24 @@ import (
 )
 
 type fakeEncoder struct {
-	aes  []byte
-	hmac []byte
+	key []byte
 }
 
-func newFakeEncoder(aes, hmac []byte) (encoder.Encoder, error) {
-	return &fakeEncoder{aes: aes, hmac: hmac}, nil
+func newFakeEncoder(key []byte) (encoder.Encoder, error) {
+	return &fakeEncoder{key: key}, nil
 }
 func (e *fakeEncoder) Encode([]byte) ([]byte, error) { return nil, errors.New("not implemented") }
 func (e *fakeEncoder) Decode([]byte) ([]byte, error) { return nil, errors.New("not implemented") }
 
 func TestRegisterEncoder(t *testing.T) {
 	id := 10
-	aes := []byte("foo")
-	hmac := []byte("bar")
+	key := []byte("foo")
 	err := encoder.RegisterEncoder(id, newFakeEncoder)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	enc, err := encoder.NewEncoder(id, aes, hmac)
+	enc, err := encoder.NewEncoder(id, key)
 	if err != nil {
 		t.Error(err)
 		return
@@ -38,11 +36,8 @@ func TestRegisterEncoder(t *testing.T) {
 	if !ok {
 		t.Errorf("unexpected received encoder: %T", enc)
 	}
-	if !bytes.Equal(fakeEnc.aes, aes) {
-		t.Errorf("AES key doesn't match.\nExpected: %q\nReceived: %q", aes, fakeEnc.aes)
-	}
-	if !bytes.Equal(fakeEnc.hmac, hmac) {
-		t.Errorf("HMAC key doesn't match.\nExpected: %q\nReceived: %q", hmac, fakeEnc.hmac)
+	if !bytes.Equal(fakeEnc.key, key) {
+		t.Errorf("Secret key doesn't match.\nExpected: %q\nReceived: %q", key, fakeEnc.key)
 	}
 	if err := encoder.UnregisterEncoder(id); err != nil {
 		t.Errorf("unregistering encoder: %v", err)
@@ -51,9 +46,8 @@ func TestRegisterEncoder(t *testing.T) {
 
 func TestNewEncoderError(t *testing.T) {
 	id := 15
-	aes := []byte("foo")
-	hmac := []byte("bar")
-	_, err := encoder.NewEncoder(id, aes, hmac)
+	key := []byte("foo")
+	_, err := encoder.NewEncoder(id, key)
 	if err == nil || err.Error() != "invalid encoding type 15" {
 		t.Errorf("unexpected error: %v", err)
 	}

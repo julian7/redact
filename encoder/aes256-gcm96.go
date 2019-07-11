@@ -10,6 +10,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	// AES256KeySize is the standard key size for AES-256 encoding
+	AES256KeySize = 32
+	// HMAC256KeySize is the standard key size for HMAC AES-256 hashing
+	HMAC256KeySize = 64
+)
+
 // AES256GCM96 can take a KeyHandler, and stores encryption and HMAC keys
 type AES256GCM96 struct {
 	key  []byte
@@ -17,8 +24,11 @@ type AES256GCM96 struct {
 }
 
 // NewAES256GCM96 returns a new Encoder initialized with a key handler
-func NewAES256GCM96(aes, hmac []byte) (Encoder, error) {
-	return &AES256GCM96{key: aes, hmac: hmac}, nil
+func NewAES256GCM96(key []byte) (Encoder, error) {
+	if len(key) < AES256KeySize+HMAC256KeySize {
+		return nil, errors.New("key too small")
+	}
+	return &AES256GCM96{key: key[:AES256KeySize], hmac: key[AES256KeySize : AES256KeySize+HMAC256KeySize]}, nil
 }
 
 // Encode takes a value, and encrypts it in a convergent way, making sure the same

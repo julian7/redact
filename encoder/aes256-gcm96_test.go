@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	sampleAES       = "0123456789abcdefghijklmnopqrstuv"
+	sampleCode      = "0123456789abcdefghijklmnopqrstuv"
 	sampleHMAC      = "0123456789abcdefghijklmnopqrstuv0123456789abcdefghijklmnopqrstuv"
 	samplePlaintext = "Lorem ipsum dolor sit amet, consectetur adipiscing " +
 		"elit. Fusce odio lacus, feugiat a elit ut, hendrerit venenatis en" +
@@ -41,7 +41,7 @@ const (
 )
 
 func TestEncode(t *testing.T) {
-	enc, err := encoder.NewAES256GCM96([]byte(sampleAES), []byte(sampleHMAC))
+	enc, err := encoder.NewAES256GCM96([]byte(sampleCode + sampleCode + sampleCode))
 	if err != nil {
 		t.Errorf("cannot create encoder: %v", err)
 		return
@@ -57,7 +57,7 @@ func TestEncode(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	enc, err := encoder.NewAES256GCM96([]byte(sampleAES), []byte(sampleHMAC))
+	enc, err := encoder.NewAES256GCM96([]byte(sampleCode + sampleCode + sampleCode))
 	if err != nil {
 		t.Errorf("cannot create encoder: %v", err)
 		return

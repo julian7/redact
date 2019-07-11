@@ -10,7 +10,7 @@ const (
 )
 
 // EncoderFactory generates a new encoder
-type EncoderFactory func(aes, hmac []byte) (Encoder, error)
+type EncoderFactory func(key []byte) (Encoder, error)
 
 var (
 	encoders = map[int]EncoderFactory{
@@ -25,12 +25,12 @@ type Encoder interface {
 }
 
 // NewEncoder returns a new Encoder initialized with a key handler
-func NewEncoder(encType int, aes, hmac []byte) (Encoder, error) {
+func NewEncoder(encType int, key []byte) (Encoder, error) {
 	encoder, ok := encoders[encType]
 	if !ok {
 		return nil, errors.Errorf("invalid encoding type %d", encType)
 	}
-	return encoder(aes, hmac)
+	return encoder(key)
 }
 
 // RegisterEncoder registers a new encoder

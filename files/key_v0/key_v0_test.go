@@ -7,8 +7,7 @@ import (
 )
 
 const (
-	sampleAES  = "0123456789abcdefghijklmnopqrstuv"
-	sampleHMAC = "0123456789abcdefghijklmnopqrstuv0123456789abcdefghijklmnopqrstuv"
+	sampleCode = "0123456789abcdefghijklmnopqrstuv"
 )
 
 func TestNewKey(t *testing.T) {
@@ -53,18 +52,11 @@ func TestGenerate(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 		return
 	}
-	if len(key.AES()) != keyv0.AESKeySize {
+	if len(key.Secret()) != keyv0.SecretSize {
 		t.Errorf(
 			"Invalid AES key size\nExpected: %d\nReceived: %d",
-			keyv0.AESKeySize,
-			len(key.AES()),
-		)
-	}
-	if len(key.HMAC()) != keyv0.HMACKeySize {
-		t.Errorf(
-			"Invalid HMAC key size\nExpected: %d\nReceived: %d",
-			keyv0.HMACKeySize,
-			len(key.HMAC()),
+			keyv0.SecretSize,
+			len(key.Secret()),
 		)
 	}
 }
@@ -73,10 +65,9 @@ func TestString(t *testing.T) {
 	key := keyv0.KeyV0{
 		Epoch: 1,
 	}
-	copy(key.AESData[:], sampleAES)
-	copy(key.HMACData[:], sampleHMAC)
+	copy(key.SecretData[:], sampleCode+sampleCode+sampleCode)
 	strval := key.String()
-	expected := "#1 b3ec9ddd"
+	expected := "#1 0006b8c0"
 	if strval != expected {
 		t.Errorf(
 			"Invalid string representation of key\nExpected: %s\nReceived: %s",

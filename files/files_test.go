@@ -54,7 +54,7 @@ func (e *failingEncoder) Encode([]byte) ([]byte, error) {
 func (e *failingEncoder) Decode([]byte) ([]byte, error) {
 	return nil, errors.New("failing encoder error: cannot decode")
 }
-func newFailingEncoder(aes, hmac []byte) (encoder.Encoder, error) {
+func newFailingEncoder(key []byte) (encoder.Encoder, error) {
 	return &failingEncoder{}, nil
 }
 

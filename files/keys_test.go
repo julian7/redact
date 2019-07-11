@@ -54,8 +54,7 @@ func TestKeyFile(t *testing.T) {
 
 type key struct {
 	epoch uint32
-	aes   []byte
-	hmac  []byte
+	key   []byte
 }
 
 func genKey(keyType uint32, keys []key) []byte {
@@ -64,8 +63,7 @@ func genKey(keyType uint32, keys []key) []byte {
 	_ = binary.Write(out, binary.BigEndian, uint32(keyType))
 	for _, aKey := range keys {
 		_ = binary.Write(out, binary.BigEndian, aKey.epoch)
-		_, _ = out.Write(aKey.aes[:32])
-		_, _ = out.Write(aKey.hmac[:64])
+		_, _ = out.Write(aKey.key[:96])
 	}
 	return out.Bytes()
 }
@@ -89,20 +87,20 @@ func TestRead(t *testing.T) {
 		{
 			"read error 2",
 			ioprobe.NewTimeoutReader(
-				bytes.NewReader(genKey(0, []key{{1, []byte(sampleAES), []byte(sampleHMAC)}})),
+				bytes.NewReader(genKey(0, []key{{1, []byte(sampleCode + sampleCode + sampleCode)}})),
 				2,
 			),
 			errors.New("reading key type: unexpected EOF"),
 		},
 		{
 			"invalid key type",
-			bytes.NewReader(genKey(5, []key{{1, []byte(sampleAES), []byte(sampleHMAC)}})),
+			bytes.NewReader(genKey(5, []key{{1, []byte(sampleCode + sampleCode + sampleCode)}})),
 			errors.New("invalid key type"),
 		},
 		{
 			"read error 3",
 			ioprobe.NewTimeoutReader(
-				bytes.NewReader(genKey(0, []key{{1, []byte(sampleAES), []byte(sampleHMAC)}})),
+				bytes.NewReader(genKey(0, []key{{1, []byte(sampleCode + sampleCode + sampleCode)}})),
 				3,
 			),
 			errors.New("reading key data: unexpected EOF"),
@@ -112,8 +110,8 @@ func TestRead(t *testing.T) {
 			bytes.NewReader(genKey(
 				0,
 				[]key{
-					{1, []byte(sampleAES), []byte(sampleHMAC)},
-					{1, []byte(sampleAES), []byte(sampleHMAC)},
+					{1, []byte(sampleCode + sampleCode + sampleCode)},
+					{1, []byte(sampleCode + sampleCode + sampleCode)},
 				},
 			)),
 			errors.New("invalid key: duplicate epoch number (1)"),
@@ -123,7 +121,7 @@ func TestRead(t *testing.T) {
 			bytes.NewReader(genKey(
 				0,
 				[]key{
-					{1, []byte(sampleAES), []byte(sampleHMAC)},
+					{1, []byte(sampleCode + sampleCode + sampleCode)},
 				},
 			)),
 			nil,
@@ -157,13 +155,6 @@ func TestGenerate(t *testing.T) {
 			return
 		}
 	}
-	tt := []struct {
-		name    string
-		keyfunc func(files.KeyHandler) []byte
-	}{
-		{"AES", (files.KeyHandler).AES},
-		{"HMAC", (files.KeyHandler).HMAC},
-	}
 	for idx, name := range []string{"latest", "first", "second"} {
 		t.Run(fmt.Sprintf("%s key", name), func(t *testing.T) {
 			key, err := k.Key(uint32(idx))
@@ -171,22 +162,18 @@ func TestGenerate(t *testing.T) {
 				t.Errorf("cannot retrieve %s key: %v", name, err)
 				return
 			}
-			for _, tc := range tt {
-				t.Run(tc.name, func(t *testing.T) {
-					val := tc.keyfunc(key)
-					if len(val) == 0 {
-						t.Errorf("empty %s %s key", name, tc.name)
-					}
-					nonzeros := 0
-					for _, c := range val {
-						if c > 0 {
-							nonzeros++
-						}
-					}
-					if nonzeros == 0 {
-						t.Errorf("%s %s key is just zero bytes", name, tc.name)
-					}
-				})
+			val := key.Secret()
+			if len(val) == 0 {
+				t.Errorf("empty %s secret key", name)
+			}
+			nonzeros := 0
+			for _, c := range val {
+				if c > 0 {
+					nonzeros++
+				}
+			}
+			if nonzeros == 0 {
+				t.Errorf("%s secret key is just zero bytes", name)
 			}
 		})
 	}
@@ -285,9 +272,9 @@ func TestLoad(t *testing.T) {
 				t.Errorf("Cannot retrieve latest key: %v", err)
 				return
 			}
-			received := key.AES()
-			if !bytes.Equal(received, []byte(sampleAES)) {
-				t.Errorf(`Wrong AES key\nExpected: "%s"\nReceived: "%s"`, sampleAES, received)
+			received := key.Secret()
+			if !bytes.Equal(received, []byte(sampleCode+sampleCode+sampleCode)) {
+				t.Errorf(`Wrong AES key\nExpected: "%s"\nReceived: "%s"`, sampleCode+sampleCode+sampleCode, received)
 			}
 		})
 	}

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 * Replace shell-based compile script with [magefile](https://magefile.org/)
 * More stdlib use
 * Refactor most testing utility methods to [tester](https://github.com/julian7/tester) library
+* Knowledge of AES and HMAC keys and sizes are moved to encryptor only. Keys should not known about required components.
 
 ## [v0.1.0]: July 3, 2019
 

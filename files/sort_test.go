@@ -77,8 +77,7 @@ type fakeKey struct{ epoch uint32 }
 func (k *fakeKey) Type() uint32    { return 99 }
 func (k *fakeKey) Version() uint32 { return k.epoch }
 func (k *fakeKey) Generate() error { return nil }
-func (k *fakeKey) AES() []byte     { return []byte("foo") }
-func (k *fakeKey) HMAC() []byte    { return []byte("bar") }
+func (k *fakeKey) Secret() []byte  { return []byte("foo") }
 func (k *fakeKey) String() string  { return fmt.Sprintf("fakeKey #%d", k.epoch) }
 
 func TestEachKey(t *testing.T) {
