@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.2.0]: July 19, 2019
+
 ### Changed
 
 * Typo fix in README.md
@@ -16,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 * More stdlib use
 * Refactor most testing utility methods to [tester](https://github.com/julian7/tester) library
 * Knowledge of AES and HMAC keys and sizes are moved to encryptor only. Keys should not known about required components.
+* Atomic master key replacement on save
 
 ## [v0.1.0]: July 3, 2019
 
@@ -30,4 +33,5 @@ Initial release
 * secret key distribution using OpenPGP keys
 
 [Unreleased]: https://github.com/julian7/redact
+[v0.1.0]: https://github.com/julian7/redact/releases/tag/v0.2.0
 [v0.1.0]: https://github.com/julian7/redact/releases/tag/v0.1.0
