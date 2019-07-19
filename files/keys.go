@@ -153,12 +153,19 @@ func (k *MasterKey) Save() error {
 	if err != nil {
 		return err
 	}
-	keyfile := buildKeyFileName(k.KeyDir)
-	f, err := k.OpenFile(keyfile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	f, err := afero.TempFile(k.Fs, k.KeyDir, "temp*")
 	if err != nil {
 		return errors.Wrap(err, "saving key file")
 	}
-	defer f.Close()
+	if err = k.SaveTo(f); err != nil {
+		return err
+	}
+	if err = f.Close(); err != nil {
+		return errors.Wrap(err, "closing temp file for key")
+	}
+	if err = k.Rename(f.Name(), buildKeyFileName(k.KeyDir)); err != nil {
+		return errors.Wrap(err, "placing key file")
+	}
 	return k.SaveTo(f)
 }
 
