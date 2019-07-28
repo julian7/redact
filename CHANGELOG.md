@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+* [SHOULDERS](SHOULDERS.md) file added to express my gratitude to all of the projects / people who helped setting this project together, in any way.
+
 ## [v0.2.0]: July 19, 2019
 
 ### Changed
