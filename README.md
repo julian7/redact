@@ -1,6 +1,6 @@
 # Redact, data encryptor in git
 
-**PLEASE NOTE**: this project is still under heavy development, and not suitable for normal use.
+**PLEASE NOTE**: this project is not released yet, and it's under testing. Use it for your own risk.
 
 Redact allows you to store sensitive data in a git repository by encrypting / decrypting it on-the-fly.
 
