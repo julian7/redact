@@ -28,7 +28,7 @@ func RedactRepo() (*files.MasterKey, error) {
 		if _, err2 := masterkey.ExchangeDir(); err2 != nil {
 			return nil, errors.New("repository is not using redact")
 		}
-		return nil, errors.New("repository is locked")
+		return nil, errors.Wrap(err, "repository is locked")
 	}
 	return masterkey, nil
 }
