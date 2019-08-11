@@ -3,10 +3,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
@@ -15,6 +17,7 @@ import (
 type buildTarget struct {
 	os   string
 	arch string
+	ext  string
 	out  string
 }
 
@@ -36,6 +39,7 @@ var (
 		"windows": &buildTarget{
 			os:   "windows",
 			arch: "amd64",
+			ext:  ".exe",
 		},
 	}
 	versionTag string
@@ -51,13 +55,26 @@ func withEnv(osType, arch string) map[string]string {
 }
 
 func (tar *buildTarget) SetOutput() {
-	outFile := fmt.Sprintf("$PACKAGENAME-%s-%s-$VERSION", tar.os, tar.arch)
+	outFile := fmt.Sprintf("$PACKAGENAME-%s-%s-$VERSION%s", tar.os, tar.arch, tar.ext)
 	tar.out = filepath.Join(targetDirName, outFile)
 }
 
-func (tar *buildTarget) Build() error {
+func build(target string) error {
+	tar, ok := targets[target]
+	if !ok {
+		tar = nil
+		for _, target := range targets {
+			if target.os == runtime.GOOS {
+				tar = target
+				break
+			}
+		}
+	}
+	if tar == nil {
+		return errors.New("Could not find appropriate build target for your OS.")
+	}
 	if len(tar.out) == 0 {
-		tar.out = packageName
+		tar.out = fmt.Sprintf("%s%s", packageName, tar.ext)
 	}
 	steps := []func(*buildTarget) error{(*buildTarget).compile, (*buildTarget).upx}
 	for _, step := range steps {
@@ -120,29 +137,35 @@ func All() {
 	for name, target := range targets {
 		step(name)
 		target.SetOutput()
-		target.Build()
+		build(name)
 	}
+}
+
+func Build() error {
+	step("build")
+	mg.Deps(Environment)
+	return build("")
 }
 
 // Darwin builds for MacOS
 func Darwin() error {
 	step("darwin")
 	mg.Deps(Environment)
-	return targets["macos"].Build()
+	return build("macos")
 }
 
 // Linux builds for linux
 func Linux() error {
 	step("linux")
 	mg.Deps(Environment)
-	return targets["linux"].Build()
+	return build("linux")
 }
 
 // Windows builds for windows
 func Windows() error {
 	step("windows")
 	mg.Deps(Environment)
-	return targets["windows"].Build()
+	return build("windows")
 }
 
 // Environment sets up environment (like calling version and checkUPX)
@@ -161,7 +184,7 @@ func CheckUPX() {
 // Version calculates app version by git describe output
 func Version() error {
 	var err error
-	versionTag, err = sh.Output("git", "describe", "--tags")
+	versionTag, err = sh.Output("git", "describe", "--tags", "--always", "--dirty")
 	if err != nil {
 		return err
 	}
