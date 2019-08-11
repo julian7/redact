@@ -74,6 +74,8 @@ func GetSecretKeys(filter string) ([][20]byte, error) {
 func DecryptWithKey(ciphertext string, fingerprint [20]byte) (io.ReadCloser, error) {
 	args := []string{
 		"--quiet",
+		"--pinentry-mode",
+		"loopback",
 		"-u",
 		fmt.Sprintf("%x", fingerprint),
 		"--decrypt",

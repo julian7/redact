@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 * Unlock silently selected the first matching GnuPG secret key if there were two matching items found.
 * Master key double save - regression from de751821a14ca4ea128332217823fa69dc121695
+* Allow gpg passphrase prompt using gpg's `--pinentry-mode loopback` option
 
 ## [v0.2.0]: July 19, 2019
 
