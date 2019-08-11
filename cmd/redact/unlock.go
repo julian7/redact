@@ -14,8 +14,18 @@ import (
 
 var unlockCmd = &cobra.Command{
 	Use:   "unlock",
+	Args:  cobra.NoArgs,
 	Short: "Unlocks repository",
-	Run:   unlockDo,
+	Long: `Unlock repository
+
+This command is able to unlock a repository, or to obtain a new version of
+the master key.
+
+By default, it detects your GnuPG keys by running gpg -K, and tries to match
+them to the available encrypted keys in the key exchange directory. This
+process won't make decisions for you, if you have multiple keys available. In
+this case, you have to provide the appropriate key with the --gpgkey option.`,
+	Run: unlockDo,
 }
 
 func init() {

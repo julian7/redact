@@ -14,8 +14,20 @@ import (
 
 var statusCmd = &cobra.Command{
 	Use:   "status [files...]",
+	Args:  cobra.ArbitraryArgs,
 	Short: "Shows redact status",
-	Run:   statusDo,
+	Long: `Show encryption status of repo files
+
+This command lists all files in the repository (filtering is possible with
+--encrypted, --repo, --unencrypted, and --quiet options) showing encrypted
+and not encrypted files. It also detects possible problems with file
+statuses, when a file was wrongly encrypted, or not encrypted even it should
+have been.
+
+It also shows if a file is encrypted with an older key. While re-encryption
+as-is is possible with --rekey option, it's strongly recommended to replace
+these secrets instead.`,
+	Run: statusDo,
 }
 
 func init() {
@@ -25,7 +37,7 @@ func init() {
 	flags.BoolP("unencrypted", "u", false, "Show plaintext files only")
 	flags.BoolP("quiet", "q", false, "Quiet mode (report only issues)")
 	flags.BoolP("fix", "f", false, "Fix problems (doesn't affect files encrypted with older keys)")
-	flags.BoolP("rekey", "R", false, "Rekey files (update for latest encryption key)")
+	flags.BoolP("rekey", "R", false, "Rekey files (NOT RECOMMENDED; update for latest encryption key)")
 	rootCmd.AddCommand(statusCmd)
 	if err := viper.BindPFlags(flags); err != nil {
 		panic(err)

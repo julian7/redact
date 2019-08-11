@@ -11,7 +11,14 @@ import (
 var lockCmd = &cobra.Command{
 	Use:   "lock",
 	Short: "Locks repository",
-	Run:   lockDo,
+	Long: `Lock repository
+
+This command removes your master key, and the filter configuration. It also
+turns secret files into their unencrypted form. The git repo will behave
+as like being not redact-aware. Locally modified or staged files can cause
+leaking of secrets, and it's recommended to cancel all local modifications
+beforehand.`,
+	Run: lockDo,
 }
 
 func init() {

@@ -12,6 +12,7 @@ import (
 
 var gitCleanCmd = &cobra.Command{
 	Use:   "clean",
+	Args:  cobra.NoArgs,
 	Short: "Encoding file from STDIN, to STDOUT",
 	Run:   gitCleanDo,
 }

@@ -9,6 +9,7 @@ import (
 
 var gitSmudgeCmd = &cobra.Command{
 	Use:   "smudge",
+	Args:  cobra.NoArgs,
 	Short: "Decoding file from STDIN, to STDOUT",
 	Run:   gitSmudgeDo,
 }

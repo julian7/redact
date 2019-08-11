@@ -14,6 +14,7 @@ import (
 
 var accessListCmd = &cobra.Command{
 	Use:   "list",
+	Args:  cobra.NoArgs,
 	Short: "List collaborators to secrets in git repo",
 	Run:   accessListDo,
 }

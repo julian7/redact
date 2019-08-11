@@ -11,6 +11,7 @@ import (
 
 var gitDiffCmd = &cobra.Command{
 	Use:   "diff FILENAME",
+	Args:  cobra.ExactArgs(1),
 	Short: "Decoding file from arg, to STDOUT",
 	Run:   gitDiffDo,
 }

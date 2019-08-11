@@ -11,7 +11,16 @@ import (
 var keyCmd = &cobra.Command{
 	Use:   "key",
 	Short: "Key commands",
-	Run:   keyDo,
+	Long: `Master Key management
+
+Key commands let you manage master key. The master key consists of multiple
+encryption keys, of which the last one is considered to be the active one.
+All the other keys are kept for archival purposes.
+
+A simple "redact key" will return the master key location, and its active
+key's epoch and signature. For more detailed look, please see
+"redact key list".`,
+	Run: keyDo,
 }
 
 func keyDo(cmd *cobra.Command, args []string) {

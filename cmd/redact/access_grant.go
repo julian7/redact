@@ -15,6 +15,7 @@ import (
 
 var accessGrantCmd = &cobra.Command{
 	Use:   "grant [KEY...]",
+	Args:  cobra.ArbitraryArgs,
 	Short: "Grants access to collaborators with OpenPGP keys",
 	RunE:  accessGrantDo,
 }
