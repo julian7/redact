@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+No changes so far.
+
+## [v0.3.0] - August 11, 2019
+
 ### Added
 
 * [SHOULDERS](SHOULDERS.md) file added to express my gratitude to all of the projects / people who helped setting this project together, in any way.
@@ -51,5 +55,6 @@ Initial release
 * secret key distribution using OpenPGP keys
 
 [Unreleased]: https://github.com/julian7/redact
+[v0.3.0]: https://github.com/julian7/redact/releases/tag/v0.3.0
 [v0.2.0]: https://github.com/julian7/redact/releases/tag/v0.2.0
 [v0.1.0]: https://github.com/julian7/redact/releases/tag/v0.1.0
