@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 * Unlock silently selected the first matching GnuPG secret key if there were two matching items found.
+* Master key double save - regression from 5b60ca8c1ca7beb762fd2ed7caa51daaf4d1242d
 
 ## [v0.2.0]: July 19, 2019
 

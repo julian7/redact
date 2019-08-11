@@ -153,7 +153,7 @@ func (k *MasterKey) Save() error {
 	if err != nil {
 		return err
 	}
-	f, err := afero.TempFile(k.Fs, k.KeyDir, "temp*")
+	f, err := afero.TempFile(k.Fs, k.KeyDir, "temp")
 	if err != nil {
 		return errors.Wrap(err, "saving key file")
 	}
@@ -166,7 +166,7 @@ func (k *MasterKey) Save() error {
 	if err = k.Rename(f.Name(), buildKeyFileName(k.KeyDir)); err != nil {
 		return errors.Wrap(err, "placing key file")
 	}
-	return k.SaveTo(f)
+	return nil
 }
 
 // Key returns the a key handler with a certain epoch. If epoch is 0,
