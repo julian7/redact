@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
@@ -13,8 +15,8 @@ import (
 )
 
 var unlockCmd = &cobra.Command{
-	Use:   "unlock",
-	Args:  cobra.NoArgs,
+	Use:   "unlock [KEYFILE]",
+	Args:  cobra.MaximumNArgs(1),
 	Short: "Unlocks repository",
 	Long: `Unlock repository
 
@@ -24,7 +26,10 @@ the master key.
 By default, it detects your GnuPG keys by running gpg -K, and tries to match
 them to the available encrypted keys in the key exchange directory. This
 process won't make decisions for you, if you have multiple keys available. In
-this case, you have to provide the appropriate key with the --gpgkey option.`,
+this case, you have to provide the appropriate key with the --gpgkey option.
+
+Alternatively, an unlocked master key can be provided. This allows unlocking
+the repository where GnuPG (or the private key) is not available.`,
 	Run: unlockDo,
 }
 
@@ -43,10 +48,39 @@ func unlockDo(cmd *cobra.Command, args []string) {
 		cmdErrHandler(errors.Wrap(err, "building master key"))
 		return
 	}
-	keys, err := gpgutil.GetSecretKeys(viper.GetString("gpgkey"))
+	if len(args) == 1 {
+		err = loadKeyFromFile(masterkey, args[0])
+	} else {
+		err = loadKeyFromGPG(masterkey, viper.GetString("gpgkey"))
+	}
 	if err != nil {
-		cmdErrHandler(err)
+		if err != io.EOF {
+			cmdErrHandler(err)
+		}
 		return
+	}
+	if err := sdk.SaveGitSettings(); err != nil {
+		cmdErrHandler(err)
+	}
+	if err := sdk.TouchUp(masterkey); err != nil {
+		cmdErrHandler(err)
+	}
+	fmt.Println("Key is unlocked.")
+}
+
+func loadKeyFromFile(masterkey *files.MasterKey, keyfile string) error {
+	f, err := masterkey.Fs.OpenFile(keyfile, os.O_RDONLY, 0600)
+	if err != nil {
+		return errors.Wrapf(err, "loading secret key from %s", keyfile)
+	}
+	defer f.Close()
+	return sdk.LoadMasterKeyFromReader(masterkey, f)
+}
+
+func loadKeyFromGPG(masterkey *files.MasterKey, keyname string) error {
+	keys, err := gpgutil.GetSecretKeys(keyname)
+	if err != nil {
+		return err
 	}
 	availableKeys := make([]int, 0, len(keys))
 
@@ -79,19 +113,10 @@ func unlockDo(cmd *cobra.Command, args []string) {
 				gpgutil.PrintKey(entity)
 			}
 		}
-		return
-	} else if len(availableKeys) < 1 {
-		cmdErrHandler(errors.New("no appropriate key found for unlock"))
-		return
+		return io.EOF
 	}
-	if err := sdk.LoadMasterKeyFromExchange(masterkey, keys[availableKeys[0]]); err != nil {
-		cmdErrHandler(err)
+	if len(availableKeys) < 1 {
+		return errors.New("no appropriate key found for unlock")
 	}
-	if err := sdk.SaveGitSettings(); err != nil {
-		cmdErrHandler(err)
-	}
-	if err := sdk.TouchUp(masterkey); err != nil {
-		cmdErrHandler(err)
-	}
-	fmt.Println("Key is unlocked.")
+	return sdk.LoadMasterKeyFromExchange(masterkey, keys[availableKeys[0]])
 }

@@ -29,6 +29,12 @@ func LoadMasterKeyFromExchange(masterkey *files.MasterKey, fingerprint [20]byte)
 		return errors.Wrap(err, "decrypt master key from exchange dir")
 	}
 	defer reader.Close()
+	return LoadMasterKeyFromReader(masterkey, reader)
+}
+
+// LoadMasterKeyFromReader reads master key from an io.Reader, and saves it into its
+// place.
+func LoadMasterKeyFromReader(masterkey *files.MasterKey, reader io.Reader) error {
 	if err := masterkey.Read(reader); err != nil {
 		return errors.Wrap(err, "reading unencrypted master key")
 	}
