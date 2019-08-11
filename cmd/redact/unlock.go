@@ -67,7 +67,7 @@ func unlockDo(cmd *cobra.Command, args []string) {
 		availableKeys = append(availableKeys, idx)
 	}
 
-	if len(availableKeys) > 2 {
+	if len(availableKeys) > 1 {
 		fmt.Println("Multiple keys found. Please specify one:")
 		for _, idx := range availableKeys {
 			pubKey, err := sdk.LoadPubkeysFromExchange(masterkey, keys[idx])

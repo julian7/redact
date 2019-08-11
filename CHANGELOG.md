@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 * Change README, as v0.2.0 is already out and under testing.
 
+### Fixed
+
+* Unlock silently selected the first matching GnuPG secret key if there were two matching items found.
+
 ## [v0.2.0]: July 19, 2019
 
 ### Changed
