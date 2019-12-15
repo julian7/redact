@@ -17,7 +17,7 @@ func TouchUp(masterkey *files.MasterKey) error {
 	if err != nil {
 		return errors.Wrap(err, "list git files")
 	}
-	err = files.CheckAttrs()
+	err = files.CheckAttrs(masterkey.Logger)
 	if err != nil {
 		return errors.Wrap(err, "check git files' attributes")
 	}

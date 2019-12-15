@@ -4,52 +4,45 @@ import (
 	"io"
 	"os"
 
-	"github.com/julian7/redact/sdk"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
-var gitDiffCmd = &cobra.Command{
-	Use:   "diff FILENAME",
-	Args:  cobra.ExactArgs(1),
-	Short: "Decoding file from arg, to STDOUT",
-	Run:   gitDiffDo,
-}
-
-func init() {
-	gitCmd.AddCommand(gitDiffCmd)
-}
-
-func gitDiffDo(cmd *cobra.Command, args []string) {
-	masterkey, err := sdk.RedactRepo()
-	if err != nil {
-		cmdErrHandler(err)
-		return
+func (rt *Runtime) gitDiffCmd() (*cobra.Command, error) {
+	cmd := &cobra.Command{
+		Use:     "diff FILENAME",
+		Args:    cobra.ExactArgs(1),
+		Short:   "Decoding file from arg, to STDOUT",
+		PreRunE: rt.RetrieveMasterKey,
+		RunE:    rt.gitDiffDo,
 	}
+
+	return cmd, nil
+}
+
+func (rt *Runtime) gitDiffDo(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		cmdErrHandler(errors.New("redact git diff requires a single argument"))
-		return
+		return errors.New("redact git diff requires a single argument")
 	}
 	reader, err := os.Open(args[0])
 	if err != nil {
-		cmdErrHandler(err)
-		return
+		return err
 	}
 	defer reader.Close()
-	err = masterkey.Decode(reader, os.Stdout)
+	err = rt.MasterKey.Decode(reader, os.Stdout)
 	if err == nil {
-		return
+		return nil
 	}
 	n, err := reader.Seek(0, io.SeekStart)
 	if err != nil {
-		cmdErrHandler(errors.Wrap(err, "re-reading file from beginning"))
+		return errors.Wrap(err, "re-reading file from beginning")
 	}
 	if n != 0 {
-		cmdErrHandler(errors.Errorf("cannot return to beginning of file: returned to position %d instead", n))
-		return
+		return errors.Errorf("cannot return to beginning of file: returned to position %d instead", n)
 	}
 	if _, err := io.Copy(os.Stdout, reader); err != nil {
-		cmdErrHandler(errors.Wrap(err, "reading file"))
-		return
+		return errors.Wrap(err, "reading file")
 	}
+
+	return nil
 }

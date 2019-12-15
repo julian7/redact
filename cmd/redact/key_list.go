@@ -4,32 +4,29 @@ import (
 	"fmt"
 
 	"github.com/julian7/redact/files"
-	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cobra"
 )
 
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "Lists redact keys",
-	Run:   listDo,
-}
-
-func init() {
-	keyCmd.AddCommand(listCmd)
-}
-
-func listDo(cmd *cobra.Command, args []string) {
-	masterkey, err := sdk.RedactRepo()
-	if err != nil {
-		cmdErrHandler(err)
-		return
+func (rt *Runtime) keyListCmd() (*cobra.Command, error) {
+	cmd := &cobra.Command{
+		Use:     "list",
+		Short:   "Lists redact keys",
+		PreRunE: rt.RetrieveMasterKey,
+		RunE:    rt.listDo,
 	}
-	fmt.Printf("repo key: %v\n", masterkey)
-	err = files.EachKey(masterkey.Keys, func(idx uint32, key files.KeyHandler) error {
+
+	return cmd, nil
+}
+
+func (rt *Runtime) listDo(cmd *cobra.Command, args []string) error {
+	fmt.Printf("repo key: %v\n", rt.MasterKey)
+	err := files.EachKey(rt.MasterKey.Keys, func(idx uint32, key files.KeyHandler) error {
 		fmt.Printf(" - %s\n", key)
 		return nil
 	})
 	if err != nil {
-		cmdErrHandler(err)
+		return err
 	}
+
+	return nil
 }

@@ -6,33 +6,29 @@ import (
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
-	"github.com/julian7/redact/log"
-	"github.com/julian7/redact/sdk"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
-var accessListCmd = &cobra.Command{
-	Use:   "list",
-	Args:  cobra.NoArgs,
-	Short: "List collaborators to secrets in git repo",
-	Run:   accessListDo,
+func (rt *Runtime) accessListCmd() (*cobra.Command, error) {
+	cmd := &cobra.Command{
+		Use:     "list",
+		Args:    cobra.NoArgs,
+		Short:   "List collaborators to secrets in git repo",
+		PreRunE: rt.RetrieveMasterKey,
+		RunE:    rt.accessListDo,
+	}
+
+	return cmd, nil
 }
 
-func init() {
-	accessCmd.AddCommand(accessListCmd)
-}
+func (rt *Runtime) accessListDo(cmd *cobra.Command, args []string) error {
 
-func accessListDo(cmd *cobra.Command, args []string) {
-	masterkey, err := sdk.RedactRepo()
+	kxdir, err := rt.MasterKey.ExchangeDir()
 	if err != nil {
-		cmdErrHandler(err)
+		return err
 	}
-	kxdir, err := masterkey.ExchangeDir()
-	if err != nil {
-		cmdErrHandler(err)
-	}
-	err = afero.Walk(masterkey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
+	err = afero.Walk(rt.MasterKey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -41,17 +37,19 @@ func accessListDo(cmd *cobra.Command, args []string) {
 		}
 		entities, err := gpgutil.LoadPubKeyFromFile(path, true)
 		if err != nil {
-			log.Log().Warnf("cannot load public key: %v", err)
+			rt.Logger.Warnf("cannot load public key: %v", err)
 			return nil
 		}
 		if len(entities) != 1 {
-			log.Log().Warnf("multiple entities in key file %s", path)
+			rt.Logger.Warnf("multiple entities in key file %s", path)
 			return nil
 		}
 		gpgutil.PrintKey(entities[0])
 		return nil
 	})
 	if err != nil {
-		cmdErrHandler(err)
+		return err
 	}
+
+	return nil
 }

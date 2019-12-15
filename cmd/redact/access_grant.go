@@ -5,42 +5,43 @@ import (
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
-	"github.com/julian7/redact/log"
 	"github.com/julian7/redact/sdk"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"golang.org/x/crypto/openpgp"
 )
 
-var accessGrantCmd = &cobra.Command{
-	Use:   "grant [KEY...]",
-	Args:  cobra.ArbitraryArgs,
-	Short: "Grants access to collaborators with OpenPGP keys",
-	RunE:  accessGrantDo,
-}
+func (rt *Runtime) accessGrantCmd() (*cobra.Command, error) {
+	cmd := &cobra.Command{
+		Use:     "grant [KEY...]",
+		Args:    cobra.ArbitraryArgs,
+		Short:   "Grants access to collaborators with OpenPGP keys",
+		PreRunE: rt.RetrieveMasterKey,
+		RunE:    rt.accessGrantDo,
+	}
 
-func init() {
-	flags := accessGrantCmd.Flags()
+	flags := cmd.Flags()
 	flags.StringSliceP("openpgp", "p", nil, "import from OpenPGP file instead of gpg keyring")
 	flags.StringSliceP("openpgp-armor", "a", nil, "import from OpenPGP ASCII Armored file instead of gpg keyring")
-	accessCmd.AddCommand(accessGrantCmd)
-	if err := viper.BindPFlags(flags); err != nil {
-		panic(err)
+
+	if err := rt.RegisterFlags("", flags); err != nil {
+		return nil, err
 	}
+
+	return cmd, nil
 }
 
-func accessGrantDo(cmd *cobra.Command, args []string) error {
+func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error {
 	var keyEntries openpgp.EntityList
 
-	pgpFiles := viper.GetStringSlice("openpgp")
-	armorFiles := viper.GetStringSlice("opengpg-armor")
+	pgpFiles := rt.Viper.GetStringSlice("openpgp")
+	armorFiles := rt.Viper.GetStringSlice("opengpg-armor")
 
 	if len(pgpFiles) > 0 {
 		for _, pgpFile := range pgpFiles {
 			entries, err := gpgutil.LoadPubKeyFromFile(pgpFile, false)
 			if err != nil {
-				log.Log().Warnf("loading public key: %v", err)
+				rt.Logger.Warnf("loading public key: %v", err)
 			}
 			keyEntries = append(keyEntries, entries...)
 		}
@@ -49,7 +50,7 @@ func accessGrantDo(cmd *cobra.Command, args []string) error {
 		for _, pgpFile := range armorFiles {
 			entries, err := gpgutil.LoadPubKeyFromFile(pgpFile, true)
 			if err != nil {
-				log.Log().Warnf("loading public key: %v", err)
+				rt.Logger.Warnf("loading public key: %v", err)
 			}
 			keyEntries = append(keyEntries, entries...)
 		}
@@ -58,13 +59,12 @@ func accessGrantDo(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		out, err := gpgutil.ExportKey(args)
 		if err != nil {
-			cmdErrHandler(errors.Wrap(err, "exporting GPG key"))
-			return nil
+			return errors.Wrap(err, "exporting GPG key")
 		}
 		reader := bytes.NewReader(out)
 		entries, err := gpgutil.LoadPubKey(reader, true)
 		if err != nil {
-			cmdErrHandler(errors.Wrap(err, "reading GPG key"))
+			return errors.Wrap(err, "reading GPG key")
 		}
 		keyEntries = append(keyEntries, entries...)
 	}
@@ -73,20 +73,15 @@ func accessGrantDo(cmd *cobra.Command, args []string) error {
 		return errors.New("nobody to grant access to")
 	}
 
-	masterkey, err := sdk.RedactRepo()
-	if err != nil {
-		cmdErrHandler(err)
-	}
-
 	saved := 0
 	for _, key := range keyEntries {
-		if err = saveKey(masterkey, key); err != nil {
-			log.Log().Warnf("cannot save key: %v", err)
+		if err := saveKey(rt.MasterKey, key); err != nil {
+			rt.Logger.Warnf("cannot save key: %v", err)
 			continue
 		}
 		saved++
 	}
-	log.Log().Infof(
+	rt.Logger.Infof(
 		"Added %d key%s. Don't forget to commit exchange files to the repository.",
 		saved,
 		map[bool]string{true: "", false: "s"}[saved == 1],

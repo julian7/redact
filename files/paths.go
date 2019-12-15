@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/julian7/redact/log"
 	"github.com/pkg/errors"
 )
 
@@ -117,7 +116,7 @@ func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
 		if !bytes.Equal(data, []byte(kxGitAttributesContents)) {
 			return nil
 		}
-		log.Log().Warn("rewriting .gitattributes file in key exchange dir")
+		k.Logger.Warn("rewriting .gitattributes file in key exchange dir")
 	}
 	if err := ioutil.WriteFile(gaFileName, []byte(kxGitAttributesContents), 0644); err != nil {
 		return errors.Wrap(err, "writing .gitattributes file in key exchange dir")

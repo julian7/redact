@@ -8,38 +8,35 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var lockCmd = &cobra.Command{
-	Use:   "lock",
-	Short: "Locks repository",
-	Long: `Lock repository
+func (rt *Runtime) lockCmd() (*cobra.Command, error) {
+	cmd := &cobra.Command{
+		Use:   "lock",
+		Short: "Locks repository",
+		Long: `Lock repository
 
 This command removes your master key, and the filter configuration. It also
 turns secret files into their unencrypted form. The git repo will behave
 as like being not redact-aware. Locally modified or staged files can cause
 leaking of secrets, and it's recommended to cancel all local modifications
 beforehand.`,
-	Run: lockDo,
-}
-
-func init() {
-	rootCmd.AddCommand(lockCmd)
-}
-
-func lockDo(cmd *cobra.Command, args []string) {
-	masterkey, err := sdk.RedactRepo()
-	if err != nil {
-		cmdErrHandler(err)
-		return
+		PreRunE: rt.RetrieveMasterKey,
+		RunE: rt.lockDo,
 	}
+
+	return cmd, nil
+}
+
+func (rt *Runtime) lockDo(cmd *cobra.Command, args []string) error {
 	if err := sdk.RemoveGitSettings(); err != nil {
-		cmdErrHandler(errors.Wrap(err, "locking repo"))
+		return errors.Wrap(err, "locking repo")
 	}
-	if err := masterkey.Remove(masterkey.KeyFile()); err != nil {
-		cmdErrHandler(errors.Wrap(err, "locking repo"))
-		return
+	if err := rt.MasterKey.Remove(rt.MasterKey.KeyFile()); err != nil {
+		return errors.Wrap(err, "locking repo")
 	}
-	if err := sdk.TouchUp(masterkey); err != nil {
-		cmdErrHandler(err)
+	if err := sdk.TouchUp(rt.MasterKey); err != nil {
+		return err
 	}
 	fmt.Println("Repository locked.")
+
+	return nil
 }

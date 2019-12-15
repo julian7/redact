@@ -8,6 +8,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
 	"github.com/julian7/redact/files"
@@ -20,7 +21,7 @@ import (
 func TestNewMasterKey(t *testing.T) {
 	oldgitdir := files.GitDirFunc
 	files.GitDirFunc = func(info *gitutil.GitRepoInfo) error { return errors.New("no git dir") }
-	_, err := files.NewMasterKey()
+	_, err := files.NewMasterKey(&logrus.Logger{})
 	files.GitDirFunc = oldgitdir
 	if err == nil || err.Error() != "not a git repository" {
 		t.Errorf("Unexpected error: %v", err)
@@ -30,7 +31,7 @@ func TestNewMasterKey(t *testing.T) {
 		info.Toplevel = "/git/repo"
 		return nil
 	}
-	k, err := files.NewMasterKey()
+	k, err := files.NewMasterKey(&logrus.Logger{})
 	files.GitDirFunc = oldgitdir
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)

@@ -4,18 +4,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var accessCmd = &cobra.Command{
-	Use:   "access",
-	Short: "Key Exchange commands",
-	Long: `Key Exchange commands
+func (rt *Runtime) accessCmd() (*cobra.Command, error) {
+	cmd := &cobra.Command{
+		Use:   "access",
+		Short: "Key Exchange commands",
+		Long: `Key Exchange commands
 
 Key exchange allows contributors to have access to the master key inside
 the git repo by storing them in OpenPGP-encrypted format for each individual.
 
 With Key Exchange commands you can give or revoke access to the project
 for contributors by their OpenPGP keys.`,
-}
+	}
 
-func init() {
-	rootCmd.AddCommand(accessCmd)
+	subcommands := []cmdFactory{
+		rt.accessGrantCmd,
+		rt.accessListCmd,
+	}
+
+	if err := rt.AddCmdTo(cmd, subcommands); err != nil {
+		return nil, err
+	}
+
+	return cmd, nil
 }

@@ -3,43 +3,38 @@ package main
 import (
 	"fmt"
 
-	"github.com/julian7/redact/log"
 	"github.com/julian7/redact/sdk"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
-var generateCmd = &cobra.Command{
-	Use:     "generate",
-	Aliases: []string{"gen", "g"},
-	Short:   "Generates redact key",
-	Run:     generateDo,
-}
-
-func init() {
-	keyCmd.AddCommand(generateCmd)
-}
-
-func generateDo(cmd *cobra.Command, args []string) {
-	masterkey, err := sdk.RedactRepo()
-	if err != nil {
-		cmdErrHandler(err)
+func (rt *Runtime) keyGenerateCmd() (*cobra.Command, error) {
+	cmd := &cobra.Command{
+		Use:     "generate",
+		Aliases: []string{"gen", "g"},
+		Short:   "Generates redact key",
+		PreRunE: rt.RetrieveMasterKey,
+		RunE:    rt.generateDo,
 	}
+
+	return cmd, nil
+}
+
+func (rt *Runtime) generateDo(cmd *cobra.Command, args []string) error {
 	if err := sdk.SaveGitSettings(); err != nil {
-		cmdErrHandler(errors.Wrap(err, "setting git config"))
-		return
+		return errors.Wrap(err, "setting git config")
 	}
-	if err := masterkey.Generate(); err != nil {
-		cmdErrHandler(errors.Wrap(err, "generating master key"))
+	if err := rt.MasterKey.Generate(); err != nil {
+		return errors.Wrap(err, "generating master key")
 	}
-	fmt.Printf("New repo key created: %v\n", masterkey)
-	if err := masterkey.Save(); err != nil {
-		cmdErrHandler(errors.Wrap(err, "saving master key"))
+	fmt.Printf("New repo key created: %v\n", rt.MasterKey)
+	if err := rt.MasterKey.Save(); err != nil {
+		return errors.Wrap(err, "saving master key")
 	}
-	updatedKeys, err := sdk.UpdateMasterExchangeKeys(masterkey)
+	updatedKeys, err := sdk.UpdateMasterExchangeKeys(rt.MasterKey)
 	if err != nil {
-		log.Log().Warn(`unable to update master keys; restore original key with "redact unlock", and try again`)
-		cmdErrHandler(errors.Wrap(err, "updating key exchange master keys"))
+		rt.Logger.Warn(`unable to update master keys; restore original key with "redact unlock", and try again`)
+		return errors.Wrap(err, "updating key exchange master keys")
 	}
 	if updatedKeys > 0 {
 		fmt.Printf(
@@ -48,4 +43,6 @@ func generateDo(cmd *cobra.Command, args []string) {
 			map[bool]string{false: "s", true: ""}[updatedKeys == 1],
 		)
 	}
+
+	return nil
 }

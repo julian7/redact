@@ -3,6 +3,7 @@ package sdk
 import (
 	"github.com/julian7/redact/files"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -18,8 +19,8 @@ const (
 // - detecting top level directory: ...: if git rev-parse command returns with failure
 // - repository is not using redact: when there're no key exchange dir in the repo
 // - repository is locked: when there is an exchange dir
-func RedactRepo() (*files.MasterKey, error) {
-	masterkey, err := files.NewMasterKey()
+func RedactRepo(l *logrus.Logger) (*files.MasterKey, error) {
+	masterkey, err := files.NewMasterKey(l)
 	if err != nil {
 		return nil, err
 	}

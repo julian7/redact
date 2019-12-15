@@ -9,14 +9,14 @@ import (
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-var statusCmd = &cobra.Command{
-	Use:   "status [files...]",
-	Args:  cobra.ArbitraryArgs,
-	Short: "Shows redact status",
-	Long: `Show encryption status of repo files
+func (rt *Runtime) statusCmd() (*cobra.Command, error) {
+	cmd := &cobra.Command{
+		Use:   "status [files...]",
+		Args:  cobra.ArbitraryArgs,
+		Short: "Shows redact status",
+		Long: `Show encryption status of repo files
 
 This command lists all files in the repository (filtering is possible with
 --encrypted, --repo, --unencrypted, and --quiet options) showing encrypted
@@ -27,21 +27,23 @@ have been.
 It also shows if a file is encrypted with an older key. While re-encryption
 as-is is possible with --rekey option, it's strongly recommended to replace
 these secrets instead.`,
-	Run: statusDo,
-}
+		PreRunE: rt.RetrieveMasterKey,
+		RunE:    rt.statusDo,
+	}
 
-func init() {
-	flags := statusCmd.Flags()
+	flags := cmd.Flags()
 	flags.BoolP("repo", "r", false, "Show repo status only")
 	flags.BoolP("encrypted", "e", false, "Show encrypted files only")
 	flags.BoolP("unencrypted", "u", false, "Show plaintext files only")
 	flags.BoolP("quiet", "q", false, "Quiet mode (report only issues)")
 	flags.BoolP("fix", "f", false, "Fix problems (doesn't affect files encrypted with older keys)")
 	flags.BoolP("rekey", "R", false, "Rekey files (NOT RECOMMENDED; update for latest encryption key)")
-	rootCmd.AddCommand(statusCmd)
-	if err := viper.BindPFlags(flags); err != nil {
-		panic(err)
+
+	if err := rt.RegisterFlags("status", flags); err != nil {
+		return nil, err
 	}
+
+	return cmd, nil
 }
 
 type statusOptions struct {
@@ -57,34 +59,27 @@ type statusOptions struct {
 	toRekey    []string
 }
 
-func statusDo(cmd *cobra.Command, args []string) {
+func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error {
 	opts := statusOptions{
-		repoOnly:   viper.GetBool("repo"),
-		encOnly:    viper.GetBool("encrypted"),
-		plainOnly:  viper.GetBool("unencrypted"),
-		quiet:      viper.GetBool("quiet"),
-		fixRepo:    viper.GetBool("fix"),
-		rekeyFiles: viper.GetBool("rekey"),
+		repoOnly:   rt.Viper.GetBool("status.repo"),
+		encOnly:    rt.Viper.GetBool("status.encrypted"),
+		plainOnly:  rt.Viper.GetBool("status.unencrypted"),
+		quiet:      rt.Viper.GetBool("status.quiet"),
+		fixRepo:    rt.Viper.GetBool("status.fix"),
+		rekeyFiles: rt.Viper.GetBool("status.rekey"),
 		args:       args,
 	}
 	if err := opts.validate(); err != nil {
-		cmdErrHandler(err)
-		return
+		return err
 	}
-	masterKey, err := sdk.RedactRepo()
-	if err != nil {
-		cmdErrHandler(err)
-	}
-	opts.key = masterKey
+	opts.key = rt.MasterKey
 	files, err := gitutil.LsFiles(opts.args)
 	if err != nil {
-		cmdErrHandler(err)
-		return
+		return err
 	}
-	err = files.CheckAttrs()
+	err = files.CheckAttrs(rt.MasterKey.Logger)
 	if err != nil {
-		cmdErrHandler(err)
-		return
+		return err
 	}
 	for _, entry := range files {
 		if entry.Filter == sdk.AttrName && entry.Status != gitutil.StatusOther {
@@ -99,9 +94,8 @@ func statusDo(cmd *cobra.Command, args []string) {
 	}
 	var msgFix string
 	if opts.fixRepo {
-		if err != sdk.TouchUpFiles(masterKey, opts.toFix) {
-			cmdErrHandler(err)
-			return
+		if err != sdk.TouchUpFiles(rt.MasterKey, opts.toFix) {
+			return err
 		}
 		msgFix = "Fixed %d file%s.\n"
 	} else {
@@ -112,9 +106,8 @@ func statusDo(cmd *cobra.Command, args []string) {
 
 	var msgRekey string
 	if opts.rekeyFiles {
-		if err != sdk.TouchUpFiles(masterKey, opts.toRekey) {
-			cmdErrHandler(err)
-			return
+		if err != sdk.TouchUpFiles(rt.MasterKey, opts.toRekey) {
+			return err
 		}
 		msgRekey = "Re-encrypted %d file%s.\n"
 	} else {
@@ -122,6 +115,8 @@ func statusDo(cmd *cobra.Command, args []string) {
 	}
 	l = len(opts.toRekey)
 	fmt.Printf(msgRekey, l, map[bool]string{false: "s", true: ""}[l == 1])
+
+	return nil
 }
 
 func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEncrypted bool) {
@@ -189,10 +184,10 @@ func (opts statusOptions) validate() error {
 		}
 	}
 	if opts.encOnly && opts.plainOnly {
-		cmdErrHandler(errors.New("--encrypted and --unencrypted are mutually exclusive options"))
+		return errors.New("--encrypted and --unencrypted are mutually exclusive options")
 	}
 	if opts.fixRepo && (opts.encOnly || opts.plainOnly) {
-		cmdErrHandler(errors.New("--encrypted and --unencrypted cannot be used with --fix"))
+		return errors.New("--encrypted and --unencrypted cannot be used with --fix")
 	}
 	return nil
 }
