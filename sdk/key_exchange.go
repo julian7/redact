@@ -126,23 +126,31 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 		if err != nil {
 			return nil
 		}
+
 		if !strings.HasSuffix(path, files.ExtKeyArmor) {
 			return nil
 		}
+
 		fingerprintText := strings.TrimRight(filepath.Base(path), files.ExtKeyArmor)
+
 		fingerprintData, err := hex.DecodeString(fingerprintText)
 		if err != nil {
 			return nil
 		}
+
 		copy(fingerprint[:], fingerprintData)
+
 		keys, err := LoadPubkeysFromExchange(masterkey, fingerprint)
 		if err != nil {
 			return fmt.Errorf("loading public key for %s: %w", fingerprintText, err)
 		}
+
 		if len(keys) != 1 {
 			return fmt.Errorf("key %s has %d public keys", fingerprintText, len(keys))
 		}
+
 		updated++
+
 		return fmt.Errorf(
 			"saving master key encrypted with key %s: %w",
 			fingerprintText,

@@ -66,7 +66,10 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := sdk.TouchUp(masterkey); err != nil {
+	err = sdk.TouchUp(rt.MasterKey, func(entry string, err error) {
+		rt.Logger.Warnf("%s: %v", entry, err)
+	})
+	if err != nil {
 		return err
 	}
 

@@ -38,7 +38,10 @@ func (rt *Runtime) lockDo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 
-	if err := sdk.TouchUp(rt.MasterKey); err != nil {
+	err = sdk.TouchUp(rt.MasterKey, func(entry string, err error) {
+		rt.Logger.Warnf("%s: %v", entry, err)
+	})
+	if err != nil {
 		return err
 	}
 
