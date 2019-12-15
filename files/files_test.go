@@ -3,6 +3,7 @@ package files_test
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"io"
 	"testing"
 	"testing/iotest"
@@ -10,7 +11,6 @@ import (
 	"github.com/julian7/redact/encoder"
 	"github.com/julian7/tester"
 	"github.com/julian7/tester/ioprobe"
-	"github.com/pkg/errors"
 )
 
 var (

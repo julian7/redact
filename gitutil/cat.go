@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-
-	"github.com/pkg/errors"
 )
 
 // Cat "cat"s a file by SHA1 hash
@@ -19,7 +17,7 @@ func Cat(objectID []byte) (io.ReadCloser, error) {
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, errors.Wrap(err, "getting git command output pipe")
+		return nil, fmt.Errorf("getting git command output pipe: %w", err)
 	}
 
 	if err := cmd.Start(); err != nil {

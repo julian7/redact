@@ -6,8 +6,8 @@ import (
 	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/sha256"
-
-	"github.com/pkg/errors"
+	"errors"
+	"fmt"
 )
 
 const (
@@ -69,13 +69,13 @@ func (enc AES256GCM96) Decode(ciphertext []byte) ([]byte, error) {
 
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "decrypting with AES256-GCM")
+		return nil, fmt.Errorf("decrypting with AES256-GCM: %w", err)
 	}
 
 	hmacSum, err := calculateHMAC(enc.hmac, plaintext)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "calculating HMAC")
+		return nil, fmt.Errorf("calculating HMAC: %w", err)
 	}
 
 	if !bytes.Equal(hmacSum[:gcm.NonceSize()], nonce) {

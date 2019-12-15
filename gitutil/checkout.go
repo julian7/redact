@@ -2,11 +2,11 @@ package gitutil
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os/exec"
 
 	"github.com/julian7/redact/log"
-	"github.com/pkg/errors"
 )
 
 // Checkout checks out files provided
@@ -37,7 +37,7 @@ func Checkout(files []string) error {
 
 	err = cmd.Run()
 	if err != nil {
-		return errors.Wrapf(err, "checking out files")
+		return fmt.Errorf("checking out files: %w", err)
 	}
 
 	return nil

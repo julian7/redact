@@ -1,7 +1,7 @@
 package encoder
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
 )
 
 const (
@@ -28,7 +28,7 @@ type Encoder interface {
 func NewEncoder(encType int, key []byte) (Encoder, error) {
 	encoder, ok := encoders[encType]
 	if !ok {
-		return nil, errors.Errorf("invalid encoding type %d", encType)
+		return nil, fmt.Errorf("invalid encoding type %d", encType)
 	}
 
 	return encoder(key)
@@ -37,7 +37,7 @@ func NewEncoder(encType int, key []byte) (Encoder, error) {
 // RegisterEncoder registers a new encoder
 func RegisterEncoder(encType int, factory Factory) error {
 	if _, ok := encoders[encType]; ok {
-		return errors.Errorf("encoder type %d already exists", encType)
+		return fmt.Errorf("encoder type %d already exists", encType)
 	}
 
 	encoders[encType] = factory
@@ -48,7 +48,7 @@ func RegisterEncoder(encType int, factory Factory) error {
 // UnregisterEncoder removes an encoder
 func UnregisterEncoder(encType int) error {
 	if _, ok := encoders[encType]; !ok {
-		return errors.Errorf("encoder type %d doesn't exist", encType)
+		return fmt.Errorf("encoder type %d doesn't exist", encType)
 	}
 
 	delete(encoders, encType)

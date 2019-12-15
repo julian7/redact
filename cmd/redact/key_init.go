@@ -5,7 +5,6 @@ import (
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/sdk"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +31,7 @@ func (rt *Runtime) initCmd() (*cobra.Command, error) {
 func (rt *Runtime) initDo(cmd *cobra.Command, args []string) error {
 	err := sdk.SaveGitSettings()
 	if err != nil {
-		return errors.Wrap(err, "setting git config")
+		return fmt.Errorf("setting git config: %w", err)
 	}
 
 	masterkey, err := files.NewMasterKey(rt.Logger)
@@ -41,17 +40,17 @@ func (rt *Runtime) initDo(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := masterkey.Load(); err == nil {
-		return errors.Errorf("repo already has master key: %s", masterkey)
+		return fmt.Errorf("repo already has master key: %s", masterkey)
 	}
 
 	if err := masterkey.Generate(); err != nil {
-		return errors.Wrap(err, "generating master key")
+		return fmt.Errorf("generating master key: %w", err)
 	}
 
 	fmt.Printf("New repo key created: %v\n", masterkey)
 
 	if err := masterkey.Save(); err != nil {
-		return errors.Wrap(err, "saving master key")
+		return fmt.Errorf("saving master key: %w", err)
 	}
 
 	return nil

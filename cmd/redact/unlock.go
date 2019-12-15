@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -8,7 +9,6 @@ import (
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +45,7 @@ the repository where GnuPG (or the private key) is not available.`,
 func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 	masterkey, err := files.NewMasterKey(rt.Logger)
 	if err != nil {
-		return errors.Wrap(err, "building master key")
+		return fmt.Errorf("building master key: %w", err)
 	}
 
 	if len(args) == 1 {
@@ -78,7 +78,7 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 func loadKeyFromFile(masterkey *files.MasterKey, keyfile string) error {
 	f, err := masterkey.Fs.OpenFile(keyfile, os.O_RDONLY, 0600)
 	if err != nil {
-		return errors.Wrapf(err, "loading secret key from %s", keyfile)
+		return fmt.Errorf("loading secret key from %s: %w", keyfile, err)
 	}
 	defer f.Close()
 

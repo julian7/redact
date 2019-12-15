@@ -2,11 +2,10 @@ package encoder_test
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/julian7/redact/encoder"
-
-	"github.com/pkg/errors"
 )
 
 type fakeEncoder struct {

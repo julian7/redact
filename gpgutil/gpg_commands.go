@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/julian7/redact/log"
-	"github.com/pkg/errors"
 )
 
 // ExportKey exports GPG key in ASCII armor
@@ -41,7 +40,7 @@ func GetSecretKeys(filter string) ([][20]byte, error) {
 
 	out, err := exec.Command("gpg", args...).Output()
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching gpg secret keys")
+		return nil, fmt.Errorf("fetching gpg secret keys: %w", err)
 	}
 
 	buf := bytes.NewBuffer(out)
@@ -55,7 +54,7 @@ func GetSecretKeys(filter string) ([][20]byte, error) {
 		}
 
 		if err != nil {
-			return nil, errors.Wrap(err, "reading gpg secret key listing output")
+			return nil, fmt.Errorf("reading gpg secret key listing output: %w", err)
 		}
 
 		if strings.HasPrefix(line, "fpr:") {

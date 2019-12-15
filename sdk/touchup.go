@@ -1,12 +1,12 @@
 package sdk
 
 import (
+	"fmt"
 	"path/filepath"
 	"time"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
-	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
@@ -14,12 +14,12 @@ import (
 func TouchUp(masterkey *files.MasterKey) error {
 	files, err := gitutil.LsFiles(nil)
 	if err != nil {
-		return errors.Wrap(err, "list git files")
+		return fmt.Errorf("list git files: %w", err)
 	}
 
 	err = files.CheckAttrs(masterkey.Logger)
 	if err != nil {
-		return errors.Wrap(err, "check git files' attributes")
+		return fmt.Errorf("check git files' attributes: %w", err)
 	}
 
 	affectedFiles := make([]string, 0, len(files))
@@ -62,7 +62,7 @@ func TouchUpFiles(masterkey *files.MasterKey, files []string) error {
 func TouchFile(filesystem afero.Fs, fullpath string) error {
 	touchTime := time.Now()
 	if err := filesystem.Chtimes(fullpath, touchTime, touchTime); err != nil {
-		return errors.Wrap(err, "touch file")
+		return fmt.Errorf("touch file: %w", err)
 	}
 
 	return nil

@@ -1,7 +1,8 @@
 package log
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,7 +25,7 @@ func SetLogLevel(logLevel string) error {
 	if _, ok := logLevels[logLevel]; ok {
 		logger.SetLevel(logLevels[logLevel])
 	} else {
-		return errors.Errorf("unknown log level: %s", logLevel)
+		return fmt.Errorf("unknown log level: %s", logLevel)
 	}
 
 	return nil

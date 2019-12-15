@@ -3,6 +3,7 @@ package files_test
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -15,7 +16,6 @@ import (
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/tester"
 	"github.com/julian7/tester/ioprobe"
-	"github.com/pkg/errors"
 )
 
 func TestNewMasterKey(t *testing.T) {

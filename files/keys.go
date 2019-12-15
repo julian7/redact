@@ -3,13 +3,13 @@ package files
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 
 	keyV0 "github.com/julian7/redact/files/key_v0"
 	"github.com/julian7/redact/gitutil"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -73,7 +73,7 @@ func (k *MasterKey) Read(f io.Reader) error {
 
 	_, err := f.Read(readbuf)
 	if err != nil {
-		return errors.Wrap(err, "reading preamble from key file")
+		return fmt.Errorf("reading preamble from key file: %w", err)
 	}
 
 	if !bytes.Equal(readbuf, []byte(KeyMagic)) {
@@ -84,7 +84,7 @@ func (k *MasterKey) Read(f io.Reader) error {
 
 	err = binary.Read(f, binary.BigEndian, &keyType)
 	if err != nil {
-		return errors.Wrap(err, "reading key type")
+		return fmt.Errorf("reading key type: %w", err)
 	}
 
 	if keyType != KeyCurrentType {
@@ -102,12 +102,12 @@ func (k *MasterKey) Read(f io.Reader) error {
 				return nil
 			}
 
-			return errors.Wrap(err, "reading key data")
+			return fmt.Errorf("reading key data: %w", err)
 		}
 
 		epoch := key.Version()
 		if _, ok := k.Keys[epoch]; ok {
-			return errors.Errorf(
+			return fmt.Errorf(
 				"invalid key: duplicate epoch number (%d)",
 				epoch,
 			)
@@ -140,7 +140,7 @@ func (k *MasterKey) Load() error {
 
 	f, err := k.OpenFile(keyfile, os.O_RDONLY, 0600)
 	if err != nil {
-		return errors.Wrap(err, "opening key file for reading")
+		return fmt.Errorf("opening key file for reading: %w", err)
 	}
 
 	defer f.Close()
@@ -151,21 +151,25 @@ func (k *MasterKey) Load() error {
 // SaveTo saves master key into IO stream
 func (k *MasterKey) SaveTo(writer io.Writer) error {
 	if _, err := writer.Write([]byte(KeyMagic)); err != nil {
-		return errors.Wrap(err, "writing key preamble")
+		return fmt.Errorf("writing key preamble: %w", err)
 	}
 
 	typeData := make([]byte, 4)
 	binary.BigEndian.PutUint32(typeData, KeyCurrentType)
 
 	if _, err := writer.Write(typeData); err != nil {
-		return errors.Wrap(err, "writing key type header")
+		return fmt.Errorf("writing key type header: %w", err)
 	}
 
 	err := EachKey(k.Keys, func(idx uint32, key KeyHandler) error {
-		return errors.Wrapf(binary.Write(writer, binary.BigEndian, key), "key #%d", idx)
+		if err := binary.Write(writer, binary.BigEndian, key); err != nil {
+			return fmt.Errorf("key #%d: %w", idx, err)
+		}
+
+		return nil
 	})
 	if err != nil {
-		return errors.Wrapf(err, "writing key contents")
+		return fmt.Errorf("writing key contents: %w", err)
 	}
 
 	return nil
@@ -180,7 +184,7 @@ func (k *MasterKey) Save() error {
 
 	f, err := afero.TempFile(k.Fs, k.KeyDir, "temp")
 	if err != nil {
-		return errors.Wrap(err, "saving key file")
+		return fmt.Errorf("saving key file: %w", err)
 	}
 
 	if err = k.SaveTo(f); err != nil {
@@ -188,11 +192,11 @@ func (k *MasterKey) Save() error {
 	}
 
 	if err = f.Close(); err != nil {
-		return errors.Wrap(err, "closing temp file for key")
+		return fmt.Errorf("closing temp file for key: %w", err)
 	}
 
 	if err = k.Rename(f.Name(), buildKeyFileName(k.KeyDir)); err != nil {
-		return errors.Wrap(err, "placing key file")
+		return fmt.Errorf("placing key file: %w", err)
 	}
 
 	return nil
@@ -211,7 +215,7 @@ func (k *MasterKey) Key(epoch uint32) (KeyHandler, error) {
 
 	key, ok := k.Keys[epoch]
 	if !ok {
-		return nil, errors.Errorf("key version %d not found", epoch)
+		return nil, fmt.Errorf("key version %d not found", epoch)
 	}
 
 	return key, nil
@@ -231,7 +235,7 @@ func (k *MasterKey) getOrCreateKeyDir() error {
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "keydir not available")
+		return fmt.Errorf("keydir not available: %w", err)
 	}
 
 	if !fs.IsDir() {
@@ -244,7 +248,7 @@ func (k *MasterKey) getOrCreateKeyDir() error {
 func (k *MasterKey) checkKeyDir() error {
 	fs, err := k.Stat(k.KeyDir)
 	if err != nil {
-		return errors.Wrap(err, "keydir not available")
+		return fmt.Errorf("keydir not available: %w", err)
 	}
 
 	if !fs.IsDir() {

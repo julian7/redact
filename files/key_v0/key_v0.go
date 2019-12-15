@@ -4,8 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/sha1" //nolint:gosec
 	"fmt"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -44,7 +42,7 @@ func (k *KeyV0) Secret() []byte {
 func (k *KeyV0) Generate() error {
 	_, err := rand.Read(k.SecretData[:])
 	if err != nil {
-		return errors.Wrap(err, "generating Secret key")
+		return fmt.Errorf("generating Secret key: %w", err)
 	}
 
 	return nil

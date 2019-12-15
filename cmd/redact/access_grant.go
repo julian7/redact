@@ -2,11 +2,12 @@ package main
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/openpgp"
 )
@@ -62,14 +63,14 @@ func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error { //no
 	if len(args) > 0 {
 		out, err := gpgutil.ExportKey(args)
 		if err != nil {
-			return errors.Wrap(err, "exporting GPG key")
+			return fmt.Errorf("exporting GPG key: %w", err)
 		}
 
 		reader := bytes.NewReader(out)
 
 		entries, err := gpgutil.LoadPubKey(reader, true)
 		if err != nil {
-			return errors.Wrap(err, "reading GPG key")
+			return fmt.Errorf("reading GPG key: %w", err)
 		}
 
 		keyEntries = append(keyEntries, entries...)

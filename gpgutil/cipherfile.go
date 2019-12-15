@@ -2,9 +2,9 @@ package gpgutil
 
 import (
 	"crypto"
+	"fmt"
 	"io"
 
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/packet"
 )
@@ -24,13 +24,13 @@ func Encrypt(reader io.Reader, writer io.Writer, receiver *openpgp.Entity) error
 
 	plain, err := openpgp.Encrypt(writer, []*openpgp.Entity{receiver}, nil, &hints, &config)
 	if err != nil {
-		return errors.Wrap(err, "creating encryption stream")
+		return fmt.Errorf("creating encryption stream: %w", err)
 	}
 
 	defer plain.Close()
 
 	if _, err = io.Copy(plain, reader); err != nil {
-		return errors.Wrap(err, "writing master key to encryption stream")
+		return fmt.Errorf("writing master key to encryption stream: %w", err)
 	}
 
 	return nil

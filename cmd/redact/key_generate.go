@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/julian7/redact/sdk"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -22,23 +21,23 @@ func (rt *Runtime) keyGenerateCmd() (*cobra.Command, error) {
 
 func (rt *Runtime) generateDo(cmd *cobra.Command, args []string) error {
 	if err := sdk.SaveGitSettings(); err != nil {
-		return errors.Wrap(err, "setting git config")
+		return fmt.Errorf("setting git config: %w", err)
 	}
 
 	if err := rt.MasterKey.Generate(); err != nil {
-		return errors.Wrap(err, "generating master key")
+		return fmt.Errorf("generating master key: %w", err)
 	}
 
 	fmt.Printf("New repo key created: %v\n", rt.MasterKey)
 
 	if err := rt.MasterKey.Save(); err != nil {
-		return errors.Wrap(err, "saving master key")
+		return fmt.Errorf("saving master key: %w", err)
 	}
 
 	updatedKeys, err := sdk.UpdateMasterExchangeKeys(rt.MasterKey)
 	if err != nil {
 		rt.Logger.Warn(`unable to update master keys; restore original key with "redact unlock", and try again`)
-		return errors.Wrap(err, "updating key exchange master keys")
+		return fmt.Errorf("updating key exchange master keys: %w", err)
 	}
 
 	if updatedKeys > 0 {

@@ -1,9 +1,8 @@
 package gitutil
 
 import (
+	"fmt"
 	"os/exec"
-
-	"github.com/pkg/errors"
 )
 
 // GitConfig sets configuration data
@@ -15,7 +14,7 @@ func GitConfig(key, val string) error {
 		val,
 	).Run()
 	if err != nil {
-		return errors.Wrapf(err, "can't set config %s", key)
+		return fmt.Errorf("setting config %s: %w", key, err)
 	}
 
 	return nil

@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
@@ -52,14 +51,14 @@ func PrintKey(key *openpgp.Entity) {
 func LoadPubKeyFromFile(path string, armor bool) (openpgp.EntityList, error) {
 	out, err := os.Open(path)
 	if err != nil {
-		return nil, errors.Wrapf(err, "opening pgp asc file %s", path)
+		return nil, fmt.Errorf("opening pgp asc file %s: %w", path, err)
 	}
 
 	defer out.Close()
 
 	entries, err := LoadPubKey(out, armor)
 	if err != nil {
-		return nil, errors.Wrapf(err, "reading file %s", path)
+		return nil, fmt.Errorf("reading file %s: %w", path, err)
 	}
 
 	return entries, nil
@@ -78,10 +77,10 @@ func LoadPubKey(reader io.Reader, armor bool) (openpgp.EntityList, error) {
 	}
 
 	if err != nil {
-		return nil, errors.Wrapf(
-			err,
-			"read keyring of pgp%s",
+		return nil, fmt.Errorf(
+			"reading keyring of pgp%s: %w",
 			map[bool]string{false: "", true: " armor"}[armor],
+			err,
 		)
 	}
 
@@ -95,7 +94,7 @@ func SavePubKey(raw io.Writer, key *openpgp.Entity, isArmor bool) error {
 	if isArmor {
 		arm, err := armor.Encode(raw, openpgp.PublicKeyType, make(map[string]string))
 		if err != nil {
-			return errors.Wrap(err, "creating armor stream")
+			return fmt.Errorf("creating armor stream: %w", err)
 		}
 		defer arm.Close()
 		writer = arm
@@ -104,7 +103,7 @@ func SavePubKey(raw io.Writer, key *openpgp.Entity, isArmor bool) error {
 	}
 
 	if err := key.Serialize(writer); err != nil {
-		return errors.Wrap(err, "serializing public key to exchange store")
+		return fmt.Errorf("serializing public key to exchange store: %w", err)
 	}
 
 	return nil

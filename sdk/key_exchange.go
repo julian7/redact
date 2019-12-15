@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"encoding/hex"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
-	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"golang.org/x/crypto/openpgp"
 )
@@ -19,7 +19,7 @@ import (
 func LoadMasterKeyFromExchange(masterkey *files.MasterKey, fingerprint [20]byte) error {
 	stub, err := masterkey.GetExchangeFilenameStubFor(fingerprint)
 	if err != nil {
-		return errors.Wrap(err, "finding key in exchange dir")
+		return fmt.Errorf("finding key in exchange dir: %w", err)
 	}
 
 	reader, err := gpgutil.DecryptWithKey(
@@ -27,7 +27,7 @@ func LoadMasterKeyFromExchange(masterkey *files.MasterKey, fingerprint [20]byte)
 		fingerprint,
 	)
 	if err != nil {
-		return errors.Wrap(err, "decrypt master key from exchange dir")
+		return fmt.Errorf("decrypt master key from exchange dir: %w", err)
 	}
 
 	defer reader.Close()
@@ -39,11 +39,11 @@ func LoadMasterKeyFromExchange(masterkey *files.MasterKey, fingerprint [20]byte)
 // place.
 func LoadMasterKeyFromReader(masterkey *files.MasterKey, reader io.Reader) error {
 	if err := masterkey.Read(reader); err != nil {
-		return errors.Wrap(err, "reading unencrypted master key")
+		return fmt.Errorf("reading unencrypted master key: %w", err)
 	}
 
 	if err := masterkey.Save(); err != nil {
-		return errors.Wrap(err, "saving master key")
+		return fmt.Errorf("saving master key: %w", err)
 	}
 
 	return nil
@@ -60,7 +60,7 @@ func SaveMasterExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
 
 	masterWriter, err := os.OpenFile(masterName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
-		return errors.Wrap(err, "opening exchange master key")
+		return fmt.Errorf("opening exchange master key: %w", err)
 	}
 	defer masterWriter.Close()
 
@@ -78,12 +78,12 @@ func SaveMasterExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
 func LoadPubkeysFromExchange(masterkey *files.MasterKey, fingerprint [20]byte) (openpgp.EntityList, error) {
 	stub, err := masterkey.GetExchangeFilenameStubFor(fingerprint)
 	if err != nil {
-		return nil, errors.Wrap(err, "finding exchange public key")
+		return nil, fmt.Errorf("finding exchange public key: %w", err)
 	}
 
 	pubkey, err := gpgutil.LoadPubKeyFromFile(files.ExchangePubKeyFile(stub), true)
 	if err != nil {
-		return nil, errors.Wrapf(err, "loading public key for %x", fingerprint)
+		return nil, fmt.Errorf("loading public key for %x: %w", fingerprint, err)
 	}
 
 	return pubkey, nil
@@ -100,13 +100,13 @@ func SavePubkeyExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
 
 	pubkeyWriter, err := os.OpenFile(pubkeyName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
-		return errors.Wrap(err, "opening exchange pubkey file")
+		return fmt.Errorf("opening exchange pubkey file: %w", err)
 	}
 
 	defer pubkeyWriter.Close()
 
 	if err := gpgutil.SavePubKey(pubkeyWriter, key, true); err != nil {
-		return errors.Wrap(err, "serializing public key to exchange store")
+		return fmt.Errorf("serializing public key to exchange store: %w", err)
 	}
 
 	return nil
@@ -116,7 +116,7 @@ func SavePubkeyExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
 func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 	kxdir, err := masterkey.ExchangeDir()
 	if err != nil {
-		return 0, errors.Wrap(err, "fetching key exchange dir")
+		return 0, fmt.Errorf("fetching key exchange dir: %w", err)
 	}
 
 	updated := 0
@@ -137,21 +137,21 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 		copy(fingerprint[:], fingerprintData)
 		keys, err := LoadPubkeysFromExchange(masterkey, fingerprint)
 		if err != nil {
-			return errors.Wrapf(err, "loading public key for %s", fingerprintText)
+			return fmt.Errorf("loading public key for %s: %w", fingerprintText, err)
 		}
 		if len(keys) != 1 {
-			return errors.Errorf("key %s has %d public keys", fingerprintText, len(keys))
+			return fmt.Errorf("key %s has %d public keys", fingerprintText, len(keys))
 		}
 		updated++
-		return errors.Wrapf(
-			SaveMasterExchange(masterkey, keys[0]),
-			"saving master key encrypted with key %s",
+		return fmt.Errorf(
+			"saving master key encrypted with key %s: %w",
 			fingerprintText,
+			SaveMasterExchange(masterkey, keys[0]),
 		)
 	})
 
 	if err != nil {
-		return 0, errors.Wrap(err, "updating master key in exchange dir")
+		return 0, fmt.Errorf("updating master key in exchange dir: %w", err)
 	}
 
 	return updated, nil

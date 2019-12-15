@@ -2,11 +2,11 @@ package files
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -35,11 +35,11 @@ func buildKeyFileName(path string) string {
 func checkFileMode(name string, fileinfo os.FileInfo, expected os.FileMode) error {
 	mode := fileinfo.Mode().Perm()
 	if mode&^expected != 0 {
-		return errors.Errorf("excessive rights on %s", name)
+		return fmt.Errorf("excessive rights on %s", name)
 	}
 
 	if mode&expected != expected {
-		return errors.Errorf("insufficient rights on %s", name)
+		return fmt.Errorf("insufficient rights on %s", name)
 	}
 
 	return nil
@@ -60,14 +60,14 @@ func (k *MasterKey) ensureExchangeDir(kxdir string) error {
 	if err != nil {
 		err = k.Mkdir(kxdir, 0755)
 		if err != nil {
-			return errors.Wrap(err, "creating key exchange dir")
+			return fmt.Errorf("creating key exchange dir: %w", err)
 		}
 
 		st, err = k.Stat(kxdir)
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "stat key exchange dir")
+		return fmt.Errorf("stat key exchange dir: %w", err)
 	}
 
 	if !st.IsDir() {
@@ -94,7 +94,7 @@ func (k *MasterKey) ExchangeDir() (string, error) {
 
 	st, err := k.Stat(kxdir)
 	if err != nil {
-		return "", errors.Wrap(err, "stat key exchange dir")
+		return "", fmt.Errorf("stat key exchange dir: %w", err)
 	}
 
 	if !st.IsDir() {
@@ -119,19 +119,19 @@ func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
 	st, err := k.Stat(gaFileName)
 	if err == nil {
 		if st.IsDir() {
-			return errors.Errorf("%s is not a normal file: %+v", gaFileName, st)
+			return fmt.Errorf("%s is not a normal file: %+v", gaFileName, st)
 		}
 
 		f, err := k.Open(gaFileName)
 		if err != nil {
-			return errors.Wrap(err, "opening .gitattributes file inside exchange dir")
+			return fmt.Errorf("opening .gitattributes file inside exchange dir: %w", err)
 		}
 
 		defer f.Close()
 
 		data, err = ioutil.ReadAll(f)
 		if err != nil {
-			return errors.Wrap(err, "reading .gitattributes file in key exchange dir")
+			return fmt.Errorf("reading .gitattributes file in key exchange dir: %w", err)
 		}
 
 		if !bytes.Equal(data, []byte(kxGitAttributesContents)) {
@@ -142,7 +142,7 @@ func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
 	}
 
 	if err := ioutil.WriteFile(gaFileName, []byte(kxGitAttributesContents), 0644); err != nil {
-		return errors.Wrap(err, "writing .gitattributes file in key exchange dir")
+		return fmt.Errorf("writing .gitattributes file in key exchange dir: %w", err)
 	}
 
 	k.Cache[key] = kxdir

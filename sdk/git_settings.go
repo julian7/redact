@@ -7,7 +7,6 @@ import (
 
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/log"
-	"github.com/pkg/errors"
 )
 
 var configItems = map[string]string{
@@ -24,7 +23,7 @@ func SaveGitSettings() error {
 		argv0, err = filepath.Abs(argv0)
 
 		if err != nil {
-			return errors.Wrap(err, "get absolute path of argv0")
+			return fmt.Errorf("get absolute path of argv0: %w", err)
 		}
 	}
 

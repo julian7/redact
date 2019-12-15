@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/julian7/redact/files"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -39,11 +38,11 @@ key's epoch and signature. For more detailed look, please see
 func (rt *Runtime) keyDo(cmd *cobra.Command, args []string) error {
 	masterkey, err := files.NewMasterKey(rt.Logger)
 	if err != nil {
-		return errors.Wrap(err, "building master key")
+		return fmt.Errorf("building master key: %w", err)
 	}
 
 	if err := masterkey.Load(); err != nil {
-		return errors.Wrap(err, "loading master key")
+		return fmt.Errorf("loading master key: %w", err)
 	}
 
 	fmt.Printf("repo key: %v\n", masterkey)

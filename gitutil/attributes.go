@@ -3,12 +3,12 @@ package gitutil
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os/exec"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,22 +23,22 @@ func (e FileEntries) CheckAttrs(l *logrus.Logger) error {
 
 	feeder, err := cmd.StdinPipe()
 	if err != nil {
-		return errors.Wrap(err, "getting input pipe")
+		return fmt.Errorf("getting input pipe: %w", err)
 	}
 
 	receiver, err := cmd.StdoutPipe()
 	if err != nil {
-		return errors.Wrap(err, "getting output pipe")
+		return fmt.Errorf("getting output pipe: %w", err)
 	}
 
 	errorstream, err := cmd.StderrPipe()
 	if err != nil {
-		return errors.Wrap(err, "getting error pipe")
+		return fmt.Errorf("getting error pipe: %w", err)
 	}
 
 	err = cmd.Start()
 	if err != nil {
-		return errors.Wrap(err, "starting git command")
+		return fmt.Errorf("starting git command: %w", err)
 	}
 
 	go e.feedWithFileNames(feeder)
@@ -94,7 +94,7 @@ func (e FileEntries) readCheckAttrs(reader io.ReadCloser, l *logrus.Logger) erro
 		items := strings.Split(line, ": filter: ")
 
 		if len(items) != 2 {
-			err = errors.Wrapf(err, `finding filter entry in line: "%s"`, line)
+			err = fmt.Errorf(`finding filter entry in line: "%s": %w`, line, err)
 			break
 		}
 

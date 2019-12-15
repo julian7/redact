@@ -1,10 +1,10 @@
 package gitutil
 
 import (
+	"errors"
+	"fmt"
 	"os/exec"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -41,7 +41,7 @@ func GitDir(info *GitRepoInfo) error {
 		"--git-common-dir",
 	).Output()
 	if err != nil {
-		return errors.Wrap(err, "retrieving git rev-parse output")
+		return fmt.Errorf("retrieving git rev-parse output: %w", err)
 	}
 
 	data := strings.Split(string(out), "\n")

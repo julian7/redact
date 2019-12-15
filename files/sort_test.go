@@ -3,8 +3,6 @@ package files
 import (
 	"fmt"
 	"testing"
-
-	"github.com/pkg/errors"
 )
 
 func TestLen(t *testing.T) {
@@ -108,7 +106,7 @@ func TestEachKey(t *testing.T) {
 			visited := make([]uint32, 0, len(keyring))
 			err := EachKey(keyring, func(id uint32, item KeyHandler) error {
 				if tc.errorAt == int(id) {
-					return errors.Errorf("throwing error at %d", tc.errorAt)
+					return fmt.Errorf("throwing error at %d", tc.errorAt)
 				}
 				visited = append(visited, id)
 				return nil

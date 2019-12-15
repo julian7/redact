@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/julian7/redact/sdk"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -28,11 +27,11 @@ beforehand.`,
 
 func (rt *Runtime) lockDo(cmd *cobra.Command, args []string) error {
 	if err := sdk.RemoveGitSettings(); err != nil {
-		return errors.Wrap(err, "locking repo")
+		return fmt.Errorf("locking repo: %w", err)
 	}
 
 	if err := rt.MasterKey.Remove(rt.MasterKey.KeyFile()); err != nil {
-		return errors.Wrap(err, "locking repo")
+		return fmt.Errorf("locking repo: %w", err)
 	}
 
 	if err := sdk.TouchUp(rt.MasterKey); err != nil {

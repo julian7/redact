@@ -1,8 +1,10 @@
 package sdk
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/julian7/redact/files"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,7 +32,7 @@ func RedactRepo(l *logrus.Logger) (*files.MasterKey, error) {
 			return nil, errors.New("repository is not using redact")
 		}
 
-		return nil, errors.Wrap(err, "repository is locked")
+		return nil, fmt.Errorf("repository is locked: %w", err)
 	}
 
 	return masterkey, nil

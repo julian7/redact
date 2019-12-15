@@ -3,11 +3,12 @@ package files
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 
 	"github.com/julian7/redact/encoder"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -25,22 +26,22 @@ type fileHeader struct {
 func (k *MasterKey) Encode(encodingFormat uint32, epoch uint32, reader io.Reader, writer io.Writer) error {
 	key, err := k.Key(epoch)
 	if err != nil {
-		return errors.Wrap(err, "encoding stream")
+		return fmt.Errorf("encoding stream: %w", err)
 	}
 
 	enc, err := encoder.NewEncoder(int(encodingFormat), key.Secret())
 	if err != nil {
-		return errors.Wrap(err, "setting up encoder")
+		return fmt.Errorf("setting up encoder: %w", err)
 	}
 
 	in, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return errors.Wrap(err, "reading input stream")
+		return fmt.Errorf("reading input stream: %w", err)
 	}
 
 	out, err := enc.Encode(in)
 	if err != nil {
-		return errors.Wrap(err, "encoding stream")
+		return fmt.Errorf("encoding stream: %w", err)
 	}
 
 	header := fileHeader{Encoding: encodingFormat, Epoch: epoch}
@@ -48,12 +49,15 @@ func (k *MasterKey) Encode(encodingFormat uint32, epoch uint32, reader io.Reader
 
 	err = binary.Write(writer, binary.BigEndian, header)
 	if err != nil {
-		return errors.Wrap(err, "writing file header")
+		return fmt.Errorf("writing file header: %w", err)
 	}
 
 	_, err = writer.Write(out)
+	if err != nil {
+		return fmt.Errorf("writing encoded stream: %w", err)
+	}
 
-	return errors.Wrap(err, "writing encoded stream")
+	return nil
 }
 
 // Decode encodes an IO stream into another IO stream
@@ -67,27 +71,30 @@ func (k *MasterKey) Decode(reader io.Reader, writer io.Writer) error {
 
 	key, err := k.Key(header.Epoch)
 	if err != nil {
-		return errors.Wrap(err, "retrieving key")
+		return fmt.Errorf("retrieving key: %w", err)
 	}
 
 	enc, err := encoder.NewEncoder(int(header.Encoding), key.Secret())
 	if err != nil {
-		return errors.Wrap(err, "setting up encoder")
+		return fmt.Errorf("setting up encoder: %w", err)
 	}
 
 	in, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return errors.Wrap(err, "reading stream")
+		return fmt.Errorf("reading stream: %w", err)
 	}
 
 	out, err := enc.Decode(in)
 	if err != nil {
-		return errors.Wrap(err, "decoding stream")
+		return fmt.Errorf("decoding stream: %w", err)
 	}
 
 	_, err = writer.Write(out)
+	if err != nil {
+		return fmt.Errorf("writing decoded stream: %w", err)
+	}
 
-	return errors.Wrap(err, "writing decoded stream")
+	return nil
 }
 
 // FileStatus returns file encryption status and key used
@@ -105,7 +112,7 @@ func (k *MasterKey) FileStatus(reader io.Reader) (bool, uint32) {
 func (k *MasterKey) readHeader(reader io.Reader, header *fileHeader) error {
 	err := binary.Read(reader, binary.BigEndian, header)
 	if err != nil {
-		return errors.Wrap(err, "reading file header")
+		return fmt.Errorf("reading file header: %w", err)
 	}
 
 	if !bytes.Equal(header.Preamble[:], []byte(FileMagic)) {

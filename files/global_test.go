@@ -1,10 +1,9 @@
 package files_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/pkg/errors"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
@@ -28,7 +27,7 @@ func genGitRepo() (*files.MasterKey, error) {
 
 	err := k.Mkdir(k.KeyDir, 0700)
 	if err != nil {
-		return nil, errors.Wrapf(err, "creating key dir %s", k.KeyDir)
+		return nil, fmt.Errorf("creating key dir %s: %w", k.KeyDir, err)
 	}
 
 	return k, nil
@@ -51,7 +50,7 @@ func writeKey(k *files.MasterKey) error {
 func writeKX(k *files.MasterKey) error {
 	kxdir := filepath.Join(k.RepoInfo.Toplevel, ".redact")
 	if err := k.MkdirAll(kxdir, 0755); err != nil {
-		return errors.Wrap(err, "creating exchange dir")
+		return fmt.Errorf("creating exchange dir: %w", err)
 	}
 
 	return writeFile(
@@ -65,15 +64,15 @@ func writeKX(k *files.MasterKey) error {
 func writeFile(k *files.MasterKey, fname string, perms os.FileMode, contents string) error {
 	of, err := k.OpenFile(fname, os.O_CREATE|os.O_WRONLY, perms)
 	if err != nil {
-		return errors.Wrapf(err, "creating %s file", fname)
+		return fmt.Errorf("creating %s file: %w", fname, err)
 	}
 
 	if _, err := of.WriteString(contents); err != nil {
-		return errors.Wrapf(err, "writing %s file", fname)
+		return fmt.Errorf("writing %s file: %w", fname, err)
 	}
 
 	if err := of.Close(); err != nil {
-		return errors.Wrapf(err, "closing %s file", fname)
+		return fmt.Errorf("closing %s file: %w", fname, err)
 	}
 
 	return nil
@@ -81,7 +80,7 @@ func writeFile(k *files.MasterKey, fname string, perms os.FileMode, contents str
 
 func checkString(expected, received string) error {
 	if received != expected {
-		return errors.Errorf(
+		return fmt.Errorf(
 			`Unexpected result.
 Expected: %q
 Received: %q`,

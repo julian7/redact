@@ -1,11 +1,11 @@
 package files_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/tester"
-	"github.com/pkg/errors"
 )
 
 func TestGetExchangeFilenameStubFor(t *testing.T) {

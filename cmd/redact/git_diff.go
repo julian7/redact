@@ -1,10 +1,11 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"os"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -39,15 +40,15 @@ func (rt *Runtime) gitDiffDo(cmd *cobra.Command, args []string) error {
 
 	n, err := reader.Seek(0, io.SeekStart)
 	if err != nil {
-		return errors.Wrap(err, "re-reading file from beginning")
+		return fmt.Errorf("re-reading file from beginning: %w", err)
 	}
 
 	if n != 0 {
-		return errors.Errorf("cannot return to beginning of file: returned to position %d instead", n)
+		return fmt.Errorf("cannot return to beginning of file: returned to position %d instead", n)
 	}
 
 	if _, err := io.Copy(os.Stdout, reader); err != nil {
-		return errors.Wrap(err, "reading file")
+		return fmt.Errorf("reading file: %w", err)
 	}
 
 	return nil

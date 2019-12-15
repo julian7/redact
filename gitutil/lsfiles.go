@@ -8,8 +8,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // FileEntry contains a single file entry in a git repository
@@ -44,7 +42,7 @@ func LsFiles(files []string) (FileEntries, error) { //nolint:funlen
 
 	out, err := exec.Command("git", args...).Output()
 	if err != nil {
-		return nil, errors.Wrap(err, "listing git files")
+		return nil, fmt.Errorf("listing git files: %w", err)
 	}
 
 	reader := bytes.NewBuffer(out)
@@ -58,7 +56,7 @@ func LsFiles(files []string) (FileEntries, error) { //nolint:funlen
 				break
 			}
 
-			return nil, errors.Wrap(err, "reading git command output")
+			return nil, fmt.Errorf("reading git command output: %w", err)
 		}
 
 		entry = strings.TrimRight(entry, "\000")
@@ -71,7 +69,7 @@ func LsFiles(files []string) (FileEntries, error) { //nolint:funlen
 			// known files: "<metadata <TAB> <file name>"
 			contents := strings.Split(entry, "\t")
 			if len(contents) != 2 {
-				return nil, errors.Errorf("invalid output from git command: %v", entry)
+				return nil, fmt.Errorf("invalid output from git command: %v", entry)
 			}
 			fileEntry.Name = contents[1]
 
@@ -80,19 +78,19 @@ func LsFiles(files []string) (FileEntries, error) { //nolint:funlen
 
 			mode, err := strconv.ParseInt(meta[1], 8, 64)
 			if err != nil {
-				return nil, errors.Wrapf(err, `parsing mode for file entry "%s"`, entry)
+				return nil, fmt.Errorf(`parsing mode for file entry "%s": %w`, entry, err)
 			}
 			fileEntry.Mode = mode
 
 			sha1, err := hex.DecodeString(meta[2])
 			if err != nil {
-				return nil, errors.Wrapf(err, `parsing SHA1 entry for file entry "%s"`, entry)
+				return nil, fmt.Errorf(`parsing SHA1 entry for file entry "%s": %w`, entry, err)
 			}
 			copy(fileEntry.SHA1[:], sha1)
 
 			stage, err := strconv.ParseInt(meta[3], 10, 64)
 			if err != nil {
-				return nil, errors.Wrapf(err, `parsing stage for file entry "%s"`, entry)
+				return nil, fmt.Errorf(`parsing stage for file entry "%s": %w`, entry, err)
 			}
 			fileEntry.Stage = stage
 		}
