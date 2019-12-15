@@ -62,7 +62,7 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	if err := sdk.SaveGitSettings(); err != nil {
+	if err := rt.SaveGitSettings(); err != nil {
 		return err
 	}
 

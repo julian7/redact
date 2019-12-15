@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/julian7/redact/files"
-	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cobra"
 )
 
@@ -29,9 +28,8 @@ func (rt *Runtime) initCmd() (*cobra.Command, error) {
 }
 
 func (rt *Runtime) initDo(cmd *cobra.Command, args []string) error {
-	err := sdk.SaveGitSettings()
-	if err != nil {
-		return fmt.Errorf("setting git config: %w", err)
+	if err := rt.SaveGitSettings(); err != nil {
+		return err
 	}
 
 	masterkey, err := files.NewMasterKey(rt.Logger)

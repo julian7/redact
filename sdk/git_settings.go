@@ -2,11 +2,8 @@ package sdk
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/julian7/redact/gitutil"
-	"github.com/julian7/redact/log"
 )
 
 var configItems = map[string]string{
@@ -16,42 +13,35 @@ var configItems = map[string]string{
 }
 
 // SaveGitSettings sets filter / diff settings into git repository config
-func SaveGitSettings() error {
-	argv0 := os.Args[0]
-	if argv0[0] == '.' {
-		var err error
-		argv0, err = filepath.Abs(argv0)
-
-		if err != nil {
-			return fmt.Errorf("get absolute path of argv0: %w", err)
-		}
-	}
-
+func SaveGitSettings(argv0 string, cb func(string)) error {
 	for key, val := range configItems {
-		if err := gitutil.GitConfig(
-			fmt.Sprintf(key, AttrName),
-			fmt.Sprintf(val, argv0),
-		); err != nil {
+		attr := fmt.Sprintf(key, AttrName)
+		val := fmt.Sprintf(val, argv0)
+
+		if err := gitutil.GitConfig(attr, val); err != nil {
 			return err
 		}
 
-		log.Log().Debugf("Setting up filter/diff git config of %s to %s", AttrName, argv0)
+		if cb != nil {
+			cb(attr)
+		}
 	}
 
 	return nil
 }
 
 // RemoveGitSettings removes filter / diff settings from git repository config
-func RemoveGitSettings() error {
+func RemoveGitSettings(cb func(string)) error {
 	for key := range configItems {
-		if err := gitutil.GitConfig(
-			"--unset",
-			fmt.Sprintf(key, AttrName),
-		); err != nil {
+		attr := fmt.Sprintf(key, AttrName)
+
+		if err := gitutil.GitConfig("--unset", attr); err != nil {
 			return err
 		}
 
-		log.Log().Debugf("Removing filter/diff git config of %s", AttrName)
+		if cb != nil {
+			cb(attr)
+		}
 	}
 
 	return nil

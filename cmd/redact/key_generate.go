@@ -20,8 +20,8 @@ func (rt *Runtime) keyGenerateCmd() (*cobra.Command, error) {
 }
 
 func (rt *Runtime) generateDo(cmd *cobra.Command, args []string) error {
-	if err := sdk.SaveGitSettings(); err != nil {
-		return fmt.Errorf("setting git config: %w", err)
+	if err := rt.SaveGitSettings(); err != nil {
+		return err
 	}
 
 	if err := rt.MasterKey.Generate(); err != nil {

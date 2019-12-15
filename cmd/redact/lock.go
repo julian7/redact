@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/julian7/redact/log"
 	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +27,10 @@ beforehand.`,
 }
 
 func (rt *Runtime) lockDo(cmd *cobra.Command, args []string) error {
-	if err := sdk.RemoveGitSettings(); err != nil {
+	err := sdk.RemoveGitSettings(func(attr string) {
+		log.Log().Debugf("Removing filter/diff git config of %s", attr)
+	})
+	if err != nil {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 
