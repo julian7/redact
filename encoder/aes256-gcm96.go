@@ -28,6 +28,7 @@ func NewAES256GCM96(key []byte) (Encoder, error) {
 	if len(key) < AES256KeySize+HMAC256KeySize {
 		return nil, errors.New("key too small")
 	}
+
 	return &AES256GCM96{key: key[:AES256KeySize], hmac: key[AES256KeySize : AES256KeySize+HMAC256KeySize]}, nil
 }
 
@@ -39,13 +40,16 @@ func (enc AES256GCM96) Encode(value []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	nonce, err := calculateHMAC(enc.hmac, value)
 	if err != nil {
 		return nil, err
 	}
+
 	nonce = nonce[:gcm.NonceSize()]
 	ciphertext := gcm.Seal(nil, nonce, value, nil)
 	ciphertext = append(nonce, ciphertext...)
+
 	return ciphertext, nil
 }
 
@@ -55,23 +59,29 @@ func (enc AES256GCM96) Decode(ciphertext []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if len(ciphertext) < gcm.NonceSize() {
 		return nil, errors.New("ciphertext too small")
 	}
+
 	nonce := ciphertext[:gcm.NonceSize()]
 	ciphertext = ciphertext[gcm.NonceSize():]
+
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "decrypting with AES256-GCM")
 	}
 
 	hmacSum, err := calculateHMAC(enc.hmac, plaintext)
+
 	if err != nil {
 		return nil, errors.Wrap(err, "calculating HMAC")
 	}
+
 	if !bytes.Equal(hmacSum[:gcm.NonceSize()], nonce) {
 		return nil, errors.New("HMAC checksum invalid")
 	}
+
 	return plaintext, nil
 }
 
@@ -80,10 +90,12 @@ func getGCM(key []byte) (cipher.AEAD, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	gcm, err := cipher.NewGCM(aesCipher)
 	if err != nil {
 		return nil, err
 	}
+
 	return gcm, nil
 }
 
@@ -91,9 +103,12 @@ func calculateHMAC(key, value []byte) ([]byte, error) {
 	if len(key) == 0 {
 		return nil, errors.New("HMAC key is empty")
 	}
+
 	nonceHMAC := hmac.New(sha256.New, key)
+
 	if _, err := nonceHMAC.Write(value); err != nil {
 		return nil, err
 	}
+
 	return nonceHMAC.Sum(nil), nil
 }

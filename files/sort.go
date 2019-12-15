@@ -14,11 +14,14 @@ func EachKey(keys map[uint32]KeyHandler, callback func(uint32, KeyHandler) error
 	for k := range keys {
 		index = append(index, k)
 	}
+
 	sort.Sort(keyIdxSlice(index))
+
 	for _, k := range index {
 		if err := callback(k, keys[k]); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

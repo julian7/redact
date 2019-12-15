@@ -17,10 +17,12 @@ func Checkout(files []string) error {
 	}
 	attrs = append(attrs, files...)
 	cmd := exec.Command("git", attrs...)
+
 	errStream, err := cmd.StderrPipe()
 	if err != nil {
 		return err
 	}
+
 	go func(reader io.ReadCloser) {
 		bufreader := bufio.NewReader(reader)
 		l := log.Log()
@@ -32,9 +34,11 @@ func Checkout(files []string) error {
 			l.Warnf("checkout: %s", line)
 		}
 	}(errStream)
+
 	err = cmd.Run()
 	if err != nil {
 		return errors.Wrapf(err, "checking out files")
 	}
+
 	return nil
 }

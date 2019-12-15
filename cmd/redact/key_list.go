@@ -24,6 +24,7 @@ func (rt *Runtime) listDo(cmd *cobra.Command, args []string) error {
 		fmt.Printf(" - %s\n", key)
 		return nil
 	})
+
 	if err != nil {
 		return err
 	}

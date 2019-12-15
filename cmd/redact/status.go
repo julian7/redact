@@ -59,7 +59,7 @@ type statusOptions struct {
 	toRekey    []string
 }
 
-func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error {
+func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error { //nolint:funlen
 	opts := statusOptions{
 		repoOnly:   rt.Viper.GetBool("status.repo"),
 		encOnly:    rt.Viper.GetBool("status.encrypted"),
@@ -72,15 +72,18 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error {
 	if err := opts.validate(); err != nil {
 		return err
 	}
+
 	opts.key = rt.MasterKey
+
 	files, err := gitutil.LsFiles(opts.args)
 	if err != nil {
 		return err
 	}
-	err = files.CheckAttrs(rt.MasterKey.Logger)
-	if err != nil {
+
+	if err := files.CheckAttrs(rt.MasterKey.Logger); err != nil {
 		return err
 	}
+
 	for _, entry := range files {
 		if entry.Filter == sdk.AttrName && entry.Status != gitutil.StatusOther {
 			if opts.encOnly || !opts.plainOnly {
@@ -92,27 +95,34 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
+
 	var msgFix string
+
 	if opts.fixRepo {
 		if err != sdk.TouchUpFiles(rt.MasterKey, opts.toFix) {
 			return err
 		}
+
 		msgFix = "Fixed %d file%s.\n"
 	} else {
 		msgFix = "There are %d file%s to be fixed.\n"
 	}
+
 	l := len(opts.toFix)
 	fmt.Printf(msgFix, l, map[bool]string{false: "s", true: ""}[l == 1])
 
 	var msgRekey string
+
 	if opts.rekeyFiles {
 		if err != sdk.TouchUpFiles(rt.MasterKey, opts.toRekey) {
 			return err
 		}
+
 		msgRekey = "Re-encrypted %d file%s.\n"
 	} else {
 		msgRekey = "There are %d file%s to be re-encrypted.\n"
 	}
+
 	l = len(opts.toRekey)
 	fmt.Printf(msgRekey, l, map[bool]string{false: "s", true: ""}[l == 1])
 
@@ -121,6 +131,7 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error {
 
 func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEncrypted bool) {
 	var isEncrypted bool
+
 	var encKeyVersion uint32
 
 	reader, err := gitutil.Cat(entry.SHA1[:])
@@ -130,6 +141,7 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 	}
 
 	msg := []string{}
+
 	if strings.HasPrefix(entry.Name, files.DefaultKeyExchangeDir+"/") {
 		if isEncrypted {
 			msg = append(msg, "should NEVER be encrypted")
@@ -144,16 +156,18 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 		}
 		opts.toFix = append(opts.toFix, entry.Name)
 	}
+
 	if isEncrypted {
 		if encKeyVersion != opts.key.LatestKey {
 			msg = append(msg, fmt.Sprintf("encrypted with key epoch %d, update to %d", encKeyVersion, opts.key.LatestKey))
 			opts.toRekey = append(opts.toRekey, entry.Name)
 		}
-		_, err := opts.key.Key(encKeyVersion)
-		if err != nil {
+
+		if _, err := opts.key.Key(encKeyVersion); err != nil {
 			msg = append(msg, err.Error())
 		}
 	}
+
 	if !opts.repoOnly && (!opts.quiet || len(msg) > 0) {
 		printFileEntry(entry, shouldBeEncrypted, strings.Join(msg, "; "))
 	}
@@ -165,9 +179,11 @@ func printFileEntry(entry *gitutil.FileEntry, shouldBeEncrypted bool, msg string
 		true:  "encrypted: ",
 	}
 	data := fmt.Sprintf("%s %s", encryptedString[shouldBeEncrypted], entry.Name)
+
 	if len(msg) > 0 {
 		data = fmt.Sprintf("%s WARNING: %s", data, msg)
 	}
+
 	fmt.Println(data)
 }
 
@@ -176,18 +192,23 @@ func (opts statusOptions) validate() error {
 		if opts.encOnly || opts.plainOnly {
 			return errors.New("--encrypted and --unencrypted options cannot be use with --repo")
 		}
+
 		if opts.fixRepo {
 			return errors.New("--fix option cannot be used with --repo")
 		}
+
 		if len(opts.args) > 0 {
 			return errors.New("files cannot be specified when --repo is used")
 		}
 	}
+
 	if opts.encOnly && opts.plainOnly {
 		return errors.New("--encrypted and --unencrypted are mutually exclusive options")
 	}
+
 	if opts.fixRepo && (opts.encOnly || opts.plainOnly) {
 		return errors.New("--encrypted and --unencrypted cannot be used with --fix")
 	}
+
 	return nil
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
-	"github.com/julian7/redact/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
@@ -17,16 +16,20 @@ func TouchUp(masterkey *files.MasterKey) error {
 	if err != nil {
 		return errors.Wrap(err, "list git files")
 	}
+
 	err = files.CheckAttrs(masterkey.Logger)
 	if err != nil {
 		return errors.Wrap(err, "check git files' attributes")
 	}
+
 	affectedFiles := make([]string, 0, len(files))
+
 	for _, entry := range files {
 		if entry.Filter == AttrName && entry.Status != gitutil.StatusOther {
 			affectedFiles = append(affectedFiles, entry.Name)
 		}
 	}
+
 	return TouchUpFiles(masterkey, affectedFiles)
 }
 
@@ -35,19 +38,23 @@ func TouchUpFiles(masterkey *files.MasterKey, files []string) error {
 	if len(files) < 1 {
 		return nil
 	}
-	l := log.Log()
+
 	touched := make([]string, 0, len(files))
+
 	for _, entry := range files {
 		fullpath := filepath.Join(masterkey.RepoInfo.Toplevel, entry)
 		if err := TouchFile(masterkey.Fs, fullpath); err != nil {
-			l.Warnf("%s: %v", entry, err)
+			masterkey.Logger.Warnf("%s: %v", entry, err)
 			continue
 		}
+
 		touched = append(touched, fullpath)
 	}
+
 	if len(touched) > 0 {
 		return gitutil.Checkout(touched)
 	}
+
 	return nil
 }
 
@@ -57,5 +64,6 @@ func TouchFile(filesystem afero.Fs, fullpath string) error {
 	if err := filesystem.Chtimes(fullpath, touchTime, touchTime); err != nil {
 		return errors.Wrap(err, "touch file")
 	}
+
 	return nil
 }

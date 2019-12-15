@@ -9,6 +9,7 @@ import (
 
 func TestLen(t *testing.T) {
 	testSlice := keyIdxSlice([]uint32{1, 2, 3, 4, 5})
+
 	len := testSlice.Len()
 	if len != 5 {
 		t.Errorf("unexpected length: %d", len)
@@ -28,6 +29,7 @@ func TestLess(t *testing.T) {
 	}
 
 	for _, tc := range tt {
+		tc := tc
 		name := fmt.Sprintf(
 			"%d %s %d",
 			tc.left,
@@ -53,7 +55,9 @@ func TestSwap(t *testing.T) {
 		{2, 3, 3},
 		{3, 4, 3},
 	}
+
 	for _, tc := range tt {
+		tc := tc
 		name := fmt.Sprintf(
 			"swapping %d and %d",
 			tc.left,
@@ -92,6 +96,7 @@ func TestEachKey(t *testing.T) {
 		{"error at 3", 3, 0, nil, "throwing error at 3"},
 	}
 	for _, tc := range tt {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			keyring := map[uint32]KeyHandler{
 				1: &fakeKey{epoch: 1},

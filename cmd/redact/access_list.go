@@ -23,11 +23,11 @@ func (rt *Runtime) accessListCmd() (*cobra.Command, error) {
 }
 
 func (rt *Runtime) accessListDo(cmd *cobra.Command, args []string) error {
-
 	kxdir, err := rt.MasterKey.ExchangeDir()
 	if err != nil {
 		return err
 	}
+
 	err = afero.Walk(rt.MasterKey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil

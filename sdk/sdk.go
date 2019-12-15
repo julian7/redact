@@ -24,12 +24,14 @@ func RedactRepo(l *logrus.Logger) (*files.MasterKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = masterkey.Load()
-	if err != nil {
+
+	if err := masterkey.Load(); err != nil {
 		if _, err2 := masterkey.ExchangeDir(); err2 != nil {
 			return nil, errors.New("repository is not using redact")
 		}
+
 		return nil, errors.Wrap(err, "repository is locked")
 	}
+
 	return masterkey, nil
 }

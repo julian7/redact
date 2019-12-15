@@ -2,7 +2,7 @@ package keyv0
 
 import (
 	"crypto/rand"
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -46,9 +46,10 @@ func (k *KeyV0) Generate() error {
 	if err != nil {
 		return errors.Wrap(err, "generating Secret key")
 	}
+
 	return nil
 }
 
 func (k *KeyV0) String() string {
-	return fmt.Sprintf("#%d %s", k.Epoch, fmt.Sprintf("%x", sha1.Sum(k.Secret()))[:8])
+	return fmt.Sprintf("#%d %s", k.Epoch, fmt.Sprintf("%x", sha1.Sum(k.Secret()))[:8]) //nolint:gosec
 }

@@ -33,9 +33,11 @@ func (rt *Runtime) gitCleanDo(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
 	if keyEpoch == 0 {
 		keyEpoch = rt.MasterKey.LatestKey
 	}
+
 	err = rt.MasterKey.Encode(encoder.TypeAES256GCM96, keyEpoch, os.Stdin, os.Stdout)
 	if err != nil {
 		return err

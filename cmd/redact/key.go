@@ -41,10 +41,11 @@ func (rt *Runtime) keyDo(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "building master key")
 	}
-	err = masterkey.Load()
-	if err != nil {
+
+	if err := masterkey.Load(); err != nil {
 		return errors.Wrap(err, "loading master key")
 	}
+
 	fmt.Printf("repo key: %v\n", masterkey)
 
 	return nil

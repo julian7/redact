@@ -26,6 +26,7 @@ func SetLogLevel(logLevel string) error {
 	} else {
 		return errors.Errorf("unknown log level: %s", logLevel)
 	}
+
 	return nil
 }
 

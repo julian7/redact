@@ -24,6 +24,7 @@ func (k *MasterKey) GetExchangeFilenameStubFor(fingerprint [20]byte) (string, er
 	if err := k.ensureExchangeDir(kxdir); err != nil {
 		return "", err
 	}
+
 	return filepath.Join(kxdir, fmt.Sprintf("%x", fingerprint)), nil
 }
 

@@ -21,6 +21,7 @@ func ExportKey(keyIDs []string) ([]byte, error) {
 		"--",
 	}
 	args = append(args, keyIDs...)
+
 	return exec.Command("gpg", args...).Output()
 }
 
@@ -35,21 +36,28 @@ func GetSecretKeys(filter string) ([][20]byte, error) {
 	if len(filter) > 0 {
 		args = append(args, "--", filter)
 	}
-	out, err := exec.Command("gpg", args...).Output()
+
 	l := log.Log()
+
+	out, err := exec.Command("gpg", args...).Output()
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching gpg secret keys")
 	}
+
 	buf := bytes.NewBuffer(out)
+
 	var keys [][20]byte
+
 	for {
 		line, err := buf.ReadString('\n')
 		if err == io.EOF {
 			break
 		}
+
 		if err != nil {
 			return nil, errors.Wrap(err, "reading gpg secret key listing output")
 		}
+
 		if strings.HasPrefix(line, "fpr:") {
 			items := strings.Split(line, ":")
 			if len(items) < 9 {
@@ -66,6 +74,7 @@ func GetSecretKeys(filter string) ([][20]byte, error) {
 			}
 		}
 	}
+
 	return keys, nil
 }
 
@@ -82,14 +91,17 @@ func DecryptWithKey(ciphertext string, fingerprint [20]byte) (io.ReadCloser, err
 		ciphertext,
 	}
 	cmd := exec.Command("gpg", args...)
+
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
 	}
+
 	errStream, err := cmd.StderrPipe()
 	if err != nil {
 		return nil, err
 	}
+
 	go func(reader io.ReadCloser) {
 		bufreader := bufio.NewReader(reader)
 		l := log.Log()
@@ -101,8 +113,10 @@ func DecryptWithKey(ciphertext string, fingerprint [20]byte) (io.ReadCloser, err
 			l.Warnf("decryption: %s", line)
 		}
 	}(errStream)
+
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
+
 	return out, nil
 }

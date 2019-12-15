@@ -22,10 +22,12 @@ func SaveGitSettings() error {
 	if argv0[0] == '.' {
 		var err error
 		argv0, err = filepath.Abs(argv0)
+
 		if err != nil {
 			return errors.Wrap(err, "get absolute path of argv0")
 		}
 	}
+
 	for key, val := range configItems {
 		if err := gitutil.GitConfig(
 			fmt.Sprintf(key, AttrName),
@@ -33,8 +35,10 @@ func SaveGitSettings() error {
 		); err != nil {
 			return err
 		}
+
 		log.Log().Debugf("Setting up filter/diff git config of %s to %s", AttrName, argv0)
 	}
+
 	return nil
 }
 
@@ -47,7 +51,9 @@ func RemoveGitSettings() error {
 		); err != nil {
 			return err
 		}
+
 		log.Log().Debugf("Removing filter/diff git config of %s", AttrName)
 	}
+
 	return nil
 }

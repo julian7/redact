@@ -9,11 +9,11 @@ const (
 	TypeAES256GCM96 = iota
 )
 
-// EncoderFactory generates a new encoder
-type EncoderFactory func(key []byte) (Encoder, error)
+// Factory generates a new encoder
+type Factory func(key []byte) (Encoder, error)
 
 var (
-	encoders = map[int]EncoderFactory{
+	encoders = map[int]Factory{
 		TypeAES256GCM96: NewAES256GCM96,
 	}
 )
@@ -30,15 +30,18 @@ func NewEncoder(encType int, key []byte) (Encoder, error) {
 	if !ok {
 		return nil, errors.Errorf("invalid encoding type %d", encType)
 	}
+
 	return encoder(key)
 }
 
 // RegisterEncoder registers a new encoder
-func RegisterEncoder(encType int, factory EncoderFactory) error {
+func RegisterEncoder(encType int, factory Factory) error {
 	if _, ok := encoders[encType]; ok {
 		return errors.Errorf("encoder type %d already exists", encType)
 	}
+
 	encoders[encType] = factory
+
 	return nil
 }
 
@@ -47,6 +50,8 @@ func UnregisterEncoder(encType int) error {
 	if _, ok := encoders[encType]; !ok {
 		return errors.Errorf("encoder type %d doesn't exist", encType)
 	}
+
 	delete(encoders, encType)
+
 	return nil
 }

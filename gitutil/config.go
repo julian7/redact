@@ -17,5 +17,6 @@ func GitConfig(key, val string) error {
 	if err != nil {
 		return errors.Wrapf(err, "can't set config %s", key)
 	}
+
 	return nil
 }

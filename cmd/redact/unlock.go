@@ -47,11 +47,13 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "building master key")
 	}
+
 	if len(args) == 1 {
 		err = loadKeyFromFile(masterkey, args[0])
 	} else {
 		err = rt.loadKeyFromGPG(masterkey, rt.Viper.GetString("gpgkey"))
 	}
+
 	if err != nil {
 		if err != io.EOF {
 			return err
@@ -59,12 +61,15 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 
 		return nil
 	}
+
 	if err := sdk.SaveGitSettings(); err != nil {
 		return err
 	}
+
 	if err := sdk.TouchUp(masterkey); err != nil {
 		return err
 	}
+
 	fmt.Println("Key is unlocked.")
 
 	return nil
@@ -76,6 +81,7 @@ func loadKeyFromFile(masterkey *files.MasterKey, keyfile string) error {
 		return errors.Wrapf(err, "loading secret key from %s", keyfile)
 	}
 	defer f.Close()
+
 	return sdk.LoadMasterKeyFromReader(masterkey, f)
 }
 
@@ -84,6 +90,7 @@ func (rt *Runtime) loadKeyFromGPG(masterkey *files.MasterKey, keyname string) er
 	if err != nil {
 		return err
 	}
+
 	availableKeys := make([]int, 0, len(keys))
 
 	for idx, key := range keys {
@@ -92,7 +99,9 @@ func (rt *Runtime) loadKeyFromGPG(masterkey *files.MasterKey, keyname string) er
 			rt.Logger.Warnf("cannot get exchange filename for %x: %v", key, err)
 			continue
 		}
+
 		masterFilename := files.ExchangeMasterKeyFile(stub)
+
 		st, err := masterkey.Stat(masterFilename)
 		if err != nil || st.IsDir() {
 			continue
@@ -103,20 +112,25 @@ func (rt *Runtime) loadKeyFromGPG(masterkey *files.MasterKey, keyname string) er
 
 	if len(availableKeys) > 1 {
 		fmt.Println("Multiple keys found. Please specify one:")
+
 		for _, idx := range availableKeys {
 			pubKey, err := sdk.LoadPubkeysFromExchange(masterkey, keys[idx])
 			if err != nil {
 				rt.Logger.Warnf("%v", err)
 				continue
 			}
+
 			for _, entity := range pubKey {
 				gpgutil.PrintKey(entity)
 			}
 		}
+
 		return io.EOF
 	}
+
 	if len(availableKeys) < 1 {
 		return errors.New("no appropriate key found for unlock")
 	}
+
 	return sdk.LoadMasterKeyFromExchange(masterkey, keys[availableKeys[0]])
 }

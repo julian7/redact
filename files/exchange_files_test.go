@@ -19,7 +19,7 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 			"empty",
 			false,
 			"",
-			errors.New("writing .gitattributes file in key exchange dir: open /git/repo/.redact/.gitattributes: no such file or directory"),
+			errors.New("writing .gitattributes file in key exchange dir: open /git/repo/.redact/.gitattributes: no such file or directory"), //nolint:lll
 		},
 		{
 			"repo",
@@ -29,6 +29,7 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 		},
 	}
 	for _, tc := range tt {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			var fingerprint [20]byte
 			copy(fingerprint[:], []byte("deadbeefdeadbeefdead"))

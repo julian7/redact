@@ -14,19 +14,19 @@ import (
 
 // FileEntry contains a single file entry in a git repository
 type FileEntry struct {
-	Status byte
+	Filter string
 	Mode   int64
+	Name   string
+	Status byte
 	SHA1   [20]byte
 	Stage  int64
-	Filter string
-	Name   string
 }
 
 // FileEntries is a list of all files
 type FileEntries []*FileEntry
 
 // LsFiles returns files in the repository, possibly filtered by names
-func LsFiles(files []string) (FileEntries, error) {
+func LsFiles(files []string) (FileEntries, error) { //nolint:funlen
 	args := []string{
 		"ls-files",
 		"--cached",
@@ -41,22 +41,29 @@ func LsFiles(files []string) (FileEntries, error) {
 		args = append(args, "--")
 		args = append(args, files...)
 	}
+
 	out, err := exec.Command("git", args...).Output()
 	if err != nil {
 		return nil, errors.Wrap(err, "listing git files")
 	}
+
 	reader := bytes.NewBuffer(out)
+
 	var allEntries []*FileEntry
+
 	for {
 		entry, err := reader.ReadString(0)
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
+
 			return nil, errors.Wrap(err, "reading git command output")
 		}
+
 		entry = strings.TrimRight(entry, "\000")
 		fileEntry := &FileEntry{Status: entry[0]}
+
 		if fileEntry.Status == StatusOther {
 			// unknown files: "? <SPACE> <file name>"
 			fileEntry.Name = entry[2:]
@@ -89,14 +96,16 @@ func LsFiles(files []string) (FileEntries, error) {
 			}
 			fileEntry.Stage = stage
 		}
+
 		allEntries = append(allEntries, fileEntry)
 	}
+
 	_ = out
+
 	return allEntries, nil
 }
 
 func (entry FileEntry) String() string {
-
 	return fmt.Sprintf(
 		"%c %o (%x) stage %d %s [%s]",
 		entry.Status,

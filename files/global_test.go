@@ -25,10 +25,12 @@ func genGitRepo() (*files.MasterKey, error) {
 		KeyDir: "/git/repo/.git/test",
 		Cache:  map[string]string{},
 	}
+
 	err := k.Mkdir(k.KeyDir, 0700)
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating key dir %s", k.KeyDir)
 	}
+
 	return k, nil
 }
 
@@ -51,6 +53,7 @@ func writeKX(k *files.MasterKey) error {
 	if err := k.MkdirAll(kxdir, 0755); err != nil {
 		return errors.Wrap(err, "creating exchange dir")
 	}
+
 	return writeFile(
 		k,
 		filepath.Join(kxdir, ".gitattributes"),
@@ -64,12 +67,15 @@ func writeFile(k *files.MasterKey, fname string, perms os.FileMode, contents str
 	if err != nil {
 		return errors.Wrapf(err, "creating %s file", fname)
 	}
+
 	if _, err := of.WriteString(contents); err != nil {
 		return errors.Wrapf(err, "writing %s file", fname)
 	}
+
 	if err := of.Close(); err != nil {
 		return errors.Wrapf(err, "closing %s file", fname)
 	}
+
 	return nil
 }
 
@@ -83,5 +89,6 @@ Received: %q`,
 			received,
 		)
 	}
+
 	return nil
 }

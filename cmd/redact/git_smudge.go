@@ -14,6 +14,7 @@ func (rt *Runtime) gitSmudgeCmd() (*cobra.Command, error) {
 		PreRunE: rt.RetrieveMasterKey,
 		RunE:    rt.gitSmudgeDo,
 	}
+
 	return cmd, nil
 }
 

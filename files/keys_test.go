@@ -23,23 +23,29 @@ func TestNewMasterKey(t *testing.T) {
 	files.GitDirFunc = func(info *gitutil.GitRepoInfo) error { return errors.New("no git dir") }
 	_, err := files.NewMasterKey(&logrus.Logger{})
 	files.GitDirFunc = oldgitdir
+
 	if err == nil || err.Error() != "not a git repository" {
 		t.Errorf("Unexpected error: %v", err)
 	}
+
 	files.GitDirFunc = func(info *gitutil.GitRepoInfo) error {
 		info.Common = ".git"
 		info.Toplevel = "/git/repo"
+
 		return nil
 	}
 	k, err := files.NewMasterKey(&logrus.Logger{})
 	files.GitDirFunc = oldgitdir
+
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
+
 	if _, ok := k.Fs.(afero.Fs); !ok {
 		t.Errorf("Unexpected filesystem type: %T", k.Fs)
 	}
+
 	if k.KeyDir != ".git/redact" {
 		t.Errorf("invalid keydir: %s", k.KeyDir)
 	}
@@ -48,6 +54,7 @@ func TestNewMasterKey(t *testing.T) {
 func TestKeyFile(t *testing.T) {
 	k := files.MasterKey{KeyDir: ".git/redact"}
 	keyfile := k.KeyFile()
+
 	if keyfile != ".git/redact/key" {
 		t.Errorf("invalid keyfile: %s", keyfile)
 	}
@@ -61,15 +68,17 @@ type key struct {
 func genKey(keyType uint32, keys []key) []byte {
 	out := bytes.NewBuffer(nil)
 	_, _ = out.WriteString("\x00REDACT\x00")
-	_ = binary.Write(out, binary.BigEndian, uint32(keyType))
+	_ = binary.Write(out, binary.BigEndian, keyType)
+
 	for _, aKey := range keys {
 		_ = binary.Write(out, binary.BigEndian, aKey.epoch)
 		_, _ = out.Write(aKey.key[:96])
 	}
+
 	return out.Bytes()
 }
 
-func TestRead(t *testing.T) {
+func TestRead(t *testing.T) { //nolint:funlen
 	tt := []struct {
 		name   string
 		reader io.Reader
@@ -129,12 +138,12 @@ func TestRead(t *testing.T) {
 		},
 	}
 	for _, tc := range tt {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			k := &files.MasterKey{}
 			if err := tester.AssertError(tc.err, k.Read(tc.reader)); err != nil {
 				t.Error(err)
 			}
-
 		})
 	}
 }
@@ -145,10 +154,12 @@ func TestGenerate(t *testing.T) {
 		t.Error(err)
 		return
 	}
+
 	if k == nil {
 		t.Error("cannot generate git repo")
 		return
 	}
+
 	for _, name := range []string{"first", "second"} {
 		err := k.Generate()
 		if err != nil {
@@ -156,7 +167,9 @@ func TestGenerate(t *testing.T) {
 			return
 		}
 	}
+
 	for idx, name := range []string{"latest", "first", "second"} {
+		idx, name := idx, name
 		t.Run(fmt.Sprintf("%s key", name), func(t *testing.T) {
 			key, err := k.Key(uint32(idx))
 			if err != nil {
@@ -196,7 +209,7 @@ func (fs *noMkdir) Mkdir(string, os.FileMode) error {
 	return errors.New("Mkdir returns error")
 }
 
-func TestLoad(t *testing.T) {
+func TestLoad(t *testing.T) { //nolint:funlen
 	tt := []struct {
 		name          string
 		hasKey        bool
@@ -247,6 +260,7 @@ func TestLoad(t *testing.T) {
 		},
 	}
 	for _, tc := range tt {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			k, err := genGitRepo()
 			if err != nil {
@@ -281,7 +295,7 @@ func TestLoad(t *testing.T) {
 	}
 }
 
-func TestSaveTo(t *testing.T) {
+func TestSaveTo(t *testing.T) { //nolint:funlen
 	tt := []struct {
 		name   string
 		writer io.Writer
@@ -339,6 +353,7 @@ func TestSaveTo(t *testing.T) {
 		},
 	}
 	for _, tc := range tt {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			k := files.MasterKey{}
 			for i := 0; i < tc.keys; i++ {
@@ -367,7 +382,7 @@ func TestSaveTo(t *testing.T) {
 	}
 }
 
-func TestSave(t *testing.T) {
+func TestSave(t *testing.T) { //nolint:funlen
 	tt := []struct {
 		name   string
 		hasKey bool
@@ -405,6 +420,7 @@ func TestSave(t *testing.T) {
 		},
 	}
 	for _, tc := range tt {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			k, err := genGitRepo()
 			if err != nil {
@@ -422,12 +438,14 @@ func TestSave(t *testing.T) {
 					return
 				}
 			}
+
 			tc.fsMods(k)
 			err = k.Save()
 			if err2 := tester.AssertError(tc.err, err); err2 != nil {
 				t.Error(err2)
 				return
 			}
+
 			if err != nil {
 				return
 			}

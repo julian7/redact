@@ -31,7 +31,7 @@ func (rt *Runtime) accessGrantCmd() (*cobra.Command, error) {
 	return cmd, nil
 }
 
-func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error {
+func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error { //nolint:funlen
 	var keyEntries openpgp.EntityList
 
 	pgpFiles := rt.Viper.GetStringSlice("openpgp")
@@ -43,15 +43,18 @@ func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				rt.Logger.Warnf("loading public key: %v", err)
 			}
+
 			keyEntries = append(keyEntries, entries...)
 		}
 	}
+
 	if len(armorFiles) > 0 {
 		for _, pgpFile := range armorFiles {
 			entries, err := gpgutil.LoadPubKeyFromFile(pgpFile, true)
 			if err != nil {
 				rt.Logger.Warnf("loading public key: %v", err)
 			}
+
 			keyEntries = append(keyEntries, entries...)
 		}
 	}
@@ -61,19 +64,23 @@ func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return errors.Wrap(err, "exporting GPG key")
 		}
+
 		reader := bytes.NewReader(out)
+
 		entries, err := gpgutil.LoadPubKey(reader, true)
 		if err != nil {
 			return errors.Wrap(err, "reading GPG key")
 		}
+
 		keyEntries = append(keyEntries, entries...)
 	}
 
-	if len(keyEntries) <= 0 {
+	if len(keyEntries) == 0 {
 		return errors.New("nobody to grant access to")
 	}
 
 	saved := 0
+
 	for _, key := range keyEntries {
 		if err := saveKey(rt.MasterKey, key); err != nil {
 			rt.Logger.Warnf("cannot save key: %v", err)
@@ -81,6 +88,7 @@ func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error {
 		}
 		saved++
 	}
+
 	rt.Logger.Infof(
 		"Added %d key%s. Don't forget to commit exchange files to the repository.",
 		saved,
@@ -92,11 +100,14 @@ func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error {
 
 func saveKey(masterkey *files.MasterKey, key *openpgp.Entity) error {
 	gpgutil.PrintKey(key)
+
 	if err := sdk.SaveMasterExchange(masterkey, key); err != nil {
 		return err
 	}
+
 	if err := sdk.SavePubkeyExchange(masterkey, key); err != nil {
 		return err
 	}
+
 	return nil
 }

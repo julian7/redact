@@ -21,14 +21,17 @@ func Encrypt(reader io.Reader, writer io.Writer, receiver *openpgp.Entity) error
 		},
 		RSABits: 4096,
 	}
+
 	plain, err := openpgp.Encrypt(writer, []*openpgp.Entity{receiver}, nil, &hints, &config)
 	if err != nil {
 		return errors.Wrap(err, "creating encryption stream")
 	}
+
 	defer plain.Close()
-	_, err = io.Copy(plain, reader)
-	if err != nil {
+
+	if _, err = io.Copy(plain, reader); err != nil {
 		return errors.Wrap(err, "writing master key to encryption stream")
 	}
+
 	return nil
 }

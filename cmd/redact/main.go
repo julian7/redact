@@ -50,6 +50,7 @@ func (rt *Runtime) AddCmdTo(cmd *cobra.Command, subcmds []cmdFactory) error {
 
 		cmd.AddCommand(subcmd)
 	}
+
 	return nil
 }
 
@@ -60,6 +61,7 @@ func (rt *Runtime) Init() {
 		rt.Viper.AddConfigPath("$HOME")
 		rt.Viper.SetConfigName(configName)
 	}
+
 	rt.Viper.AutomaticEnv()
 	rt.Viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
@@ -130,6 +132,7 @@ func (rt *Runtime) setLogLevel(level string) {
 		rt.Logger.Warnf("unknown log level: %s", level)
 		return
 	}
+
 	rt.Logger.SetLevel(logLevel)
 	rt.Logger.Debugf("Setting log level to %s", level)
 }

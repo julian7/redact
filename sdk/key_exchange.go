@@ -21,6 +21,7 @@ func LoadMasterKeyFromExchange(masterkey *files.MasterKey, fingerprint [20]byte)
 	if err != nil {
 		return errors.Wrap(err, "finding key in exchange dir")
 	}
+
 	reader, err := gpgutil.DecryptWithKey(
 		files.ExchangeMasterKeyFile(stub),
 		fingerprint,
@@ -28,7 +29,9 @@ func LoadMasterKeyFromExchange(masterkey *files.MasterKey, fingerprint [20]byte)
 	if err != nil {
 		return errors.Wrap(err, "decrypt master key from exchange dir")
 	}
+
 	defer reader.Close()
+
 	return LoadMasterKeyFromReader(masterkey, reader)
 }
 
@@ -38,9 +41,11 @@ func LoadMasterKeyFromReader(masterkey *files.MasterKey, reader io.Reader) error
 	if err := masterkey.Read(reader); err != nil {
 		return errors.Wrap(err, "reading unencrypted master key")
 	}
+
 	if err := masterkey.Save(); err != nil {
 		return errors.Wrap(err, "saving master key")
 	}
+
 	return nil
 }
 
@@ -50,17 +55,22 @@ func SaveMasterExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
 	if err != nil {
 		return err
 	}
+
 	masterName := files.ExchangeMasterKeyFile(kxstub)
+
 	masterWriter, err := os.OpenFile(masterName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return errors.Wrap(err, "opening exchange master key")
 	}
 	defer masterWriter.Close()
+
 	r, w := io.Pipe()
+
 	go func(writer io.WriteCloser) {
 		_ = masterkey.SaveTo(writer)
 		writer.Close()
 	}(w)
+
 	return gpgutil.Encrypt(r, masterWriter, key)
 }
 
@@ -70,10 +80,12 @@ func LoadPubkeysFromExchange(masterkey *files.MasterKey, fingerprint [20]byte) (
 	if err != nil {
 		return nil, errors.Wrap(err, "finding exchange public key")
 	}
+
 	pubkey, err := gpgutil.LoadPubKeyFromFile(files.ExchangePubKeyFile(stub), true)
 	if err != nil {
 		return nil, errors.Wrapf(err, "loading public key for %x", fingerprint)
 	}
+
 	return pubkey, nil
 }
 
@@ -83,15 +95,20 @@ func SavePubkeyExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
 	if err != nil {
 		return err
 	}
+
 	pubkeyName := files.ExchangePubKeyFile(kxstub)
+
 	pubkeyWriter, err := os.OpenFile(pubkeyName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return errors.Wrap(err, "opening exchange pubkey file")
 	}
+
 	defer pubkeyWriter.Close()
+
 	if err := gpgutil.SavePubKey(pubkeyWriter, key, true); err != nil {
 		return errors.Wrap(err, "serializing public key to exchange store")
 	}
+
 	return nil
 }
 
@@ -101,7 +118,9 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "fetching key exchange dir")
 	}
+
 	updated := 0
+
 	err = afero.Walk(masterkey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
 		var fingerprint [20]byte
 		if err != nil {
@@ -124,10 +143,16 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 			return errors.Errorf("key %s has %d public keys", fingerprintText, len(keys))
 		}
 		updated++
-		return errors.Wrapf(SaveMasterExchange(masterkey, keys[0]), "saving master key encrypted with key %s", fingerprintText)
+		return errors.Wrapf(
+			SaveMasterExchange(masterkey, keys[0]),
+			"saving master key encrypted with key %s",
+			fingerprintText,
+		)
 	})
+
 	if err != nil {
 		return 0, errors.Wrap(err, "updating master key in exchange dir")
 	}
+
 	return updated, nil
 }

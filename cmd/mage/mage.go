@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/magefile/mage/mage"
 	"os"
+
+	"github.com/magefile/mage/mage"
 )
 
 func main() {

@@ -43,11 +43,14 @@ func GitDir(info *GitRepoInfo) error {
 	if err != nil {
 		return errors.Wrap(err, "retrieving git rev-parse output")
 	}
+
 	data := strings.Split(string(out), "\n")
 	if len(data) != 3 {
 		return errors.New("error parsing git rev-parse")
 	}
+
 	info.Toplevel = data[0]
 	info.Common = data[1]
+
 	return nil
 }

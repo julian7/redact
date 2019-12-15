@@ -12,11 +12,13 @@ const (
 
 func TestNewKey(t *testing.T) {
 	epoch := uint32(5)
+
 	key := keyv0.NewKey(epoch)
 	if key == nil {
 		t.Error("No key returned")
 		return
 	}
+
 	if key.Epoch != epoch {
 		t.Errorf(
 			"invalid epoch\nExpected: %d\nReceived: %d",
@@ -28,6 +30,7 @@ func TestNewKey(t *testing.T) {
 
 func TestKeyVersion(t *testing.T) {
 	key := keyv0.KeyV0{}
+
 	expected := uint32(0)
 	if key.Version() != expected {
 		t.Errorf(
@@ -47,11 +50,12 @@ func TestKeyType(t *testing.T) {
 
 func TestGenerate(t *testing.T) {
 	key := keyv0.KeyV0{Epoch: 1}
-	err := key.Generate()
-	if err != nil {
+
+	if err := key.Generate(); err != nil {
 		t.Errorf("unexpected error: %v", err)
 		return
 	}
+
 	if len(key.Secret()) != keyv0.SecretSize {
 		t.Errorf(
 			"Invalid AES key size\nExpected: %d\nReceived: %d",
@@ -68,6 +72,7 @@ func TestString(t *testing.T) {
 	copy(key.SecretData[:], sampleCode+sampleCode+sampleCode)
 	strval := key.String()
 	expected := "#1 0006b8c0"
+
 	if strval != expected {
 		t.Errorf(
 			"Invalid string representation of key\nExpected: %s\nReceived: %s",
