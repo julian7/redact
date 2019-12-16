@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-### Fixed
+Fixed:
 
 * stability: removed the majority of global variables (except non-changing ones)
 * stability: removed all implicit method invocations (eg. init functions)
@@ -16,19 +16,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v0.3.0] - August 11, 2019
 
-### Added
+Added:
 
 * [SHOULDERS](SHOULDERS.md) file added to express my gratitude to all of the projects / people who helped setting this project together, in any way.
 * Inline documentation added
 * More strict args management for subcommands
 * Allow unlocking with a copy of plaintext master file
 
-### Changed
+Changed:
 
 * Change README, as v0.2.0 is already out and under testing.
 * magefile niceties: "build" target for native OS, ".exe" extension for windows target, more precise version info from git
 
-### Fixed
+Fixed:
 
 * Unlock silently selected the first matching GnuPG secret key if there were two matching items found.
 * Master key double save - regression from de751821a14ca4ea128332217823fa69dc121695
@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v0.2.0]: July 19, 2019
 
-### Changed
+Changed:
 
 * Typo fix in README.md
 * `redact status` honors --repo option (to be even more quiet than --quiet)
@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 Initial release
 
-### Added
+Added:
 
 * "redact" CLI tool compiled to 64bit OSes (Linux, Windows, MacOS)
 * AES256-GCM96 file encryption with nonce computed with HMAC SHA-256
