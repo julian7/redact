@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+### Fixed
+
+* stability: removed the majority of global variables (except non-changing ones)
+* stability: removed all implicit method invocations (eg. init functions)
+* stability: fulfil lint requirements (except master key's sha1 hash chunk representation, as it's not security-related)
+* scope: reduced runtime scope (eg. logging, environment detection) to runtime
 
 ## [v0.3.0] - August 11, 2019
 
