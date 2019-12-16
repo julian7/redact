@@ -85,13 +85,13 @@ func (rt *Runtime) RegisterFlags(group string, l *pflag.FlagSet) (err error) {
 
 func (rt *Runtime) RetrieveMasterKey(cmd *cobra.Command, args []string) error {
 	var err error
-	rt.MasterKey, err = sdk.RedactRepo(rt.Logger)
 
+	rt.MasterKey, err = files.NewMasterKey(rt.Logger)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return sdk.RedactRepo(rt.MasterKey)
 }
 
 func (rt *Runtime) SaveGitSettings() error {
