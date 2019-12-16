@@ -1,0 +1,34 @@
+project_name: redact
+release:
+  github:
+    owner: julian7
+    name: redact
+before:
+  hooks:
+    - go mod tidy
+builds:
+- env:
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+  main: ./cmd/redact
+  ldflags:
+  - -s -w -X main.version={{.Version}}
+  goos:
+  - darwin
+  - linux
+  - windows
+  goarch:
+  - amd64
+  hooks:
+    post: ./upx.sh
+archives:
+- name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}-{{.Version}}"
+  replacements:
+    darwin: macos
+  format: binary
+  files:
+  - none*
+checksum:
+  name_template: 'SHA256SUMS.{{.ProjectName}}-{{.Version}}'
+snapshot:
+  name_template: "{{ .Tag }}-{{ .ShortCommit }}"
