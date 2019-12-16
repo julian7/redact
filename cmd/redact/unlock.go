@@ -89,9 +89,15 @@ func loadKeyFromFile(masterkey *files.MasterKey, keyfile string) error {
 }
 
 func (rt *Runtime) loadKeyFromGPG(masterkey *files.MasterKey, keyname string) error {
-	keys, err := gpgutil.GetSecretKeys(keyname)
+	keys, warns, err := gpgutil.GetSecretKeys(keyname)
 	if err != nil {
 		return err
+	}
+
+	if len(warns) > 0 {
+		for _, item := range warns {
+			rt.Logger.Warn(item)
+		}
 	}
 
 	availableKeys := make([]int, 0, len(keys))

@@ -1,6 +1,6 @@
 module github.com/julian7/redact
 
-go 1.12
+go 1.13
 
 require (
 	github.com/julian7/tester v0.0.0-20190708141839-fd2332449f51

@@ -10,21 +10,8 @@ import (
 	"strings"
 )
 
-// FileEntry contains a single file entry in a git repository
-type FileEntry struct {
-	Filter string
-	Mode   int64
-	Name   string
-	Status byte
-	SHA1   [20]byte
-	Stage  int64
-}
-
-// FileEntries is a list of all files
-type FileEntries []*FileEntry
-
 // LsFiles returns files in the repository, possibly filtered by names
-func LsFiles(files []string) (FileEntries, error) { //nolint:funlen
+func LsFiles(files []string) (*FileEntries, error) {
 	args := []string{
 		"ls-files",
 		"--cached",
@@ -47,7 +34,7 @@ func LsFiles(files []string) (FileEntries, error) { //nolint:funlen
 
 	reader := bytes.NewBuffer(out)
 
-	var allEntries []*FileEntry
+	var allEntries *FileEntries
 
 	for {
 		entry, err := reader.ReadString(0)
@@ -60,42 +47,13 @@ func LsFiles(files []string) (FileEntries, error) { //nolint:funlen
 		}
 
 		entry = strings.TrimRight(entry, "\000")
-		fileEntry := &FileEntry{Status: entry[0]}
 
-		if fileEntry.Status == StatusOther {
-			// unknown files: "? <SPACE> <file name>"
-			fileEntry.Name = entry[2:]
-		} else {
-			// known files: "<metadata <TAB> <file name>"
-			contents := strings.Split(entry, "\t")
-			if len(contents) != 2 {
-				return nil, fmt.Errorf("invalid output from git command: %v", entry)
-			}
-			fileEntry.Name = contents[1]
-
-			// metadata: "<status> <SPACE> <file mode> <SPACE> <sha1> <SPACE> <stage>"
-			meta := strings.Split(contents[0], " ")
-
-			mode, err := strconv.ParseInt(meta[1], 8, 64)
-			if err != nil {
-				return nil, fmt.Errorf(`parsing mode for file entry "%s": %w`, entry, err)
-			}
-			fileEntry.Mode = mode
-
-			sha1, err := hex.DecodeString(meta[2])
-			if err != nil {
-				return nil, fmt.Errorf(`parsing SHA1 entry for file entry "%s": %w`, entry, err)
-			}
-			copy(fileEntry.SHA1[:], sha1)
-
-			stage, err := strconv.ParseInt(meta[3], 10, 64)
-			if err != nil {
-				return nil, fmt.Errorf(`parsing stage for file entry "%s": %w`, entry, err)
-			}
-			fileEntry.Stage = stage
+		fileEntry, err := parseEntry(entry)
+		if err != nil {
+			return nil, err
 		}
 
-		allEntries = append(allEntries, fileEntry)
+		allEntries.AddFile(fileEntry)
 	}
 
 	_ = out
@@ -103,14 +61,41 @@ func LsFiles(files []string) (FileEntries, error) { //nolint:funlen
 	return allEntries, nil
 }
 
-func (entry FileEntry) String() string {
-	return fmt.Sprintf(
-		"%c %o (%x) stage %d %s [%s]",
-		entry.Status,
-		entry.Mode,
-		entry.SHA1[0:4],
-		entry.Stage,
-		entry.Name,
-		entry.Filter,
-	)
+func parseEntry(entry string) (*FileEntry, error) {
+	fileEntry := &FileEntry{Status: entry[0]}
+
+	if fileEntry.Status == StatusOther {
+		// unknown files: "? <SPACE> <file name>"
+		fileEntry.Name = entry[2:]
+	} else {
+		// known files: "<metadata <TAB> <file name>"
+		contents := strings.Split(entry, "\t")
+		if len(contents) != 2 {
+			return nil, fmt.Errorf("invalid output from git command: %v", entry)
+		}
+		fileEntry.Name = contents[1]
+
+		// metadata: "<status> <SPACE> <file mode> <SPACE> <sha1> <SPACE> <stage>"
+		meta := strings.Split(contents[0], " ")
+
+		mode, err := strconv.ParseInt(meta[1], 8, 64)
+		if err != nil {
+			return nil, fmt.Errorf(`parsing mode for file entry "%s": %w`, entry, err)
+		}
+		fileEntry.Mode = mode
+
+		sha1, err := hex.DecodeString(meta[2])
+		if err != nil {
+			return nil, fmt.Errorf(`parsing SHA1 entry for file entry "%s": %w`, entry, err)
+		}
+		copy(fileEntry.SHA1[:], sha1)
+
+		stage, err := strconv.ParseInt(meta[3], 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf(`parsing stage for file entry "%s": %w`, entry, err)
+		}
+		fileEntry.Stage = stage
+	}
+
+	return fileEntry, nil
 }

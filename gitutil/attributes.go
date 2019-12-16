@@ -3,17 +3,16 @@ package gitutil
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os/exec"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
 // CheckAttrs fills in filter attributes for file entries
-func (e FileEntries) CheckAttrs(l *logrus.Logger) error {
+func (e *FileEntries) CheckAttrs() error {
 	cmd := exec.Command(
 		"git",
 		"check-attr",
@@ -43,31 +42,34 @@ func (e FileEntries) CheckAttrs(l *logrus.Logger) error {
 
 	go e.feedWithFileNames(feeder)
 
-	go logErrors(errorstream, l)
+	go e.logErrors(errorstream)
 
-	err = e.readCheckAttrs(receiver, l)
+	err = e.readCheckAttrs(receiver)
 	if err != nil {
-		l.Errorf("git command output error: %v", err)
+		e.AddError("git command output", err)
 	}
 
 	return cmd.Wait()
 }
 
-func (e FileEntries) feedWithFileNames(writer io.WriteCloser) {
-	for _, entry := range e {
-		writer.Write([]byte(entry.Name + "\n")) // nolint:errcheck
+func (e *FileEntries) feedWithFileNames(writer io.WriteCloser) {
+	for _, entry := range e.Items {
+		_, err := writer.Write([]byte(entry.Name + "\n"))
+		if err != nil {
+			e.AddError(entry.Name, err)
+		}
 	}
 
 	writer.Close()
 }
 
-func (e FileEntries) readCheckAttrs(reader io.ReadCloser, l *logrus.Logger) error {
+func (e FileEntries) readCheckAttrs(reader io.ReadCloser) error {
 	var err error
 
 	defer reader.Close()
 
 	idx := make(map[string]*FileEntry)
-	for _, entry := range e {
+	for _, entry := range e.Items {
 		idx[entry.Name] = entry
 	}
 
@@ -100,8 +102,7 @@ func (e FileEntries) readCheckAttrs(reader io.ReadCloser, l *logrus.Logger) erro
 
 		item, ok := idx[items[0]]
 		if !ok {
-			l.Infof("item not found in file list: %s", items[0])
-			continue
+			e.AddError(items[0], errors.New("not found"))
 		}
 
 		item.Filter = items[1]
@@ -110,7 +111,7 @@ func (e FileEntries) readCheckAttrs(reader io.ReadCloser, l *logrus.Logger) erro
 	return err
 }
 
-func logErrors(input io.ReadCloser, l *logrus.Logger) {
+func (e *FileEntries) logErrors(input io.ReadCloser) {
 	defer input.Close()
 	inbuf := bufio.NewReader(input)
 
@@ -121,11 +122,11 @@ func logErrors(input io.ReadCloser, l *logrus.Logger) {
 				return
 			}
 
-			l.Errorf("error reading line from error: %v", err)
+			e.AddError(string(line), err)
 
 			return
 		}
 
-		l.Errorf("git command error: %s", line)
+		e.AddError(string(line), err)
 	}
 }

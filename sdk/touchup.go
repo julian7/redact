@@ -17,16 +17,22 @@ func TouchUp(masterkey *files.MasterKey, softErrHandler func(string, error)) err
 		return fmt.Errorf("list git files: %w", err)
 	}
 
-	err = files.CheckAttrs(masterkey.Logger)
+	err = files.CheckAttrs()
 	if err != nil {
 		return fmt.Errorf("check git files' attributes: %w", err)
 	}
 
-	affectedFiles := make([]string, 0, len(files))
+	affectedFiles := make([]string, 0, len(files.Items))
 
-	for _, entry := range files {
+	for _, entry := range files.Items {
 		if entry.Filter == AttrName && entry.Status != gitutil.StatusOther {
 			affectedFiles = append(affectedFiles, entry.Name)
+		}
+	}
+
+	if softErrHandler != nil {
+		for _, err := range files.Errors {
+			softErrHandler(err.Name, err.Orig)
 		}
 	}
 
@@ -52,7 +58,16 @@ func TouchUpFiles(masterkey *files.MasterKey, files []string, softErrHandler fun
 	}
 
 	if len(touched) > 0 {
-		return gitutil.Checkout(touched)
+		issues, err := gitutil.Checkout(touched)
+		if len(issues) > 0 && softErrHandler != nil {
+			for _, issue := range issues {
+				softErrHandler(issue.Name, issue.Orig)
+			}
+		}
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

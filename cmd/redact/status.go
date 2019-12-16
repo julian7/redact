@@ -80,11 +80,15 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error { //nolint:
 		return err
 	}
 
-	if err := files.CheckAttrs(rt.MasterKey.Logger); err != nil {
+	if err := files.CheckAttrs(); err != nil {
 		return err
 	}
 
-	for _, entry := range files {
+	for _, entry := range files.Errors {
+		rt.Logger.Warn(entry.Error())
+	}
+
+	for _, entry := range files.Items {
 		if entry.Filter == sdk.AttrName && entry.Status != gitutil.StatusOther {
 			if opts.encOnly || !opts.plainOnly {
 				opts.handleFileEntry(entry, true)

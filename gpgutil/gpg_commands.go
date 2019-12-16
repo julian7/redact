@@ -8,8 +8,7 @@ import (
 	"io"
 	"os/exec"
 	"strings"
-
-	"github.com/julian7/redact/log"
+	"sync"
 )
 
 // ExportKey exports GPG key in ASCII armor
@@ -25,7 +24,7 @@ func ExportKey(keyIDs []string) ([]byte, error) {
 }
 
 // GetSecretKeys retrieves secret keys from GnuPG
-func GetSecretKeys(filter string) ([][20]byte, error) {
+func GetSecretKeys(filter string) ([][20]byte, []string, error) {
 	args := []string{
 		"--batch",
 		"--with-colons",
@@ -36,14 +35,13 @@ func GetSecretKeys(filter string) ([][20]byte, error) {
 		args = append(args, "--", filter)
 	}
 
-	l := log.Log()
-
 	out, err := exec.Command("gpg", args...).Output()
 	if err != nil {
-		return nil, fmt.Errorf("fetching gpg secret keys: %w", err)
+		return nil, nil, fmt.Errorf("fetching gpg secret keys: %w", err)
 	}
 
 	buf := bytes.NewBuffer(out)
+	warnings := []string{}
 
 	var keys [][20]byte
 
@@ -54,17 +52,17 @@ func GetSecretKeys(filter string) ([][20]byte, error) {
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("reading gpg secret key listing output: %w", err)
+			return nil, nil, fmt.Errorf("reading gpg secret key listing output: %w", err)
 		}
 
 		if strings.HasPrefix(line, "fpr:") {
 			items := strings.Split(line, ":")
 			if len(items) < 9 {
-				l.Warnf("invalid private key entry: %q", line)
+				warnings = append(warnings, fmt.Sprintf("invalid private key entry: %q", line))
 			} else {
 				fingerprint, err := hex.DecodeString(items[9])
 				if err != nil {
-					l.Warnf("invalid fingerprint: %s", items[9])
+					warnings = append(warnings, fmt.Sprintf("invalid fingerprint: %s", items[9]))
 				}
 				var key [20]byte
 				copy(key[:], fingerprint)
@@ -74,7 +72,7 @@ func GetSecretKeys(filter string) ([][20]byte, error) {
 		}
 	}
 
-	return keys, nil
+	return keys, warnings, nil
 }
 
 // DecryptWithKey decrypts a ciphertext, and stores into target path, using
@@ -101,20 +99,35 @@ func DecryptWithKey(ciphertext string, fingerprint [20]byte) (io.ReadCloser, err
 		return nil, err
 	}
 
+	var issue error
+
+	messages := []string{}
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
 	go func(reader io.ReadCloser) {
+		defer wg.Done()
 		bufreader := bufio.NewReader(reader)
-		l := log.Log()
 		for {
 			line, _, err := bufreader.ReadLine()
 			if err != nil {
+				issue = err
 				return
 			}
-			l.Warnf("decryption: %s", line)
+			messages = append(messages, string(line))
 		}
 	}(errStream)
 
-	if err := cmd.Start(); err != nil {
+	err = cmd.Start()
+
+	wg.Done()
+
+	if err != nil {
 		return nil, err
+	}
+
+	if issue != nil {
+		return nil, fmt.Errorf("%w: %s", issue, strings.Join(messages, ""))
 	}
 
 	return out, nil

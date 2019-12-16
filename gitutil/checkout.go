@@ -2,15 +2,15 @@ package gitutil
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
-
-	"github.com/julian7/redact/log"
+	"sync"
 )
 
 // Checkout checks out files provided
-func Checkout(files []string) error {
+func Checkout(files []string) ([]*NamedError, error) {
 	attrs := []string{
 		"checkout",
 		"--",
@@ -20,25 +20,33 @@ func Checkout(files []string) error {
 
 	errStream, err := cmd.StderrPipe()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	issues := []*NamedError{}
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
 	go func(reader io.ReadCloser) {
+		defer wg.Done()
+
 		bufreader := bufio.NewReader(reader)
-		l := log.Log()
+
 		for {
 			line, _, err := bufreader.ReadLine()
 			if err != nil {
 				return
 			}
-			l.Warnf("checkout: %s", line)
+			issues = append(issues, NewError(string(line), errors.New("git checkout")))
 		}
 	}(errStream)
 
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("checking out files: %w", err)
+		return nil, fmt.Errorf("checking out files: %w", err)
 	}
 
-	return nil
+	wg.Wait()
+
+	return issues, nil
 }
