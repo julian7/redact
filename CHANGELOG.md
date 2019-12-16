@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+No changes so far.
+
+## [v0.4.0] - December 16, 2019
+
 Fixed:
 
 * stability: removed the majority of global variables (except non-changing ones)
@@ -60,6 +64,7 @@ Added:
 * secret key distribution using OpenPGP keys
 
 [Unreleased]: https://github.com/julian7/redact
+[v0.4.0]: https://github.com/julian7/redact/releases/tag/v0.4.0
 [v0.3.0]: https://github.com/julian7/redact/releases/tag/v0.3.0
 [v0.2.0]: https://github.com/julian7/redact/releases/tag/v0.2.0
 [v0.1.0]: https://github.com/julian7/redact/releases/tag/v0.1.0
