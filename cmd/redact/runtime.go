@@ -30,6 +30,9 @@ func (rt *Runtime) AddCmdTo(cmd *cobra.Command, subcmds []cmdFactory) error {
 			return err
 		}
 
+		subcmd.SilenceErrors = true
+		subcmd.SilenceUsage = true
+
 		cmd.AddCommand(subcmd)
 	}
 

@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+Changed:
+
+* errors handled with less ceremony: they don't show up the error twice, and usage when execution fails.
+
+Fixed:
+
+* v0.4.0 showstopper regressions in unlock and status commands
+* key exchange directory's `.gitattributes` file check has not been rewritten upon modification
 
 ## [v0.4.0] - December 16, 2019
 
