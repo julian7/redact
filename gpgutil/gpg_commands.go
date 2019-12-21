@@ -120,7 +120,7 @@ func DecryptWithKey(ciphertext string, fingerprint [20]byte) (io.ReadCloser, err
 
 	err = cmd.Start()
 
-	wg.Done()
+	wg.Wait()
 
 	if err != nil {
 		return nil, err
