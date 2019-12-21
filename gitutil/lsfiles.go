@@ -33,8 +33,7 @@ func LsFiles(files []string) (*FileEntries, error) {
 	}
 
 	reader := bytes.NewBuffer(out)
-
-	var allEntries *FileEntries
+	allEntries := NewEntries()
 
 	for {
 		entry, err := reader.ReadString(0)

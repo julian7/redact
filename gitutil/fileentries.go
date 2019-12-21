@@ -11,6 +11,15 @@ type FileEntries struct {
 	Errors []*NamedError
 }
 
+// NewEntries returns an empty FileEntries
+func NewEntries() *FileEntries {
+	return &FileEntries{
+		RWMutex: &sync.RWMutex{},
+		Items:   []*FileEntry{},
+		Errors:  []*NamedError{},
+	}
+}
+
 // AddError adds an error into FileEntries in a multithread-safe way
 func (e *FileEntries) AddError(name string, err error) {
 	e.Lock()
