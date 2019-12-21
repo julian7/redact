@@ -134,7 +134,8 @@ func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
 			return fmt.Errorf("reading .gitattributes file in key exchange dir: %w", err)
 		}
 
-		if !bytes.Equal(data, []byte(kxGitAttributesContents)) {
+		if bytes.Equal(data, []byte(kxGitAttributesContents)) {
+			k.Cache[key] = kxdir
 			return nil
 		}
 
