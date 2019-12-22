@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+Added:
+
+* git filter-branch script to turn a git-crypt repo to redact repo
 
 ## [v0.4.2] - December 30, 2019
 
