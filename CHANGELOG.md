@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v0.4.1] - December 22, 2019
 
 Changed:
 
@@ -71,6 +71,7 @@ Added:
 * secret key distribution using OpenPGP keys
 
 [Unreleased]: https://github.com/julian7/redact
+[v0.4.1]: https://github.com/julian7/redact/releases/tag/v0.4.1
 [v0.4.0]: https://github.com/julian7/redact/releases/tag/v0.4.0
 [v0.3.0]: https://github.com/julian7/redact/releases/tag/v0.3.0
 [v0.2.0]: https://github.com/julian7/redact/releases/tag/v0.2.0
