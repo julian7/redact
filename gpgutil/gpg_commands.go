@@ -111,7 +111,9 @@ func DecryptWithKey(ciphertext string, fingerprint [20]byte) (io.ReadCloser, err
 		for {
 			line, _, err := bufreader.ReadLine()
 			if err != nil {
-				issue = err
+				if err != io.EOF {
+					issue = err
+				}
 				return
 			}
 			messages = append(messages, string(line))
