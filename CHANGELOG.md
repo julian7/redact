@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+* Fix unlock: unnecessary EOF while GPG command runs well
+* Fix unlock: null pointer dereference regression from v0.4.0
 
 ## [v0.4.1] - December 22, 2019
 
