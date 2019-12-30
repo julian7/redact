@@ -51,7 +51,7 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(args) == 1 {
-		err = loadKeyFromFile(rt.MasterKey, args[0])
+		err = rt.loadKeyFromFile(args[0])
 	} else {
 		err = rt.loadKeyFromGPG(rt.Viper.GetString("gpgkey"))
 	}
@@ -80,14 +80,14 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func loadKeyFromFile(masterkey *files.MasterKey, keyfile string) error {
-	f, err := masterkey.Fs.OpenFile(keyfile, os.O_RDONLY, 0600)
+func (rt *Runtime) loadKeyFromFile(keyfile string) error {
+	f, err := rt.MasterKey.Fs.OpenFile(keyfile, os.O_RDONLY, 0600)
 	if err != nil {
 		return fmt.Errorf("loading secret key from %s: %w", keyfile, err)
 	}
 	defer f.Close()
 
-	return sdk.LoadMasterKeyFromReader(masterkey, f)
+	return sdk.LoadMasterKeyFromReader(rt.MasterKey, f)
 }
 
 func (rt *Runtime) loadKeyFromGPG(keyname string) error {
