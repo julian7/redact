@@ -43,15 +43,17 @@ the repository where GnuPG (or the private key) is not available.`,
 }
 
 func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
-	masterkey, err := files.NewMasterKey(rt.Logger)
+	var err error
+
+	rt.MasterKey, err = files.NewMasterKey(rt.Logger)
 	if err != nil {
 		return fmt.Errorf("building master key: %w", err)
 	}
 
 	if len(args) == 1 {
-		err = loadKeyFromFile(masterkey, args[0])
+		err = loadKeyFromFile(rt.MasterKey, args[0])
 	} else {
-		err = rt.loadKeyFromGPG(masterkey, rt.Viper.GetString("gpgkey"))
+		err = rt.loadKeyFromGPG(rt.Viper.GetString("gpgkey"))
 	}
 
 	if err != nil {
@@ -88,7 +90,7 @@ func loadKeyFromFile(masterkey *files.MasterKey, keyfile string) error {
 	return sdk.LoadMasterKeyFromReader(masterkey, f)
 }
 
-func (rt *Runtime) loadKeyFromGPG(masterkey *files.MasterKey, keyname string) error {
+func (rt *Runtime) loadKeyFromGPG(keyname string) error {
 	keys, warns, err := gpgutil.GetSecretKeys(keyname)
 	if err != nil {
 		return err
@@ -103,7 +105,7 @@ func (rt *Runtime) loadKeyFromGPG(masterkey *files.MasterKey, keyname string) er
 	availableKeys := make([]int, 0, len(keys))
 
 	for idx, key := range keys {
-		stub, err := masterkey.GetExchangeFilenameStubFor(key)
+		stub, err := rt.MasterKey.GetExchangeFilenameStubFor(key)
 		if err != nil {
 			rt.Logger.Warnf("cannot get exchange filename for %x: %v", key, err)
 			continue
@@ -111,7 +113,7 @@ func (rt *Runtime) loadKeyFromGPG(masterkey *files.MasterKey, keyname string) er
 
 		masterFilename := files.ExchangeMasterKeyFile(stub)
 
-		st, err := masterkey.Stat(masterFilename)
+		st, err := rt.MasterKey.Stat(masterFilename)
 		if err != nil || st.IsDir() {
 			continue
 		}
@@ -123,7 +125,7 @@ func (rt *Runtime) loadKeyFromGPG(masterkey *files.MasterKey, keyname string) er
 		fmt.Println("Multiple keys found. Please specify one:")
 
 		for _, idx := range availableKeys {
-			pubKey, err := sdk.LoadPubkeysFromExchange(masterkey, keys[idx])
+			pubKey, err := sdk.LoadPubkeysFromExchange(rt.MasterKey, keys[idx])
 			if err != nil {
 				rt.Logger.Warnf("%v", err)
 				continue
@@ -141,5 +143,5 @@ func (rt *Runtime) loadKeyFromGPG(masterkey *files.MasterKey, keyname string) er
 		return errors.New("no appropriate key found for unlock")
 	}
 
-	return sdk.LoadMasterKeyFromExchange(masterkey, keys[availableKeys[0]])
+	return sdk.LoadMasterKeyFromExchange(rt.MasterKey, keys[availableKeys[0]])
 }
