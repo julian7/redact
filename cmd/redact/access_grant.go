@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cobra"
@@ -35,30 +34,8 @@ func (rt *Runtime) accessGrantCmd() (*cobra.Command, error) {
 func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error { //nolint:funlen
 	var keyEntries openpgp.EntityList
 
-	pgpFiles := rt.Viper.GetStringSlice("openpgp")
-	armorFiles := rt.Viper.GetStringSlice("opengpg-armor")
-
-	if len(pgpFiles) > 0 {
-		for _, pgpFile := range pgpFiles {
-			entries, err := gpgutil.LoadPubKeyFromFile(pgpFile, false)
-			if err != nil {
-				rt.Logger.Warnf("loading public key: %v", err)
-			}
-
-			keyEntries = append(keyEntries, entries...)
-		}
-	}
-
-	if len(armorFiles) > 0 {
-		for _, pgpFile := range armorFiles {
-			entries, err := gpgutil.LoadPubKeyFromFile(pgpFile, true)
-			if err != nil {
-				rt.Logger.Warnf("loading public key: %v", err)
-			}
-
-			keyEntries = append(keyEntries, entries...)
-		}
-	}
+	rt.loadKeys(rt.Viper.GetStringSlice("openpgp"), false, &keyEntries)
+	rt.loadKeys(rt.Viper.GetStringSlice("openpgp-armor"), true, &keyEntries)
 
 	if len(args) > 0 {
 		out, err := gpgutil.ExportKey(args)
@@ -83,7 +60,7 @@ func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error { //no
 	saved := 0
 
 	for _, key := range keyEntries {
-		if err := saveKey(rt.MasterKey, key); err != nil {
+		if err := rt.saveKey(key); err != nil {
 			rt.Logger.Warnf("cannot save key: %v", err)
 			continue
 		}
@@ -99,14 +76,30 @@ func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error { //no
 	return nil
 }
 
-func saveKey(masterkey *files.MasterKey, key *openpgp.Entity) error {
+func (rt *Runtime) loadKeys(pgpFiles []string, isArmor bool, keyEntries *openpgp.EntityList) {
+	if len(pgpFiles) == 0 {
+		return
+	}
+
+	for _, pgpFile := range pgpFiles {
+		entries, err := gpgutil.LoadPubKeyFromFile(pgpFile, isArmor)
+		if err != nil {
+			rt.Logger.Warnf("loading public key: %v", err)
+			continue
+		}
+
+		*keyEntries = append(*keyEntries, entries...)
+	}
+}
+
+func (rt *Runtime) saveKey(key *openpgp.Entity) error {
 	gpgutil.PrintKey(key)
 
-	if err := sdk.SaveMasterExchange(masterkey, key); err != nil {
+	if err := sdk.SaveMasterExchange(rt.MasterKey, key); err != nil {
 		return err
 	}
 
-	if err := sdk.SavePubkeyExchange(masterkey, key); err != nil {
+	if err := sdk.SavePubkeyExchange(rt.MasterKey, key); err != nil {
 		return err
 	}
 
