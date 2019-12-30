@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+No changes so far.
+
+## [v0.4.2] - December 30, 2019
+
 Changed:
 
 * more output goes to log
@@ -83,6 +87,7 @@ Added:
 * secret key distribution using OpenPGP keys
 
 [Unreleased]: https://github.com/julian7/redact
+[v0.4.2]: https://github.com/julian7/redact/releases/tag/v0.4.2
 [v0.4.1]: https://github.com/julian7/redact/releases/tag/v0.4.1
 [v0.4.0]: https://github.com/julian7/redact/releases/tag/v0.4.0
 [v0.3.0]: https://github.com/julian7/redact/releases/tag/v0.3.0
