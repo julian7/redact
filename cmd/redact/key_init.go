@@ -45,7 +45,7 @@ func (rt *Runtime) initDo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("generating master key: %w", err)
 	}
 
-	fmt.Printf("New repo key created: %v\n", masterkey)
+	rt.Logger.Infof("New repo key created: %v", masterkey)
 
 	if err := masterkey.Save(); err != nil {
 		return fmt.Errorf("saving master key: %w", err)

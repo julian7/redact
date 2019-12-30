@@ -44,7 +44,7 @@ func (rt *Runtime) lockDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("Repository locked.")
+	rt.Logger.Info("Repository locked.")
 
 	return nil
 }

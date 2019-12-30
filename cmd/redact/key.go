@@ -45,7 +45,7 @@ func (rt *Runtime) keyDo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("loading master key: %w", err)
 	}
 
-	fmt.Printf("repo key: %v\n", masterkey)
+	rt.Logger.Infof("repo key: %v", masterkey)
 
 	return nil
 }

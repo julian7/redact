@@ -24,6 +24,6 @@ func main() {
 	}
 
 	if err := cmd.Execute(); err != nil {
-		rt.Logger.Fatalln("Error:", err)
+		rt.Logger.Fatal("Error:", err)
 	}
 }

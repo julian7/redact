@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/julian7/redact/files"
 	"github.com/spf13/cobra"
 )
@@ -19,15 +17,10 @@ func (rt *Runtime) keyListCmd() (*cobra.Command, error) {
 }
 
 func (rt *Runtime) listDo(cmd *cobra.Command, args []string) error {
-	fmt.Printf("repo key: %v\n", rt.MasterKey)
-	err := files.EachKey(rt.MasterKey.Keys, func(idx uint32, key files.KeyHandler) error {
-		fmt.Printf(" - %s\n", key)
+	rt.Logger.Infof("repo key: %v", rt.MasterKey)
+
+	return files.EachKey(rt.MasterKey.Keys, func(idx uint32, key files.KeyHandler) error {
+		rt.Logger.Infof(" - %s", key)
 		return nil
 	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
