@@ -19,8 +19,6 @@ builds:
   - windows
   goarch:
   - amd64
-  hooks:
-    post: ./upx.sh
 archives:
 - name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}-{{.Version}}"
   replacements:

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Changed:
 
 * more output goes to log
+* dropped upx: it comes at a great cost when called repeatedly
 
 Fixed:
 
