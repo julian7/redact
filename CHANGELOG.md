@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+Fixed:
+
+* windows showstopper: permissions checking always failed. Removed check on windows platform.
+
+Added:
+
+* File permissions check: self-heal permissions if possible before reporting errors (windows: just self-heal, there are no checks ATM).
 
 ## [v0.4.2] - December 30, 2019
 

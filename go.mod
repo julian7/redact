@@ -3,6 +3,7 @@ module github.com/julian7/redact
 go 1.13
 
 require (
+	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 	github.com/julian7/tester v0.0.0-20190708141839-fd2332449f51
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/magefile/mage v1.8.0
