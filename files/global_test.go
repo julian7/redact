@@ -17,7 +17,7 @@ const (
 
 func genGitRepo() (*files.MasterKey, error) {
 	k := &files.MasterKey{
-		Fs: afero.NewMemMapFs(),
+		Fs:     afero.NewMemMapFs(),
 		Logger: logrus.New(),
 		RepoInfo: gitutil.GitRepoInfo{
 			Common:   ".git",

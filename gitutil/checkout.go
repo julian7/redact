@@ -37,6 +37,7 @@ func Checkout(files []string) ([]*NamedError, error) {
 			if err != nil {
 				return
 			}
+
 			issues = append(issues, NewError(string(line), errors.New("git checkout")))
 		}
 	}(errStream)
