@@ -44,7 +44,7 @@ func NewMasterKey(l *logrus.Logger) (*MasterKey, error) {
 	}
 
 	return &MasterKey{
-		Fs:     afero.NewOsFs(),
+		Fs:     NewOsFs(),
 		Logger: l,
 		KeyDir: buildKeyDir(masterkey.RepoInfo.Common),
 		Cache:  make(map[string]string),
@@ -129,12 +129,7 @@ func (k *MasterKey) Load() error {
 
 	keyfile := buildKeyFileName(k.KeyDir)
 
-	fs, err := k.Stat(keyfile)
-	if err != nil {
-		return err
-	}
-
-	if err = checkFileMode("key file", fs, 0600); err != nil {
+	if err = checkFileMode(k.Fs, "key file", keyfile, 0600); err != nil {
 		return err
 	}
 
@@ -195,8 +190,13 @@ func (k *MasterKey) Save() error {
 		return fmt.Errorf("closing temp file for key: %w", err)
 	}
 
-	if err = k.Rename(f.Name(), buildKeyFileName(k.KeyDir)); err != nil {
-		return fmt.Errorf("placing key file: %w", err)
+	keyFileName := buildKeyFileName(k.KeyDir)
+	if err = k.Rename(f.Name(), keyFileName); err != nil {
+		return fmt.Errorf("placing master key: %w", err)
+	}
+
+	if err := k.Fs.Chmod(keyFileName, 0600); err != nil {
+		return fmt.Errorf("setting permissions on master key: %w", err)
 	}
 
 	return nil
@@ -230,7 +230,10 @@ func (k *MasterKey) ensureKeys() {
 func (k *MasterKey) getOrCreateKeyDir() error {
 	fs, err := k.Stat(k.KeyDir)
 	if err != nil {
-		k.Mkdir(k.KeyDir, 0700) // nolint:errcheck
+		if err := k.Mkdir(k.KeyDir, 0700); err != nil {
+			return fmt.Errorf("creating keydir: %w", err)
+		}
+
 		fs, err = k.Stat(k.KeyDir)
 	}
 
@@ -255,7 +258,7 @@ func (k *MasterKey) checkKeyDir() error {
 		return errors.New("keydir is not a directory")
 	}
 
-	err = checkFileMode("key dir", fs, 0700)
+	err = checkFileMode(k.Fs, "key dir", k.KeyDir, 0700)
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,6 @@
 package files_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/julian7/redact/files"
@@ -18,8 +17,8 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 		{
 			"empty",
 			false,
-			"",
-			errors.New("writing .gitattributes file in key exchange dir: open /git/repo/.redact/.gitattributes: no such file or directory"), //nolint:lll
+			"/git/repo/.redact/6465616462656566646561646265656664656164",
+			nil,
 		},
 		{
 			"repo",

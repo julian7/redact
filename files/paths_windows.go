@@ -8,14 +8,14 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/hectane/go-acl"
+	"github.com/spf13/afero"
 )
 
-func checkFileMode(name string, fileinfo os.FileInfo, expected os.FileMode) error {
+func checkFileMode(fs afero.Fs, name, filename string, expected os.FileMode) error {
 	var syserr syscall.Errno
 
-	if err := acl.Chmod(name, expected); err != nil && (!errors.As(err, &syserr) || syserr != 0) {
-		return fmt.Errorf("setting permissions for %q: %T", name, syserr)
+	if err := fs.Chmod(filename, expected); err != nil && (!errors.As(err, &syserr) || syserr != 0) {
+		return fmt.Errorf("setting permissions for %s: %w", name, syserr)
 	}
 
 	return nil

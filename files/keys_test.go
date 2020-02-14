@@ -240,7 +240,7 @@ func TestLoad(t *testing.T) { //nolint:funlen
 			func(k *files.MasterKey) {
 				_ = k.Chmod("/git/repo/.git/test/key", 0777)
 			},
-			errors.New("excessive rights on key file"),
+			nil,
 		},
 		{
 			"restrictive rights",
@@ -248,7 +248,7 @@ func TestLoad(t *testing.T) { //nolint:funlen
 			func(k *files.MasterKey) {
 				_ = k.Chmod("/git/repo/.git/test/key", 0)
 			},
-			errors.New("insufficient rights on key file"),
+			nil,
 		},
 		{
 			"read error",
@@ -408,7 +408,7 @@ func TestSave(t *testing.T) { //nolint:funlen
 				_ = k.RemoveAll(k.KeyDir)
 				k.Fs = &noMkdir{Fs: k.Fs}
 			},
-			errors.New("keydir not available: open /git/repo/.git/test: file does not exist"),
+			errors.New("creating keydir: Mkdir returns error"),
 		},
 		{
 			"error writing key",

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+
+	"github.com/spf13/afero"
 )
 
 const (
@@ -128,7 +130,7 @@ func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
 		k.Logger.Warn("rewriting .gitattributes file in key exchange dir")
 	}
 
-	if err := ioutil.WriteFile(gaFileName, []byte(kxGitAttributesContents), 0644); err != nil {
+	if err := afero.WriteFile(k.Fs, gaFileName, []byte(kxGitAttributesContents), 0644); err != nil {
 		return fmt.Errorf("writing .gitattributes file in key exchange dir: %w", err)
 	}
 

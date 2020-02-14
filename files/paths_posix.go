@@ -5,15 +5,22 @@ package files
 import (
 	"fmt"
 	"os"
+
+	"github.com/spf13/afero"
 )
 
-func checkFileMode(name string, fileinfo os.FileInfo, expected os.FileMode) error {
-	if checkFileModeOnce(name, fileinfo, expected) != nil {
-		if err := os.Chmod(name, expected); err != nil {
-			return fmt.Errorf("enforcing file mode on %q: %w", name, err)
+func checkFileMode(fs afero.Fs, name, filename string, expected os.FileMode) error {
+	st, err := fs.Stat(filename)
+	if err != nil {
+		return err
+	}
+
+	if checkFileModeOnce(name, st, expected) != nil {
+		if err := fs.Chmod(filename, expected); err != nil {
+			return fmt.Errorf("enforcing file mode on %s: %w", name, err)
 		}
 
-		return checkFileModeOnce(name, fileinfo, expected)
+		return checkFileModeOnce(name, st, expected)
 	}
 
 	return nil
