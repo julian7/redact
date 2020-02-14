@@ -7,6 +7,7 @@ import (
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
 
@@ -17,6 +18,7 @@ const (
 func genGitRepo() (*files.MasterKey, error) {
 	k := &files.MasterKey{
 		Fs: afero.NewMemMapFs(),
+		Logger: logrus.New(),
 		RepoInfo: gitutil.GitRepoInfo{
 			Common:   ".git",
 			Toplevel: "/git/repo",
