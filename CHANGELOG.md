@@ -15,6 +15,10 @@ Added:
 
 * File permissions check: self-heal permissions if possible before reporting errors (windows: just self-heal, there are no checks ATM).
 
+Changed:
+
+* use goreleaser for full build and release
+
 ## [v0.4.2] - December 30, 2019
 
 Changed:
