@@ -53,15 +53,28 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		err = rt.loadKeyFromFile(args[0])
 	} else {
-		err = rt.loadKeyFromGPG(rt.Viper.GetString("gpgkey"))
+		var key string
+
+		key, err = rt.loadKeyFromGPG(rt.Viper.GetString("gpgkey"))
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			if key != "" {
+				fmt.Printf("Hint: try to unlock by hand:\n\n")
+				fmt.Println("  mkdir .git/redact")
+				fmt.Printf(
+					"  gpg -o .git/redact/key -u %s -d .redact/%s.key\n",
+					key,
+					key,
+				)
+				fmt.Println("  redact status -f")
+			}
+		}
 	}
 
 	if err != nil {
-		if err != io.EOF {
-			return err
-		}
-
-		return nil
+		return err
 	}
 
 	if err := rt.SaveGitSettings(); err != nil {
@@ -90,10 +103,10 @@ func (rt *Runtime) loadKeyFromFile(keyfile string) error {
 	return sdk.LoadMasterKeyFromReader(rt.MasterKey, f)
 }
 
-func (rt *Runtime) loadKeyFromGPG(keyname string) error {
+func (rt *Runtime) selectKey(keyname string) (*[20]byte, error) {
 	keys, warns, err := gpgutil.GetSecretKeys(keyname)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(warns) > 0 {
@@ -136,12 +149,21 @@ func (rt *Runtime) loadKeyFromGPG(keyname string) error {
 			}
 		}
 
-		return io.EOF
+		return nil, io.EOF
 	}
 
 	if len(availableKeys) < 1 {
-		return errors.New("no appropriate key found for unlock")
+		return nil, errors.New("no appropriate key found for unlock")
 	}
 
-	return sdk.LoadMasterKeyFromExchange(rt.MasterKey, keys[availableKeys[0]])
+	return &keys[availableKeys[0]], nil
+}
+
+func (rt *Runtime) loadKeyFromGPG(gpgkey string) (string, error) {
+	key, err := rt.selectKey(gpgkey)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", *key), sdk.LoadMasterKeyFromExchange(rt.MasterKey, *key)
 }

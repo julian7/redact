@@ -6,9 +6,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os/exec"
 	"strings"
-	"sync"
 )
 
 // ExportKey exports GPG key in ASCII armor
@@ -78,6 +78,8 @@ func GetSecretKeys(filter string) ([][20]byte, []string, error) {
 // DecryptWithKey decrypts a ciphertext, and stores into target path, using
 // the provided fingerprint.
 func DecryptWithKey(ciphertext string, fingerprint [20]byte) (io.ReadCloser, error) {
+	var stdout, stderr bytes.Buffer
+
 	args := []string{
 		"--quiet",
 		"--pinentry-mode",
@@ -88,53 +90,30 @@ func DecryptWithKey(ciphertext string, fingerprint [20]byte) (io.ReadCloser, err
 		ciphertext,
 	}
 	cmd := exec.Command("gpg", args...)
-
-	out, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-
-	errStream, err := cmd.StderrPipe()
-	if err != nil {
-		return nil, err
-	}
-
-	var issue error
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
 	messages := []string{}
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
-	go func(reader io.ReadCloser) {
-		defer wg.Done()
+	err := cmd.Run()
+	bufreader := bufio.NewReader(&stderr)
 
-		bufreader := bufio.NewReader(reader)
-
-		for {
-			line, _, err := bufreader.ReadLine()
-			if err != nil {
-				if err != io.EOF {
-					issue = err
-				}
-
-				return
-			}
-
-			messages = append(messages, string(line))
+	for {
+		line, _, err := bufreader.ReadLine()
+		if err != nil {
+			break
 		}
-	}(errStream)
 
-	err = cmd.Start()
-
-	wg.Wait()
+		messages = append(messages, string(line))
+	}
 
 	if err != nil {
-		return nil, err
+		if len(messages) > 0 {
+			return nil, fmt.Errorf("%s", strings.Join(messages, ""))
+		}
+
+		return nil, fmt.Errorf("%w: (no error message)", err)
 	}
 
-	if issue != nil {
-		return nil, fmt.Errorf("%w: %s", issue, strings.Join(messages, ""))
-	}
-
-	return out, nil
+	return ioutil.NopCloser(bufio.NewReader(&stdout)), nil
 }

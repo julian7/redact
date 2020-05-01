@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+Fixed:
+
+* unlock: convey gpg error messages to users
+
+Added:
+
+* unlock: hint manual decrypting of gitlab keys on failure
 
 ## [v0.4.3] - February 16, 2020
 
