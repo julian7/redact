@@ -9,11 +9,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
+	"github.com/julian7/redact/logger"
 	"github.com/julian7/tester"
 	"github.com/julian7/tester/ioprobe"
 )
@@ -21,7 +21,7 @@ import (
 func TestNewMasterKey(t *testing.T) {
 	oldgitdir := files.GitDirFunc
 	files.GitDirFunc = func(info *gitutil.GitRepoInfo) error { return errors.New("no git dir") }
-	_, err := files.NewMasterKey(&logrus.Logger{})
+	_, err := files.NewMasterKey(logger.New())
 	files.GitDirFunc = oldgitdir
 
 	if err == nil || err.Error() != "not a git repository" {
@@ -34,7 +34,7 @@ func TestNewMasterKey(t *testing.T) {
 
 		return nil
 	}
-	k, err := files.NewMasterKey(&logrus.Logger{})
+	k, err := files.NewMasterKey(logger.New())
 	files.GitDirFunc = oldgitdir
 
 	if err != nil {

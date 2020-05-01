@@ -15,6 +15,10 @@ Added:
 
 * unlock: hint manual decrypting of gitlab keys on failure
 
+Changed:
+
+* Removed dependency to github.com/sirupsen/logrus, there's no need for a heavyweight logger.
+
 ## [v0.4.3] - February 16, 2020
 
 Fixed:

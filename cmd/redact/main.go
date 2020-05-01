@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sirupsen/logrus"
+	"github.com/julian7/redact/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 func main() {
 	rt := &Runtime{
-		Logger: logrus.New(),
+		Logger: logger.New(),
 		Viper:  viper.New(),
 	}
 

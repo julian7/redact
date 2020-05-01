@@ -10,7 +10,7 @@ import (
 
 	keyV0 "github.com/julian7/redact/files/key_v0"
 	"github.com/julian7/redact/gitutil"
-	"github.com/sirupsen/logrus"
+	"github.com/julian7/redact/logger"
 	"github.com/spf13/afero"
 )
 
@@ -26,7 +26,7 @@ var GitDirFunc = gitutil.GitDir
 // MasterKey contains master key in a git repository
 type MasterKey struct {
 	afero.Fs
-	*logrus.Logger
+	*logger.Logger
 	RepoInfo  gitutil.GitRepoInfo
 	KeyDir    string
 	Keys      map[uint32]KeyHandler
@@ -35,7 +35,7 @@ type MasterKey struct {
 }
 
 // NewMasterKey generates a new repo key in the OS' filesystem
-func NewMasterKey(l *logrus.Logger) (*MasterKey, error) {
+func NewMasterKey(l *logger.Logger) (*MasterKey, error) {
 	var masterkey MasterKey
 
 	err := GitDirFunc(&masterkey.RepoInfo)
