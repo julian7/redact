@@ -3,7 +3,9 @@ package gitutil
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -28,6 +30,8 @@ const (
 type GitRepoInfo struct {
 	// Common contains internal git dir inside a workspace
 	Common string
+	// LegacyCommon contains --git-dir, which is most likely a good common dir name
+	LegacyCommon string
 	// TopLevel contains a full path of the top level directory of the git repo
 	Toplevel string
 }
@@ -38,6 +42,7 @@ func GitDir(info *GitRepoInfo) error {
 		"git",
 		"rev-parse",
 		"--show-toplevel",
+		"--git-dir",
 		"--git-common-dir",
 	).Output()
 	if err != nil {
@@ -45,12 +50,39 @@ func GitDir(info *GitRepoInfo) error {
 	}
 
 	data := strings.Split(string(out), "\n")
-	if len(data) != 3 {
+	if len(data) != 4 {
 		return errors.New("error parsing git rev-parse")
 	}
 
 	info.Toplevel = data[0]
-	info.Common = data[1]
+	info.LegacyCommon = data[1]
+	info.Common = data[2]
+
+	if info.Common == "--git-common-dir" {
+		return info.FixCommon()
+	}
+
+	return nil
+}
+
+// FixCommon fixes common dir setting if legacy git CLI is in use
+func (i *GitRepoInfo) FixCommon() error {
+	if !filepath.IsAbs(i.LegacyCommon) {
+		i.Common = i.LegacyCommon
+		return nil
+	}
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	relPath, err := filepath.Rel(pwd, i.LegacyCommon)
+	if err != nil {
+		return fmt.Errorf("cannot find relative path for common dir detection: %w", err)
+	}
+
+	i.Common = relPath
 
 	return nil
 }

@@ -11,6 +11,7 @@ Fixed:
 
 * unlock: convey gpg error messages to users
 * key permission detection: do a new fs stat after permission fix attempt
+* git: GIT_DIR detection with old (1.8) git versions. It is still common on RHEL7-like environments.
 
 Added:
 
