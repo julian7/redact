@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+No changes so far.
+
+## [v0.4.4] - June 17, 2020
+
 Fixed:
 
 * unlock: convey gpg error messages to users
@@ -113,6 +117,7 @@ Added:
 * secret key distribution using OpenPGP keys
 
 [Unreleased]: https://github.com/julian7/redact
+[v0.4.4]: https://github.com/julian7/redact/releases/tag/v0.4.4
 [v0.4.3]: https://github.com/julian7/redact/releases/tag/v0.4.3
 [v0.4.2]: https://github.com/julian7/redact/releases/tag/v0.4.2
 [v0.4.1]: https://github.com/julian7/redact/releases/tag/v0.4.1
