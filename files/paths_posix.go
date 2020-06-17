@@ -20,6 +20,11 @@ func checkFileMode(fs afero.Fs, name, filename string, expected os.FileMode) err
 			return fmt.Errorf("enforcing file mode on %s: %w", name, err)
 		}
 
+		st, err := fs.Stat(filename)
+		if err != nil {
+			return err
+		}
+
 		return checkFileModeOnce(name, st, expected)
 	}
 

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Fixed:
 
 * unlock: convey gpg error messages to users
+* key permission detection: do a new fs stat after permission fix attempt
 
 Added:
 
