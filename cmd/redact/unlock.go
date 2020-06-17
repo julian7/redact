@@ -62,13 +62,13 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 			}
 			if key != "" {
 				fmt.Printf("Hint: try to unlock by hand:\n\n")
-				fmt.Println("  mkdir .git/redact")
 				fmt.Printf(
-					"  gpg -o .git/redact/key -u %s -d .redact/%s.key\n",
+					"  gpg -o key -u %s -d .redact/%s.key\n",
 					key,
 					key,
 				)
-				fmt.Println("  redact status -f")
+				fmt.Println("  redact unlock key")
+				fmt.Println("  rm key")
 			}
 		}
 	}
