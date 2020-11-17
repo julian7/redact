@@ -151,11 +151,16 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 
 		updated++
 
-		return fmt.Errorf(
-			"saving master key encrypted with key %s: %w",
-			fingerprintText,
-			SaveMasterExchange(masterkey, keys[0]),
-		)
+		err = SaveMasterExchange(masterkey, keys[0])
+		if err != nil {
+			return fmt.Errorf(
+				"saving master key encrypted with key %s: %w",
+				fingerprintText,
+				err,
+			)
+		}
+
+		return nil
 	})
 
 	if err != nil {
