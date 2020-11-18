@@ -12,17 +12,18 @@ import (
 
 func (rt *Runtime) accessListCmd() (*cobra.Command, error) {
 	cmd := &cobra.Command{
-		Use:     "list",
-		Args:    cobra.NoArgs,
-		Short:   "List collaborators to secrets in git repo",
-		PreRunE: rt.RetrieveMasterKey,
-		RunE:    rt.accessListDo,
+		Use:   "list",
+		Args:  cobra.NoArgs,
+		Short: "List collaborators to secrets in git repo",
+		RunE:  rt.accessListDo,
 	}
 
 	return cmd, nil
 }
 
 func (rt *Runtime) accessListDo(cmd *cobra.Command, args []string) error {
+	_ = rt.RetrieveMasterKey(cmd, args)
+
 	kxdir, err := rt.MasterKey.ExchangeDir()
 	if err != nil {
 		return err

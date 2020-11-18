@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+Fixed:
+
+* generate: threw empty error on success
+* list: unlocked repo is optional
 
 ## [v0.4.4] - June 17, 2020
 
