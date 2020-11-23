@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+No changes so far.
+
+## [v0.4.5] - November 23, 2020
+
 Fixed:
 
 * generate: threw empty error on success
@@ -120,6 +124,7 @@ Added:
 * secret key distribution using OpenPGP keys
 
 [Unreleased]: https://github.com/julian7/redact
+[v0.4.4]: https://github.com/julian7/redact/releases/tag/v0.4.5
 [v0.4.4]: https://github.com/julian7/redact/releases/tag/v0.4.4
 [v0.4.3]: https://github.com/julian7/redact/releases/tag/v0.4.3
 [v0.4.2]: https://github.com/julian7/redact/releases/tag/v0.4.2
