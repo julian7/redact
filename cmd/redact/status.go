@@ -103,8 +103,8 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error { //nolint:
 	var msgFix string
 
 	if opts.fixRepo {
-		err := sdk.TouchUpFiles(rt.MasterKey, opts.toFix, func(entry string, err error) {
-			rt.Logger.Warnf("%s: %v", entry, err)
+		err := sdk.TouchUpFiles(rt.MasterKey, opts.toFix, func(err error) {
+			rt.Logger.Warn(err.Error())
 		})
 
 		if err != nil {
@@ -122,8 +122,8 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error { //nolint:
 	var msgRekey string
 
 	if opts.rekeyFiles {
-		err := sdk.TouchUpFiles(rt.MasterKey, opts.toRekey, func(entry string, err error) {
-			rt.Logger.Warnf("%s: %v", entry, err)
+		err := sdk.TouchUpFiles(rt.MasterKey, opts.toRekey, func(err error) {
+			rt.Logger.Warn(err.Error())
 		})
 		if err != nil {
 			return err
