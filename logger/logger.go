@@ -48,7 +48,7 @@ type Base interface {
 // New returns new logger with default config
 func New() *Logger {
 	return &Logger{
-		Base:  log.New(os.Stdout, "", log.LstdFlags),
+		Base:  log.New(os.Stderr, "", log.LstdFlags),
 		level: InfoLevel,
 	}
 }

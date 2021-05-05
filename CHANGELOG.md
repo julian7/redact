@@ -11,6 +11,11 @@ Changed:
 
 * Licensing updated to be able to choose between Blue Oak Model License (original but not widely adopted) or MIT
 
+Fixed:
+
+* Debug messages infiltrated into encrypted files, which were not detected as
+  encrypted files anymore.
+
 ## [v0.4.5] - November 23, 2020
 
 Fixed:
