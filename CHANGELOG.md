@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+Changed:
+
+* Licensing updated to be able to choose between Blue Oak Model License (original but not widely adopted) or MIT
 
 ## [v0.4.5] - November 23, 2020
 

@@ -145,3 +145,9 @@ As always, play safe, and revoke all secrets if there is any chance it can cause
 ## Any issues?
 
 Open a ticket, perhaps a pull request. We support [GitHub Flow](https://guides.github.com/introduction/flow/). You might want to [fork](https://guides.github.com/activities/forking/) this project first.
+
+## Licensing
+
+SPDX-License-Identifier: BlueOak-1.0.0 OR MIT
+
+This software is licensed under two licenses of your choice: Blue Oak Public License 1.0, or MIT Public License.
