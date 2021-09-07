@@ -41,7 +41,7 @@ func (rt *Runtime) keyDo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("building master key: %w", err)
 	}
 
-	if err := masterkey.Load(); err != nil {
+	if err := masterkey.Load(rt.StrictPermissionChecks); err != nil {
 		return fmt.Errorf("loading master key: %w", err)
 	}
 

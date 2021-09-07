@@ -20,7 +20,8 @@ type Runtime struct {
 	*logger.Logger
 	*files.MasterKey
 	*viper.Viper
-	Config string
+	Config                 string
+	StrictPermissionChecks bool
 }
 
 func (rt *Runtime) AddCmdTo(cmd *cobra.Command, subcmds []cmdFactory) error {
@@ -94,7 +95,7 @@ func (rt *Runtime) RetrieveMasterKey(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return sdk.RedactRepo(rt.MasterKey)
+	return sdk.RedactRepo(rt.MasterKey, rt.StrictPermissionChecks)
 }
 
 func (rt *Runtime) SaveGitSettings() error {

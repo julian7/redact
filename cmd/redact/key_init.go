@@ -37,7 +37,7 @@ func (rt *Runtime) initDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := masterkey.Load(); err == nil {
+	if err := masterkey.Load(rt.StrictPermissionChecks); err == nil {
 		return fmt.Errorf("repo already has master key: %s", masterkey)
 	}
 

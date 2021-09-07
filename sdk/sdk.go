@@ -20,8 +20,10 @@ const (
 // - detecting top level directory: ...: if git rev-parse command returns with failure
 // - repository is not using redact: when there're no key exchange dir in the repo
 // - repository is locked: when there is an exchange dir
-func RedactRepo(masterkey *files.MasterKey) error {
-	if err := masterkey.Load(); err != nil {
+//
+// Checks key file permissions optionally.
+func RedactRepo(masterkey *files.MasterKey, strict bool) error {
+	if err := masterkey.Load(strict); err != nil {
 		if _, err2 := masterkey.ExchangeDir(); err2 != nil {
 			return errors.New("repository is not using redact")
 		}

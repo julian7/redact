@@ -40,6 +40,12 @@ The subsequent "git add" command will encrypt files matching this pattern.`,
 	flags.StringVar(&rt.Config, "config", "", "config file (default: ~/"+configName+".yaml)")
 	flags.StringP("verbosity", "v", "info", "Verbosity (possible values: debug, info, warn, error, fatal)")
 	flags.String("logfile", "", "log file (empty for standard out)")
+	flags.BoolVar(
+		&rt.StrictPermissionChecks,
+		"strict-permissions",
+		true,
+		"enforce file permission checks; use with caution!",
+	)
 
 	if err := rt.RegisterFlags("", flags); err != nil {
 		return nil, err

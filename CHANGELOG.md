@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Changed:
 
 * Licensing updated to be able to choose between Blue Oak Model License (original but not widely adopted) or MIT
+* Strict permission mode enforcement can be disabled. In certain situations, where POSIX and Windows permission setters are not available (like in WSL2 mounting from Windows), permission enforcement is not possible.
 
 Fixed:
 

@@ -120,16 +120,17 @@ func (k *MasterKey) Read(f io.Reader) error {
 	}
 }
 
-// Load loads existing key
-func (k *MasterKey) Load() error {
-	err := k.checkKeyDir()
+// Load loads existing key. Optionally it enforces strict file permissions.
+func (k *MasterKey) Load(strict bool) error {
+	err := k.checkKeyDir(strict)
 	if err != nil {
 		return err
 	}
 
 	keyfile := buildKeyFileName(k.KeyDir)
 
-	if err = checkFileMode(k.Fs, "key file", keyfile, 0600); err != nil {
+	err = checkFileMode(k.Fs, "key file", keyfile, 0600, strict)
+	if err != nil {
 		return err
 	}
 
@@ -248,7 +249,7 @@ func (k *MasterKey) getOrCreateKeyDir() error {
 	return nil
 }
 
-func (k *MasterKey) checkKeyDir() error {
+func (k *MasterKey) checkKeyDir(strict bool) error {
 	fs, err := k.Stat(k.KeyDir)
 	if err != nil {
 		return fmt.Errorf("keydir not available: %w", err)
@@ -258,7 +259,7 @@ func (k *MasterKey) checkKeyDir() error {
 		return errors.New("keydir is not a directory")
 	}
 
-	err = checkFileMode(k.Fs, "key dir", k.KeyDir, 0700)
+	err = checkFileMode(k.Fs, "key dir", k.KeyDir, 0700, strict)
 	if err != nil {
 		return err
 	}

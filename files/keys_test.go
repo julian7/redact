@@ -274,7 +274,7 @@ func TestLoad(t *testing.T) { //nolint:funlen
 				}
 			}
 			tc.fsMods(k)
-			err = k.Load()
+			err = k.Load(true)
 			if err2 := tester.AssertError(tc.expectedError, err); err2 != nil {
 				t.Error(err2)
 				return

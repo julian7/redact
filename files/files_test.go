@@ -108,7 +108,7 @@ func TestEncode(t *testing.T) { //nolint:funlen
 		return
 	}
 
-	if err := k.Load(); err != nil {
+	if err := k.Load(true); err != nil {
 		t.Error(err)
 		return
 	}
@@ -224,7 +224,7 @@ func TestDecode(t *testing.T) { //nolint:funlen
 		return
 	}
 
-	if err := k.Load(); err != nil {
+	if err := k.Load(true); err != nil {
 		t.Error(err)
 		return
 	}
@@ -354,7 +354,7 @@ func TestFileStatus(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			if err := k.Load(); err != nil {
+			if err := k.Load(true); err != nil {
 				t.Error(err)
 				return
 			}

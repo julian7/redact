@@ -1,4 +1,5 @@
-//+build windows
+//go:build windows
+// +build windows
 
 package files
 
@@ -11,10 +12,10 @@ import (
 	"github.com/spf13/afero"
 )
 
-func checkFileMode(fs afero.Fs, name, filename string, expected os.FileMode) error {
+func checkFileMode(fs afero.Fs, name, filename string, expected os.FileMode, strict bool) error {
 	var syserr syscall.Errno
 
-	if err := fs.Chmod(filename, expected); err != nil && (!errors.As(err, &syserr) || syserr != 0) {
+	if err := fs.Chmod(filename, expected); err != nil && strict && (!errors.As(err, &syserr) || syserr != 0) {
 		return fmt.Errorf("setting permissions for %s: %w", name, syserr)
 	}
 
