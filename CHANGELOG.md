@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+No changes so far.
+
+## [v0.5.0] - October 21, 2021
+
 Changed:
 
 * Licensing updated to be able to choose between Blue Oak Model License (original but not widely adopted) or MIT
@@ -133,6 +137,7 @@ Added:
 * secret key distribution using OpenPGP keys
 
 [Unreleased]: https://github.com/julian7/redact
+[v0.4.4]: https://github.com/julian7/redact/releases/tag/v0.5.0
 [v0.4.4]: https://github.com/julian7/redact/releases/tag/v0.4.5
 [v0.4.4]: https://github.com/julian7/redact/releases/tag/v0.4.4
 [v0.4.3]: https://github.com/julian7/redact/releases/tag/v0.4.3
