@@ -103,7 +103,7 @@ func (rt *Runtime) loadKeyFromFile(keyfile string) error {
 	return sdk.LoadMasterKeyFromReader(rt.MasterKey, f)
 }
 
-func (rt *Runtime) selectKey(keyname string) (*[20]byte, error) {
+func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 	keys, warns, err := gpgutil.GetSecretKeys(keyname)
 	if err != nil {
 		return nil, err

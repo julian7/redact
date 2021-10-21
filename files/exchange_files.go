@@ -19,7 +19,7 @@ const (
 //
 // - .asc: Public key ASCII armor file
 // - .key: Master key encryped with public key
-func (k *MasterKey) GetExchangeFilenameStubFor(fingerprint [20]byte) (string, error) {
+func (k *MasterKey) GetExchangeFilenameStubFor(fingerprint []byte) (string, error) {
 	kxdir := ExchangeDir(k.RepoInfo.Toplevel)
 	if err := k.ensureExchangeDir(kxdir); err != nil {
 		return "", err

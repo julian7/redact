@@ -24,7 +24,7 @@ func ExportKey(keyIDs []string) ([]byte, error) {
 }
 
 // GetSecretKeys retrieves secret keys from GnuPG
-func GetSecretKeys(filter string) ([][20]byte, []string, error) {
+func GetSecretKeys(filter string) ([][]byte, []string, error) {
 	args := []string{
 		"--batch",
 		"--with-colons",
@@ -43,7 +43,7 @@ func GetSecretKeys(filter string) ([][20]byte, []string, error) {
 	buf := bytes.NewBuffer(out)
 	warnings := []string{}
 
-	var keys [][20]byte
+	var keys [][]byte
 
 	for {
 		line, err := buf.ReadString('\n')
@@ -64,10 +64,8 @@ func GetSecretKeys(filter string) ([][20]byte, []string, error) {
 				if err != nil {
 					warnings = append(warnings, fmt.Sprintf("invalid fingerprint: %s", items[9]))
 				}
-				var key [20]byte
-				copy(key[:], fingerprint)
 
-				keys = append(keys, key)
+				keys = append(keys, fingerprint)
 			}
 		}
 	}
@@ -77,7 +75,7 @@ func GetSecretKeys(filter string) ([][20]byte, []string, error) {
 
 // DecryptWithKey decrypts a ciphertext, and stores into target path, using
 // the provided fingerprint.
-func DecryptWithKey(ciphertext string, fingerprint [20]byte) (io.ReadCloser, error) {
+func DecryptWithKey(ciphertext string, fingerprint []byte) (io.ReadCloser, error) {
 	var stdout, stderr bytes.Buffer
 
 	args := []string{

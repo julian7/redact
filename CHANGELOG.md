@@ -11,6 +11,7 @@ Changed:
 
 * Licensing updated to be able to choose between Blue Oak Model License (original but not widely adopted) or MIT
 * Strict permission mode enforcement can be disabled. In certain situations, where POSIX and Windows permission setters are not available (like in WSL2 mounting from Windows), permission enforcement is not possible.
+* Replaced deprecated golang.org/x/crypto/openpgp with supported github.com/ProtonMail/go-crypto/openpgp. This allows support for newer key formats like ED25519.
 
 Fixed:
 

@@ -30,8 +30,7 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 	for _, tc := range tt {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			var fingerprint [20]byte
-			copy(fingerprint[:], []byte("deadbeefdeadbeefdead"))
+			fingerprint := []byte("deadbeefdeadbeefdead")
 			mk, err := genGitRepo()
 			if err != nil {
 				t.Error(err)

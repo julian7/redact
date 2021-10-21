@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/openpgp"
 )
 
 func (rt *Runtime) accessGrantCmd() (*cobra.Command, error) {

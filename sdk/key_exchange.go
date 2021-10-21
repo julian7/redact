@@ -8,15 +8,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/spf13/afero"
-	"golang.org/x/crypto/openpgp"
 )
 
 // LoadMasterKeyFromExchange loads data from an encrypted master key into provided
 // object, and then saves it.
-func LoadMasterKeyFromExchange(masterkey *files.MasterKey, fingerprint [20]byte) error {
+func LoadMasterKeyFromExchange(masterkey *files.MasterKey, fingerprint []byte) error {
 	stub, err := masterkey.GetExchangeFilenameStubFor(fingerprint)
 	if err != nil {
 		return fmt.Errorf("finding key in exchange dir: %w", err)
@@ -75,7 +75,7 @@ func SaveMasterExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
 }
 
 // LoadPubkeysFromExchange loads a public key from key exchange
-func LoadPubkeysFromExchange(masterkey *files.MasterKey, fingerprint [20]byte) (openpgp.EntityList, error) {
+func LoadPubkeysFromExchange(masterkey *files.MasterKey, fingerprint []byte) (openpgp.EntityList, error) {
 	stub, err := masterkey.GetExchangeFilenameStubFor(fingerprint)
 	if err != nil {
 		return nil, fmt.Errorf("finding exchange public key: %w", err)
@@ -122,7 +122,6 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 	updated := 0
 
 	err = afero.Walk(masterkey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
-		var fingerprint [20]byte
 		if err != nil {
 			return nil
 		}
@@ -133,12 +132,10 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 
 		fingerprintText := strings.TrimRight(filepath.Base(path), files.ExtKeyArmor)
 
-		fingerprintData, err := hex.DecodeString(fingerprintText)
+		fingerprint, err := hex.DecodeString(fingerprintText)
 		if err != nil {
 			return nil
 		}
-
-		copy(fingerprint[:], fingerprintData)
 
 		keys, err := LoadPubkeysFromExchange(masterkey, fingerprint)
 		if err != nil {
