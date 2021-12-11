@@ -19,11 +19,11 @@ func main() {
 
 	cmd, err := rt.rootCmd()
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println("Error: ", err)
 		os.Exit(1)
 	}
 
 	if err := cmd.Execute(); err != nil {
-		rt.Logger.Fatal("Error:", err)
+		rt.Logger.Fatal(err.Error())
 	}
 }
