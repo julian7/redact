@@ -31,7 +31,7 @@ func (rt *Runtime) accessListDo(cmd *cobra.Command, args []string) error {
 
 	err = afero.Walk(rt.SecretKey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return nil
+			return nil // nolint:nilerr
 		}
 		if !strings.HasSuffix(path, files.ExtKeyArmor) {
 			return nil
