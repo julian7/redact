@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/julian7/redact/sdk"
@@ -36,6 +37,10 @@ func (rt *Runtime) generateDo(cmd *cobra.Command, args []string) error {
 
 	updatedKeys, err := sdk.UpdateMasterExchangeKeys(rt.MasterKey)
 	if err != nil {
+		var exchangedir *sdk.ErrExchangeDir
+		if errors.As(err, &exchangedir) {
+			return nil
+		}
 		rt.Logger.Warn(`unable to update master keys; restore original key with "redact unlock", and try again`)
 		return fmt.Errorf("updating key exchange master keys: %w", err)
 	}

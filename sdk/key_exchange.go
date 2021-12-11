@@ -14,6 +14,22 @@ import (
 	"github.com/spf13/afero"
 )
 
+type ErrExchangeDir struct {
+	err error
+}
+
+func (e *ErrExchangeDir) Error() string {
+	return e.err.Error()
+}
+
+func (e *ErrExchangeDir) Unwrap() error {
+	err, ok := e.err.(interface{ Unwrap() error })
+	if ok {
+		return err.Unwrap()
+	}
+	return nil
+}
+
 // LoadMasterKeyFromExchange loads data from an encrypted master key into provided
 // object, and then saves it.
 func LoadMasterKeyFromExchange(masterkey *files.MasterKey, fingerprint []byte) error {
@@ -116,7 +132,9 @@ func SavePubkeyExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
 func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 	kxdir, err := masterkey.ExchangeDir()
 	if err != nil {
-		return 0, fmt.Errorf("fetching key exchange dir: %w", err)
+		return 0, &ErrExchangeDir{
+			err: fmt.Errorf("fetching key exchange dir: %w", err),
+		}
 	}
 
 	updated := 0

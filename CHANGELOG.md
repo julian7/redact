@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+Fixed:
+
+* Don't throw error on `redact generate` if key exchange dir doesn't exist
 
 ## [v0.5.0] - October 21, 2021
 
