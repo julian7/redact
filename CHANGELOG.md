@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+Changed:
+
+* Breaking change: Unlocking with GPG key moved to `redact unlock gpg` command.
+* Breaking change: Unlocking with master key needs argument: `redact unlock --key <master key>`.
+
 Fixed:
 
 * Don't throw error on `redact generate` if key exchange dir doesn't exist
