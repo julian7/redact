@@ -71,17 +71,17 @@ func (rt *Runtime) Init() {
 }
 
 func (rt *Runtime) RegisterFlags(group string, l *pflag.FlagSet) (err error) {
+	nameconv := func(in string) string { return in }
+	if len(group) > 0 {
+		nameconv = func(in string) string { return fmt.Sprintf("%s.%s", group, in) }
+	}
+
 	l.VisitAll(func(flag *pflag.Flag) {
 		if err != nil {
 			return
 		}
 
-		name := flag.Name
-		if len(group) > 0 {
-			name = fmt.Sprintf("%s.%s", group, name)
-		}
-
-		err = rt.Viper.BindPFlag(name, flag)
+		err = rt.Viper.BindPFlag(nameconv(flag.Name), flag)
 	})
 
 	return err
