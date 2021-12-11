@@ -11,6 +11,7 @@ Fixed:
 
 * Don't throw error on `redact generate` if key exchange dir doesn't exist
 * `redact git clean` never received `--epoch`
+* Honor epoch number for clean filter: `git status` showed files encrypted with older keys as being different in cloned repos. Now `redact git clean` takes the original file name as a parameter, and it can read its epoch number from git blob database.
 
 ## [v0.5.0] - October 21, 2021
 

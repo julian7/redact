@@ -147,7 +147,10 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 
 	reader, err := gitutil.Cat(entry.SHA1[:])
 	if err == nil {
-		isEncrypted, encKeyVersion = opts.key.FileStatus(reader)
+		epoch, err := opts.key.FileStatus(reader)
+		if err == nil {
+			encKeyVersion = epoch
+		}
 		defer reader.Close()
 	}
 

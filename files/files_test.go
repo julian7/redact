@@ -9,6 +9,7 @@ import (
 	"testing/iotest"
 
 	"github.com/julian7/redact/encoder"
+	"github.com/julian7/redact/files"
 	"github.com/julian7/tester"
 	"github.com/julian7/tester/ioprobe"
 )
@@ -333,13 +334,13 @@ func TestDecode(t *testing.T) { //nolint:funlen
 func TestFileStatus(t *testing.T) {
 	testFN := "testfile.txt"
 	tt := []struct {
-		name      string
-		contents  string
-		encrypted bool
-		epoch     uint32
+		name     string
+		contents string
+		err      error
+		epoch    uint32
 	}{
-		{"plaintext", samplePlaintext, false, 0},
-		{"encrypted", sampleCiphertext, true, 1},
+		{"plaintext", samplePlaintext, files.ErrInvalidPreamble, 0},
+		{"encrypted", sampleCiphertext, nil, 1},
 	}
 
 	for _, tc := range tt {
@@ -367,10 +368,10 @@ func TestFileStatus(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			ok, epoch := k.FileStatus(reader)
+			epoch, err := k.FileStatus(reader)
 			reader.Close()
-			if ok != tc.encrypted {
-				t.Errorf("expected %s file", tc.name)
+			if err != tc.err {
+				t.Errorf("expected %v error; received: %v", tc.err, err)
 			}
 			if epoch != tc.epoch {
 				t.Errorf("expected epoch == %d; received: %d", tc.epoch, epoch)

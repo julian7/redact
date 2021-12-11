@@ -16,6 +16,8 @@ const (
 	FileMagic = "\000REDACTED\000"
 )
 
+var ErrInvalidPreamble = errors.New("invalid file preamble")
+
 type fileHeader struct {
 	Preamble [10]byte
 	Encoding uint32
@@ -98,15 +100,15 @@ func (k *MasterKey) Decode(reader io.Reader, writer io.Writer) error {
 }
 
 // FileStatus returns file encryption status and key used
-func (k *MasterKey) FileStatus(reader io.Reader) (bool, uint32) {
+func (k *MasterKey) FileStatus(reader io.Reader) (uint32, error) {
 	var header fileHeader
 
 	err := k.readHeader(reader, &header)
 	if err != nil {
-		return false, 0
+		return 0, err
 	}
 
-	return true, header.Epoch
+	return header.Epoch, nil
 }
 
 func (k *MasterKey) readHeader(reader io.Reader, header *fileHeader) error {
@@ -116,7 +118,7 @@ func (k *MasterKey) readHeader(reader io.Reader, header *fileHeader) error {
 	}
 
 	if !bytes.Equal(header.Preamble[:], []byte(FileMagic)) {
-		return errors.New("invalid file preamble")
+		return ErrInvalidPreamble
 	}
 
 	return nil

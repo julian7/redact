@@ -7,7 +7,7 @@ import (
 )
 
 var configItems = map[string]string{
-	"filter.%s.clean":  `"%s" git clean`,
+	"filter.%s.clean":  `"%s" git clean --file=%%f`,
 	"filter.%s.smudge": `"%s" git smudge`,
 	"diff.%s.textconv": `"%s" git diff`,
 }
