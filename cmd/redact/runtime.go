@@ -115,8 +115,6 @@ func (rt *Runtime) SaveGitSettings() error {
 }
 
 func (rt *Runtime) SetupLogging(cmd *cobra.Command, args []string) {
-	rt.setLogLevel(strings.ToLower(rt.Viper.GetString("verbosity")))
-
 	logFile := rt.Viper.GetString("logfile")
 	if logFile != "" {
 		writer, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
@@ -126,6 +124,8 @@ func (rt *Runtime) SetupLogging(cmd *cobra.Command, args []string) {
 			rt.Logger.SetOutput(writer)
 		}
 	}
+
+	rt.setLogLevel(strings.ToLower(rt.Viper.GetString("verbosity")))
 }
 
 func (rt *Runtime) setLogLevel(level string) {
