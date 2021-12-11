@@ -30,7 +30,7 @@ func Encrypt(reader io.Reader, writer io.Writer, receiver *openpgp.Entity) error
 	defer plain.Close()
 
 	if _, err = io.Copy(plain, reader); err != nil {
-		return fmt.Errorf("writing master key to encryption stream: %w", err)
+		return fmt.Errorf("writing secret key to encryption stream: %w", err)
 	}
 
 	return nil

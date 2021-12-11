@@ -8,8 +8,8 @@ import (
 const (
 	// ExtKeyArmor is public key ASCII armor file extension in Key Exchange folder
 	ExtKeyArmor = ".asc"
-	// ExtMaster is encrypted master key file extension in Key Exchange folder
-	ExtMaster = ".key"
+	// ExtSecret is encrypted secret key file extension in Key Exchange folder
+	ExtSecret = ".key"
 )
 
 // GetExchangeFilenameStubFor returns file name stub of the Key Exchange for an
@@ -18,8 +18,8 @@ const (
 // Add extensions for files:
 //
 // - .asc: Public key ASCII armor file
-// - .key: Master key encryped with public key
-func (k *MasterKey) GetExchangeFilenameStubFor(fingerprint []byte) (string, error) {
+// - .key: Secret key encryped with public key
+func (k *SecretKey) GetExchangeFilenameStubFor(fingerprint []byte) (string, error) {
 	kxdir := ExchangeDir(k.RepoInfo.Toplevel)
 	if err := k.ensureExchangeDir(kxdir); err != nil {
 		return "", err
@@ -33,7 +33,7 @@ func ExchangePubKeyFile(stub string) string {
 	return fmt.Sprintf("%s%s", stub, ExtKeyArmor)
 }
 
-// ExchangeMasterKeyFile returns full filename for Master key exchange
-func ExchangeMasterKeyFile(stub string) string {
-	return fmt.Sprintf("%s%s", stub, ExtMaster)
+// ExchangeSecretKeyFile returns full filename for Secret key exchange
+func ExchangeSecretKeyFile(stub string) string {
+	return fmt.Sprintf("%s%s", stub, ExtSecret)
 }

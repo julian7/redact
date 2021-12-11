@@ -65,8 +65,8 @@ func TestExchangePubKeyFile(t *testing.T) {
 	}
 }
 
-func TestExchangeMasterKeyFile(t *testing.T) {
-	if err := checkString("stub.key", files.ExchangeMasterKeyFile("stub")); err != nil {
+func TestExchangeSecretKeyFile(t *testing.T) {
+	if err := checkString("stub.key", files.ExchangeSecretKeyFile("stub")); err != nil {
 		t.Error(err)
 	}
 }

@@ -11,13 +11,13 @@ func (rt *Runtime) keyCmd() (*cobra.Command, error) {
 	cmd := &cobra.Command{
 		Use:   "key",
 		Short: "Key commands",
-		Long: `Master Key management
+		Long: `Secret Key management
 
-Key commands let you manage master key. The master key consists of multiple
+Key commands let you manage secret key. The secret key consists of multiple
 encryption keys, of which the last one is considered to be the active one.
 All the other keys are kept for archival purposes.
 
-A simple "redact key" will return the master key location, and its active
+A simple "redact key" will return the secret key location, and its active
 key's epoch and signature. For more detailed look, please see
 "redact key list".`,
 		RunE: rt.keyDo,
@@ -36,16 +36,16 @@ key's epoch and signature. For more detailed look, please see
 }
 
 func (rt *Runtime) keyDo(cmd *cobra.Command, args []string) error {
-	masterkey, err := files.NewMasterKey(rt.Logger)
+	secretkey, err := files.NewSecretKey(rt.Logger)
 	if err != nil {
-		return fmt.Errorf("building master key: %w", err)
+		return fmt.Errorf("building secret key: %w", err)
 	}
 
-	if err := masterkey.Load(rt.StrictPermissionChecks); err != nil {
-		return fmt.Errorf("loading master key: %w", err)
+	if err := secretkey.Load(rt.StrictPermissionChecks); err != nil {
+		return fmt.Errorf("loading secret key: %w", err)
 	}
 
-	rt.Logger.Infof("repo key: %v", masterkey)
+	rt.Logger.Infof("repo key: %v", secretkey)
 
 	return nil
 }

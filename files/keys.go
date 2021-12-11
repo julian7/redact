@@ -23,8 +23,8 @@ const (
 
 var GitDirFunc = gitutil.GitDir
 
-// MasterKey contains master key in a git repository
-type MasterKey struct {
+// SecretKey contains secret key in a git repository
+type SecretKey struct {
 	afero.Fs
 	*logger.Logger
 	RepoInfo  gitutil.GitRepoInfo
@@ -34,25 +34,25 @@ type MasterKey struct {
 	Cache     map[string]string
 }
 
-// NewMasterKey generates a new repo key in the OS' filesystem
-func NewMasterKey(l *logger.Logger) (*MasterKey, error) {
-	var masterkey MasterKey
+// NewSecretKey generates a new repo key in the OS' filesystem
+func NewSecretKey(l *logger.Logger) (*SecretKey, error) {
+	var secretkey SecretKey
 
-	err := GitDirFunc(&masterkey.RepoInfo)
+	err := GitDirFunc(&secretkey.RepoInfo)
 	if err != nil {
 		return nil, errors.New("not a git repository")
 	}
 
-	return &MasterKey{
+	return &SecretKey{
 		Fs:     NewOsFs(),
 		Logger: l,
-		KeyDir: buildKeyDir(masterkey.RepoInfo.Common),
+		KeyDir: buildKeyDir(secretkey.RepoInfo.Common),
 		Cache:  make(map[string]string),
 	}, nil
 }
 
-// Generate generates a new master key
-func (k *MasterKey) Generate() error {
+// Generate generates a new secret key
+func (k *SecretKey) Generate() error {
 	epoch := k.LatestKey
 	k.ensureKeys()
 	epoch++
@@ -62,13 +62,13 @@ func (k *MasterKey) Generate() error {
 	return k.Keys[epoch].Generate()
 }
 
-// KeyFile returns master key's file name
-func (k *MasterKey) KeyFile() string {
+// KeyFile returns secret key's file name
+func (k *SecretKey) KeyFile() string {
 	return buildKeyFileName(k.KeyDir)
 }
 
 // Read loads key from reader stream
-func (k *MasterKey) Read(f io.Reader) error {
+func (k *SecretKey) Read(f io.Reader) error {
 	readbuf := make([]byte, len(KeyMagic))
 
 	_, err := f.Read(readbuf)
@@ -121,7 +121,7 @@ func (k *MasterKey) Read(f io.Reader) error {
 }
 
 // Load loads existing key. Optionally it enforces strict file permissions.
-func (k *MasterKey) Load(strict bool) error {
+func (k *SecretKey) Load(strict bool) error {
 	err := k.checkKeyDir(strict)
 	if err != nil {
 		return err
@@ -144,8 +144,8 @@ func (k *MasterKey) Load(strict bool) error {
 	return k.Read(f)
 }
 
-// SaveTo saves master key into IO stream
-func (k *MasterKey) SaveTo(writer io.Writer) error {
+// SaveTo saves secret key into IO stream
+func (k *SecretKey) SaveTo(writer io.Writer) error {
 	if _, err := writer.Write([]byte(KeyMagic)); err != nil {
 		return fmt.Errorf("writing key preamble: %w", err)
 	}
@@ -172,7 +172,7 @@ func (k *MasterKey) SaveTo(writer io.Writer) error {
 }
 
 // Save saves key
-func (k *MasterKey) Save() error {
+func (k *SecretKey) Save() error {
 	err := k.getOrCreateKeyDir()
 	if err != nil {
 		return err
@@ -193,11 +193,11 @@ func (k *MasterKey) Save() error {
 
 	keyFileName := buildKeyFileName(k.KeyDir)
 	if err = k.Rename(f.Name(), keyFileName); err != nil {
-		return fmt.Errorf("placing master key: %w", err)
+		return fmt.Errorf("placing secret key: %w", err)
 	}
 
 	if err := k.Fs.Chmod(keyFileName, 0600); err != nil {
-		return fmt.Errorf("setting permissions on master key: %w", err)
+		return fmt.Errorf("setting permissions on secret key: %w", err)
 	}
 
 	return nil
@@ -205,7 +205,7 @@ func (k *MasterKey) Save() error {
 
 // Key returns the a key handler with a certain epoch. If epoch is 0,
 // it returns the latest key.
-func (k *MasterKey) Key(epoch uint32) (KeyHandler, error) {
+func (k *SecretKey) Key(epoch uint32) (KeyHandler, error) {
 	if k.Keys == nil || k.LatestKey == 0 {
 		return nil, errors.New("no keys loaded")
 	}
@@ -222,13 +222,13 @@ func (k *MasterKey) Key(epoch uint32) (KeyHandler, error) {
 	return key, nil
 }
 
-func (k *MasterKey) ensureKeys() {
+func (k *SecretKey) ensureKeys() {
 	if k.Keys == nil {
 		k.Keys = make(map[uint32]KeyHandler)
 	}
 }
 
-func (k *MasterKey) getOrCreateKeyDir() error {
+func (k *SecretKey) getOrCreateKeyDir() error {
 	fs, err := k.Stat(k.KeyDir)
 	if err != nil {
 		if err := k.Mkdir(k.KeyDir, 0700); err != nil {
@@ -249,7 +249,7 @@ func (k *MasterKey) getOrCreateKeyDir() error {
 	return nil
 }
 
-func (k *MasterKey) checkKeyDir(strict bool) error {
+func (k *SecretKey) checkKeyDir(strict bool) error {
 	fs, err := k.Stat(k.KeyDir)
 	if err != nil {
 		return fmt.Errorf("keydir not available: %w", err)
@@ -267,7 +267,7 @@ func (k *MasterKey) checkKeyDir(strict bool) error {
 	return nil
 }
 
-func (k *MasterKey) String() string {
+func (k *SecretKey) String() string {
 	var keymsg string
 
 	key, err := k.Key(0)

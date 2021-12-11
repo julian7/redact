@@ -41,9 +41,9 @@ this case, you have to provide the appropriate key with the --gpgkey option.`,
 func (rt *Runtime) unlockGpgDo(cmd *cobra.Command, args []string) error {
 	var err error
 
-	rt.MasterKey, err = files.NewMasterKey(rt.Logger)
+	rt.SecretKey, err = files.NewSecretKey(rt.Logger)
 	if err != nil {
-		return fmt.Errorf("building master key: %w", err)
+		return fmt.Errorf("building secret key: %w", err)
 	}
 
 	var key string
@@ -72,7 +72,7 @@ func (rt *Runtime) unlockGpgDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = sdk.TouchUp(rt.MasterKey, func(err error) {
+	err = sdk.TouchUp(rt.SecretKey, func(err error) {
 		rt.Logger.Warn(err.Error())
 	})
 	if err != nil {
@@ -85,13 +85,13 @@ func (rt *Runtime) unlockGpgDo(cmd *cobra.Command, args []string) error {
 }
 
 func (rt *Runtime) loadKeyFromFile(keyfile string) error {
-	f, err := rt.MasterKey.Fs.OpenFile(keyfile, os.O_RDONLY, 0600)
+	f, err := rt.SecretKey.Fs.OpenFile(keyfile, os.O_RDONLY, 0600)
 	if err != nil {
 		return fmt.Errorf("loading secret key from %s: %w", keyfile, err)
 	}
 	defer f.Close()
 
-	return sdk.LoadMasterKeyFromReader(rt.MasterKey, f)
+	return sdk.LoadSecretKeyFromReader(rt.SecretKey, f)
 }
 
 func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
@@ -109,15 +109,15 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 	availableKeys := make([]int, 0, len(keys))
 
 	for idx, key := range keys {
-		stub, err := rt.MasterKey.GetExchangeFilenameStubFor(key)
+		stub, err := rt.SecretKey.GetExchangeFilenameStubFor(key)
 		if err != nil {
 			rt.Logger.Warnf("cannot get exchange filename for %x: %v", key, err)
 			continue
 		}
 
-		masterFilename := files.ExchangeMasterKeyFile(stub)
+		secretKeyFilename := files.ExchangeSecretKeyFile(stub)
 
-		st, err := rt.MasterKey.Stat(masterFilename)
+		st, err := rt.SecretKey.Stat(secretKeyFilename)
 		if err != nil || st.IsDir() {
 			continue
 		}
@@ -129,7 +129,7 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 		fmt.Println("Multiple keys found. Please specify one:")
 
 		for _, idx := range availableKeys {
-			pubKey, err := sdk.LoadPubkeysFromExchange(rt.MasterKey, keys[idx])
+			pubKey, err := sdk.LoadPubkeysFromExchange(rt.SecretKey, keys[idx])
 			if err != nil {
 				rt.Logger.Warnf("%v", err)
 				continue
@@ -156,5 +156,5 @@ func (rt *Runtime) loadKeyFromGPG(gpgkey string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%x", *key), sdk.LoadMasterKeyFromExchange(rt.MasterKey, *key)
+	return fmt.Sprintf("%x", *key), sdk.LoadSecretKeyFromExchange(rt.SecretKey, *key)
 }

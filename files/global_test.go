@@ -15,8 +15,8 @@ const (
 	sampleCode = "0123456789abcdefghijklmnopqrstuv"
 )
 
-func genGitRepo() (*files.MasterKey, error) {
-	k := &files.MasterKey{
+func genGitRepo() (*files.SecretKey, error) {
+	k := &files.SecretKey{
 		Fs:     afero.NewMemMapFs(),
 		Logger: logger.New(),
 		RepoInfo: gitutil.GitRepoInfo{
@@ -35,7 +35,7 @@ func genGitRepo() (*files.MasterKey, error) {
 	return k, nil
 }
 
-func writeKey(k *files.MasterKey) error {
+func writeKey(k *files.SecretKey) error {
 	return writeFile(
 		k,
 		filepath.Join(k.KeyDir, "key"),
@@ -49,7 +49,7 @@ func writeKey(k *files.MasterKey) error {
 	)
 }
 
-func writeKX(k *files.MasterKey) error {
+func writeKX(k *files.SecretKey) error {
 	kxdir := filepath.Join(k.RepoInfo.Toplevel, ".redact")
 	if err := k.MkdirAll(kxdir, 0755); err != nil {
 		return fmt.Errorf("creating exchange dir: %w", err)
@@ -63,7 +63,7 @@ func writeKX(k *files.MasterKey) error {
 	)
 }
 
-func writeFile(k *files.MasterKey, fname string, perms os.FileMode, contents string) error {
+func writeFile(k *files.SecretKey, fname string, perms os.FileMode, contents string) error {
 	of, err := k.OpenFile(fname, os.O_CREATE|os.O_WRONLY, perms)
 	if err != nil {
 		return fmt.Errorf("creating %s file: %w", fname, err)

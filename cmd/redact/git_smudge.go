@@ -11,7 +11,7 @@ func (rt *Runtime) gitSmudgeCmd() (*cobra.Command, error) {
 		Use:     "smudge",
 		Args:    cobra.NoArgs,
 		Short:   "Decoding file from STDIN, to STDOUT",
-		PreRunE: rt.RetrieveMasterKey,
+		PreRunE: rt.RetrieveSecretKey,
 		RunE:    rt.gitSmudgeDo,
 	}
 
@@ -19,7 +19,7 @@ func (rt *Runtime) gitSmudgeCmd() (*cobra.Command, error) {
 }
 
 func (rt *Runtime) gitSmudgeDo(cmd *cobra.Command, args []string) error {
-	err := rt.MasterKey.Decode(os.Stdin, os.Stdout)
+	err := rt.SecretKey.Decode(os.Stdin, os.Stdout)
 	if err != nil {
 		return err
 	}

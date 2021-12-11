@@ -16,7 +16,7 @@ func (rt *Runtime) accessGrantCmd() (*cobra.Command, error) {
 		Use:     "grant [KEY...]",
 		Args:    cobra.ArbitraryArgs,
 		Short:   "Grants access to collaborators with OpenPGP keys",
-		PreRunE: rt.RetrieveMasterKey,
+		PreRunE: rt.RetrieveSecretKey,
 		RunE:    rt.accessGrantDo,
 	}
 
@@ -95,11 +95,11 @@ func (rt *Runtime) loadKeys(pgpFiles []string, isArmor bool, keyEntries *openpgp
 func (rt *Runtime) saveKey(key *openpgp.Entity) error {
 	gpgutil.PrintKey(key)
 
-	if err := sdk.SaveMasterExchange(rt.MasterKey, key); err != nil {
+	if err := sdk.SaveSecretExchange(rt.SecretKey, key); err != nil {
 		return err
 	}
 
-	if err := sdk.SavePubkeyExchange(rt.MasterKey, key); err != nil {
+	if err := sdk.SavePubkeyExchange(rt.SecretKey, key); err != nil {
 		return err
 	}
 

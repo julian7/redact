@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 Changed:
 
+* Renaming "master key" with "secret key", "master" branch with "main."
 * Breaking change: Unlocking with GPG key moved to `redact unlock gpg` command.
-* Breaking change: Unlocking with master key needs argument: `redact unlock --key <master key>`.
+* Breaking change: Unlocking with secret key needs argument: `redact unlock --key <secret key>`.
 
 Fixed:
 
@@ -97,7 +98,7 @@ Fixed:
 
 * stability: removed the majority of global variables (except non-changing ones)
 * stability: removed all implicit method invocations (eg. init functions)
-* stability: fulfil lint requirements (except master key's sha1 hash chunk representation, as it's not security-related)
+* stability: fulfil lint requirements (except secret key's sha1 hash chunk representation, as it's not security-related)
 * scope: reduced runtime scope (eg. logging, environment detection) to runtime
 
 ## [v0.3.0] - August 11, 2019
@@ -107,7 +108,7 @@ Added:
 * [SHOULDERS](SHOULDERS.md) file added to express my gratitude to all of the projects / people who helped setting this project together, in any way.
 * Inline documentation added
 * More strict args management for subcommands
-* Allow unlocking with a copy of plaintext master file
+* Allow unlocking with a copy of plaintext secret key
 
 Changed:
 
@@ -117,7 +118,7 @@ Changed:
 Fixed:
 
 * Unlock silently selected the first matching GnuPG secret key if there were two matching items found.
-* Master key double save - regression from de751821a14ca4ea128332217823fa69dc121695
+* Secret key double save - regression from de751821a14ca4ea128332217823fa69dc121695
 * Allow gpg passphrase prompt using gpg's `--pinentry-mode loopback` option
 
 ## [v0.2.0]: July 19, 2019
@@ -131,7 +132,7 @@ Changed:
 * More stdlib use
 * Refactor most testing utility methods to [tester](https://github.com/julian7/tester) library
 * Knowledge of AES and HMAC keys and sizes are moved to encryptor only. Keys should not known about required components.
-* Atomic master key replacement on save
+* Atomic secret key replacement on save
 
 ## [v0.1.0]: July 3, 2019
 

@@ -17,18 +17,18 @@ func (rt *Runtime) unlockCmd() (*cobra.Command, error) {
 		Long: `Unlock repository
 
 This group of commands able to unlock a repository, or to obtain a new version
-of the master key.
+of the secret key.
 
 Use a subcommand for different ways of unlocking the repository from key
 exchange.
 
-Alternatively, a master key can be provided. This allows unlocking the
+Alternatively, a secret key can be provided. This allows unlocking the
 repository where other ways are not available.`,
 		RunE: rt.unlockDo,
 	}
 
 	flags := cmd.Flags()
-	flags.StringP("key", "k", "", "Use specific master key")
+	flags.StringP("key", "k", "", "Use specific secret key")
 
 	if err := rt.RegisterFlags("", flags); err != nil {
 		return nil, err
@@ -54,9 +54,9 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 		return errors.New("--key is required")
 	}
 
-	rt.MasterKey, err = files.NewMasterKey(rt.Logger)
+	rt.SecretKey, err = files.NewSecretKey(rt.Logger)
 	if err != nil {
-		return fmt.Errorf("building master key: %w", err)
+		return fmt.Errorf("building secret key: %w", err)
 	}
 
 	err = rt.loadKeyFromFile(keyFile)
@@ -68,7 +68,7 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = sdk.TouchUp(rt.MasterKey, func(err error) {
+	err = sdk.TouchUp(rt.SecretKey, func(err error) {
 		rt.Logger.Warn(err.Error())
 	})
 	if err != nil {

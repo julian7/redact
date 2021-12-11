@@ -13,12 +13,12 @@ func (rt *Runtime) lockCmd() (*cobra.Command, error) {
 		Short: "Locks repository",
 		Long: `Lock repository
 
-This command removes your master key, and the filter configuration. It also
+This command removes your secret key, and the filter configuration. It also
 turns secret files into their unencrypted form. The git repo will behave
 as like being not redact-aware. Locally modified or staged files can cause
 leaking of secrets, and it's recommended to cancel all local modifications
 beforehand.`,
-		PreRunE: rt.RetrieveMasterKey,
+		PreRunE: rt.RetrieveSecretKey,
 		RunE:    rt.lockDo,
 	}
 
@@ -33,11 +33,11 @@ func (rt *Runtime) lockDo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 
-	if err := rt.MasterKey.Remove(rt.MasterKey.KeyFile()); err != nil {
+	if err := rt.SecretKey.Remove(rt.SecretKey.KeyFile()); err != nil {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 
-	err = sdk.TouchUp(rt.MasterKey, func(err error) {
+	err = sdk.TouchUp(rt.SecretKey, func(err error) {
 		rt.Logger.Warn(err.Error())
 	})
 	if err != nil {

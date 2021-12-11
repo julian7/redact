@@ -30,69 +30,69 @@ func (e *ErrExchangeDir) Unwrap() error {
 	return nil
 }
 
-// LoadMasterKeyFromExchange loads data from an encrypted master key into provided
+// LoadSecretKeyFromExchange loads data from an encrypted secret key into provided
 // object, and then saves it.
-func LoadMasterKeyFromExchange(masterkey *files.MasterKey, fingerprint []byte) error {
-	stub, err := masterkey.GetExchangeFilenameStubFor(fingerprint)
+func LoadSecretKeyFromExchange(secretkey *files.SecretKey, fingerprint []byte) error {
+	stub, err := secretkey.GetExchangeFilenameStubFor(fingerprint)
 	if err != nil {
 		return fmt.Errorf("finding key in exchange dir: %w", err)
 	}
 
 	reader, err := gpgutil.DecryptWithKey(
-		files.ExchangeMasterKeyFile(stub),
+		files.ExchangeSecretKeyFile(stub),
 		fingerprint,
 	)
 	if err != nil {
-		return fmt.Errorf("decrypt master key from exchange dir: %w", err)
+		return fmt.Errorf("decrypt secret key from exchange dir: %w", err)
 	}
 
 	defer reader.Close()
 
-	return LoadMasterKeyFromReader(masterkey, reader)
+	return LoadSecretKeyFromReader(secretkey, reader)
 }
 
-// LoadMasterKeyFromReader reads master key from an io.Reader, and saves it into its
+// LoadSecretKeyFromReader reads secret key from an io.Reader, and saves it into its
 // place.
-func LoadMasterKeyFromReader(masterkey *files.MasterKey, reader io.Reader) error {
-	if err := masterkey.Read(reader); err != nil {
-		return fmt.Errorf("reading unencrypted master key: %w", err)
+func LoadSecretKeyFromReader(secretkey *files.SecretKey, reader io.Reader) error {
+	if err := secretkey.Read(reader); err != nil {
+		return fmt.Errorf("reading unencrypted secret key: %w", err)
 	}
 
-	if err := masterkey.Save(); err != nil {
-		return fmt.Errorf("saving master key: %w", err)
+	if err := secretkey.Save(); err != nil {
+		return fmt.Errorf("saving secret key: %w", err)
 	}
 
 	return nil
 }
 
-// SaveMasterExchange saves master key into key exchange, encrypted with OpenPGP key
-func SaveMasterExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
-	kxstub, err := masterkey.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
+// SaveSecretExchange saves secret key into key exchange, encrypted with OpenPGP key
+func SaveSecretExchange(secretkey *files.SecretKey, key *openpgp.Entity) error {
+	kxstub, err := secretkey.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
 	if err != nil {
 		return err
 	}
 
-	masterName := files.ExchangeMasterKeyFile(kxstub)
+	secretName := files.ExchangeSecretKeyFile(kxstub)
 
-	masterWriter, err := os.OpenFile(masterName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	secretWriter, err := os.OpenFile(secretName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("opening exchange master key: %w", err)
+		return fmt.Errorf("opening exchange secret key: %w", err)
 	}
-	defer masterWriter.Close()
+	defer secretWriter.Close()
 
 	r, w := io.Pipe()
 
 	go func(writer io.WriteCloser) {
-		_ = masterkey.SaveTo(writer)
+		_ = secretkey.SaveTo(writer)
 		writer.Close()
 	}(w)
 
-	return gpgutil.Encrypt(r, masterWriter, key)
+	return gpgutil.Encrypt(r, secretWriter, key)
 }
 
 // LoadPubkeysFromExchange loads a public key from key exchange
-func LoadPubkeysFromExchange(masterkey *files.MasterKey, fingerprint []byte) (openpgp.EntityList, error) {
-	stub, err := masterkey.GetExchangeFilenameStubFor(fingerprint)
+func LoadPubkeysFromExchange(secretkey *files.SecretKey, fingerprint []byte) (openpgp.EntityList, error) {
+	stub, err := secretkey.GetExchangeFilenameStubFor(fingerprint)
 	if err != nil {
 		return nil, fmt.Errorf("finding exchange public key: %w", err)
 	}
@@ -106,8 +106,8 @@ func LoadPubkeysFromExchange(masterkey *files.MasterKey, fingerprint []byte) (op
 }
 
 // SavePubkeyExchange saves public OpenPGP key into key exchange
-func SavePubkeyExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
-	kxstub, err := masterkey.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
+func SavePubkeyExchange(secretkey *files.SecretKey, key *openpgp.Entity) error {
+	kxstub, err := secretkey.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
 	if err != nil {
 		return err
 	}
@@ -128,9 +128,9 @@ func SavePubkeyExchange(masterkey *files.MasterKey, key *openpgp.Entity) error {
 	return nil
 }
 
-// UpdateMasterExchangeKeys updates all key exchange master keys with new data
-func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
-	kxdir, err := masterkey.ExchangeDir()
+// UpdateSecretExchangeKeys updates all key exchange secret keys with new data
+func UpdateSecretExchangeKeys(secretkey *files.SecretKey) (int, error) {
+	kxdir, err := secretkey.ExchangeDir()
 	if err != nil {
 		return 0, &ErrExchangeDir{
 			err: fmt.Errorf("fetching key exchange dir: %w", err),
@@ -139,7 +139,7 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 
 	updated := 0
 
-	err = afero.Walk(masterkey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
+	err = afero.Walk(secretkey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -155,7 +155,7 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 			return nil
 		}
 
-		keys, err := LoadPubkeysFromExchange(masterkey, fingerprint)
+		keys, err := LoadPubkeysFromExchange(secretkey, fingerprint)
 		if err != nil {
 			return fmt.Errorf("loading public key for %s: %w", fingerprintText, err)
 		}
@@ -166,10 +166,10 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 
 		updated++
 
-		err = SaveMasterExchange(masterkey, keys[0])
+		err = SaveSecretExchange(secretkey, keys[0])
 		if err != nil {
 			return fmt.Errorf(
-				"saving master key encrypted with key %s: %w",
+				"saving secret key encrypted with key %s: %w",
 				fingerprintText,
 				err,
 			)
@@ -179,7 +179,7 @@ func UpdateMasterExchangeKeys(masterkey *files.MasterKey) (int, error) {
 	})
 
 	if err != nil {
-		return 0, fmt.Errorf("updating master key in exchange dir: %w", err)
+		return 0, fmt.Errorf("updating secret key in exchange dir: %w", err)
 	}
 
 	return updated, nil

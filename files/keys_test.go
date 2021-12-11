@@ -18,10 +18,10 @@ import (
 	"github.com/julian7/tester/ioprobe"
 )
 
-func TestNewMasterKey(t *testing.T) {
+func TestNewSecretKey(t *testing.T) {
 	oldgitdir := files.GitDirFunc
 	files.GitDirFunc = func(info *gitutil.GitRepoInfo) error { return errors.New("no git dir") }
-	_, err := files.NewMasterKey(logger.New())
+	_, err := files.NewSecretKey(logger.New())
 	files.GitDirFunc = oldgitdir
 
 	if err == nil || err.Error() != "not a git repository" {
@@ -34,7 +34,7 @@ func TestNewMasterKey(t *testing.T) {
 
 		return nil
 	}
-	k, err := files.NewMasterKey(logger.New())
+	k, err := files.NewSecretKey(logger.New())
 	files.GitDirFunc = oldgitdir
 
 	if err != nil {
@@ -52,7 +52,7 @@ func TestNewMasterKey(t *testing.T) {
 }
 
 func TestKeyFile(t *testing.T) {
-	k := files.MasterKey{KeyDir: ".git/redact"}
+	k := files.SecretKey{KeyDir: ".git/redact"}
 	keyfile := k.KeyFile()
 
 	if keyfile != ".git/redact/key" {
@@ -140,7 +140,7 @@ func TestRead(t *testing.T) { //nolint:funlen
 	for _, tc := range tt {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			k := &files.MasterKey{}
+			k := &files.SecretKey{}
 			if err := tester.AssertError(tc.err, k.Read(tc.reader)); err != nil {
 				t.Error(err)
 			}
@@ -213,31 +213,31 @@ func TestLoad(t *testing.T) { //nolint:funlen
 	tt := []struct {
 		name          string
 		hasKey        bool
-		fsMods        func(*files.MasterKey)
+		fsMods        func(*files.SecretKey)
 		expectedError error
 	}{
 		{
 			"uninitialized",
 			false,
-			func(*files.MasterKey) {},
+			func(*files.SecretKey) {},
 			errors.New("open /git/repo/.git/test/key: file does not exist"),
 		},
 		{
 			"initialized",
 			true,
-			func(*files.MasterKey) {},
+			func(*files.SecretKey) {},
 			nil,
 		},
 		{
 			"no key dir",
 			true,
-			func(k *files.MasterKey) { k.KeyDir = "/a/b/c" },
+			func(k *files.SecretKey) { k.KeyDir = "/a/b/c" },
 			errors.New("keydir not available: open /a/b/c: file does not exist"),
 		},
 		{
 			"excessive rights",
 			true,
-			func(k *files.MasterKey) {
+			func(k *files.SecretKey) {
 				_ = k.Chmod("/git/repo/.git/test/key", 0777)
 			},
 			nil,
@@ -245,7 +245,7 @@ func TestLoad(t *testing.T) { //nolint:funlen
 		{
 			"restrictive rights",
 			true,
-			func(k *files.MasterKey) {
+			func(k *files.SecretKey) {
 				_ = k.Chmod("/git/repo/.git/test/key", 0)
 			},
 			nil,
@@ -253,7 +253,7 @@ func TestLoad(t *testing.T) { //nolint:funlen
 		{
 			"read error",
 			true,
-			func(k *files.MasterKey) {
+			func(k *files.SecretKey) {
 				k.Fs = &noOpenFile{Fs: k.Fs}
 			},
 			errors.New("opening key file for reading: open file returns error"),
@@ -355,7 +355,7 @@ func TestSaveTo(t *testing.T) { //nolint:funlen
 	for _, tc := range tt {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			k := files.MasterKey{}
+			k := files.SecretKey{}
 			for i := 0; i < tc.keys; i++ {
 				err := k.Generate()
 				if err != nil {
@@ -386,25 +386,25 @@ func TestSave(t *testing.T) { //nolint:funlen
 	tt := []struct {
 		name   string
 		hasKey bool
-		fsMods func(*files.MasterKey)
+		fsMods func(*files.SecretKey)
 		err    error
 	}{
 		{
 			"uninitialized",
 			false,
-			func(*files.MasterKey) {},
+			func(*files.SecretKey) {},
 			nil,
 		},
 		{
 			"initialized",
 			true,
-			func(*files.MasterKey) {},
+			func(*files.SecretKey) {},
 			nil,
 		},
 		{
 			"error getting keydir",
 			false,
-			func(k *files.MasterKey) {
+			func(k *files.SecretKey) {
 				_ = k.RemoveAll(k.KeyDir)
 				k.Fs = &noMkdir{Fs: k.Fs}
 			},
@@ -413,7 +413,7 @@ func TestSave(t *testing.T) { //nolint:funlen
 		{
 			"error writing key",
 			false,
-			func(k *files.MasterKey) {
+			func(k *files.SecretKey) {
 				k.Fs = &noOpenFile{Fs: k.Fs}
 			},
 			errors.New("saving key file: open file returns error"),

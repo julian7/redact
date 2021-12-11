@@ -17,12 +17,12 @@ func (rt *Runtime) rootCmd() (*cobra.Command, error) {
 		Long: `redact - keep secrets in a git repository
 
 This application uses gitattributes(5) to encrypt and decrypt files behind
-the scenes (see filter and diff attributes). This process requires a master
-key, what you can generate with "redact init" command. The master key can
+the scenes (see filter and diff attributes). This process requires a secret
+key, what you can generate with "redact init" command. The secret key can
 hold multiple key versions, supporting key rotation and retrieval of old
 secrets.
 
-Master keys can be distributed inside the repository in the key exchange
+Secret keys can be distributed inside the repository in the key exchange
 directory ($GIT_DIR/.redact), encrypted by contributors' OpenPGP keys.
 Contributors can unlock the repo by running "redact unlock".
 

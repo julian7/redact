@@ -38,7 +38,7 @@ func ExchangeDir(toplevel string) string {
 	return filepath.Join(toplevel, DefaultKeyExchangeDir)
 }
 
-func (k *MasterKey) ensureExchangeDir(kxdir string) error {
+func (k *SecretKey) ensureExchangeDir(kxdir string) error {
 	key := "kxdir_ensure"
 	if _, ok := k.Cache[key]; ok {
 		return nil
@@ -72,7 +72,7 @@ func (k *MasterKey) ensureExchangeDir(kxdir string) error {
 }
 
 // ExchangeDir returns key exchange directory if exists
-func (k *MasterKey) ExchangeDir() (string, error) {
+func (k *SecretKey) ExchangeDir() (string, error) {
 	key := "kxdir"
 	if val, ok := k.Cache[key]; ok {
 		return val, nil
@@ -94,7 +94,7 @@ func (k *MasterKey) ExchangeDir() (string, error) {
 	return kxdir, nil
 }
 
-func (k *MasterKey) ensureExchangeGitAttributes(kxdir string) error {
+func (k *SecretKey) ensureExchangeGitAttributes(kxdir string) error {
 	key := "kxgitattrs"
 	if _, ok := k.Cache[key]; ok {
 		return nil

@@ -18,7 +18,7 @@ type cmdFactory func() (*cobra.Command, error)
 
 type Runtime struct {
 	*logger.Logger
-	*files.MasterKey
+	*files.SecretKey
 	*viper.Viper
 	Config                 string
 	StrictPermissionChecks bool
@@ -87,15 +87,15 @@ func (rt *Runtime) RegisterFlags(group string, l *pflag.FlagSet) (err error) {
 	return err
 }
 
-func (rt *Runtime) RetrieveMasterKey(cmd *cobra.Command, args []string) error {
+func (rt *Runtime) RetrieveSecretKey(cmd *cobra.Command, args []string) error {
 	var err error
 
-	rt.MasterKey, err = files.NewMasterKey(rt.Logger)
+	rt.SecretKey, err = files.NewSecretKey(rt.Logger)
 	if err != nil {
 		return err
 	}
 
-	return sdk.RedactRepo(rt.MasterKey, rt.StrictPermissionChecks)
+	return sdk.RedactRepo(rt.SecretKey, rt.StrictPermissionChecks)
 }
 
 func (rt *Runtime) SaveGitSettings() error {

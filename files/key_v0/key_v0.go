@@ -38,7 +38,7 @@ func (k *KeyV0) Secret() []byte {
 	return k.SecretData[:]
 }
 
-// Generate generates new keys to master key
+// Generate generates new keys to secret key
 func (k *KeyV0) Generate() error {
 	_, err := rand.Read(k.SecretData[:])
 	if err != nil {

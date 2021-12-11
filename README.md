@@ -38,11 +38,11 @@ Then, add them to version control:
 ```shell
 $ git add --all
 $ git status -sb
-## No commits yet on master
+## No commits yet on main
 A  .gitattributes
 A  private.key
 $ git commit -m initial
-[master (root-commit) 0b9eb27] initial
+[main (root-commit) 0b9eb27] initial
  2 files changed, 2 insertions(+)
  create mode 100644 .gitattributes
  create mode 100644 private.key
@@ -87,7 +87,7 @@ KeyID: BDE0F1CE, fingerprint: 1857918cd0b4d303071d6624466cbb98bde0f1ce
 INFO[0000] Added 1 key. Don't forget to commit exchange files to the repository.
 $ git add --all
 $ git status -sb
-## master
+## main
 A  .redact/.gitattributes
 A  .redact/1857918cd0b4d303071d6624466cbb98bde0f1ce.asc
 A  .redact/1857918cd0b4d303071d6624466cbb98bde0f1ce.key
@@ -98,7 +98,7 @@ A  .redact/1857918cd0b4d303071d6624466cbb98bde0f1ce.key
 * Redact is written in go, and as such, it can bring encryption into environments with no bash (???), and can be cross-compiled.
 * it uses OpenPGP for key exchange (almost like git-crypt)
 * it requires GnuPG only for unlocking, all OpenPGP operations are handled internally
-* it stores OpenPGP keys of collaborators next to their encrypted master key copies
+* it stores OpenPGP keys of collaborators next to their encrypted secret key copies
 * it supports key rotation (like transcrypt)
 * auto-generates key (not like transcrypt)
 * only dependencies are git and GnuPG
@@ -112,17 +112,17 @@ File encoding uses AES256-GCM96 encoding. Encryption nonce is calculated from th
 
 ## Subcommands
 
-* key: master key commands:
-  * init: initializes master key
-  * generate: generates new master key
-  * info (default): shows master key info
+* key: secret key commands:
+  * init: initializes secret key
+  * generate: generates new secret key
+  * info (default): shows secret key info
   * list: lists all keys
 * lock: locks repository (deletes local key and removes diff/filter configs)
 * unlock: unlocks repository with local key
 * access: key exchange commands
   * ls/list: list user access
   * grant: add OpenPGP key access
-  * update: re-encrypt master key with OpenPGP keys
+  * update: re-encrypt secret key with OpenPGP keys
 * git: git filter commands
   * clean: acts as clean filter for git
   * diff: acts as diff filter for git
@@ -136,8 +136,8 @@ See [the to do](TODO.md) file for details.
 When you lose trust of someone, there is one thing we can't do: we can't revoke
 historical access to secrets stored in the repository. We can do something about the future though:
 
-* remove encrypted key from the key exchange folder. This will stop the user from recreating the master key in the future.
-* generate a new key: rotate master key. You can re-encrypt secret files as they are, but since usually the untrusted party already knows about the secrets, they can easily figure out the newly encrypted files are indeed having the same content. This can possibly help them learning about the new secret key.
+* remove encrypted key from the key exchange folder. This will stop the user from recreating the secret key in the future.
+* generate a new key: rotate secret key. You can re-encrypt secret files as they are, but since usually the untrusted party already knows about the secrets, they can easily figure out the newly encrypted files are indeed having the same content. This can possibly help them learning about the new secret key.
 * replacing secrets: when encrypted files are supposed to be exposed, the best thing we can do is not just replacing their encryptions, but replacing secrets too. For example, if encrypted files are secret parts of key pairs (like a TLS certificate), we might want to revoke the full certificate altogether, generating new ones.
 
 As always, play safe, and revoke all secrets if there is any chance it can cause damage.

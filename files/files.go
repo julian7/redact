@@ -25,7 +25,7 @@ type fileHeader struct {
 }
 
 // Encode encodes an IO stream into another IO stream
-func (k *MasterKey) Encode(encodingFormat uint32, epoch uint32, reader io.Reader, writer io.Writer) error {
+func (k *SecretKey) Encode(encodingFormat uint32, epoch uint32, reader io.Reader, writer io.Writer) error {
 	key, err := k.Key(epoch)
 	if err != nil {
 		return fmt.Errorf("encoding stream: %w", err)
@@ -63,7 +63,7 @@ func (k *MasterKey) Encode(encodingFormat uint32, epoch uint32, reader io.Reader
 }
 
 // Decode encodes an IO stream into another IO stream
-func (k *MasterKey) Decode(reader io.Reader, writer io.Writer) error {
+func (k *SecretKey) Decode(reader io.Reader, writer io.Writer) error {
 	var header fileHeader
 
 	err := k.readHeader(reader, &header)
@@ -100,7 +100,7 @@ func (k *MasterKey) Decode(reader io.Reader, writer io.Writer) error {
 }
 
 // FileStatus returns file encryption status and key used
-func (k *MasterKey) FileStatus(reader io.Reader) (uint32, error) {
+func (k *SecretKey) FileStatus(reader io.Reader) (uint32, error) {
 	var header fileHeader
 
 	err := k.readHeader(reader, &header)
@@ -111,7 +111,7 @@ func (k *MasterKey) FileStatus(reader io.Reader) (uint32, error) {
 	return header.Epoch, nil
 }
 
-func (k *MasterKey) readHeader(reader io.Reader, header *fileHeader) error {
+func (k *SecretKey) readHeader(reader io.Reader, header *fileHeader) error {
 	err := binary.Read(reader, binary.BigEndian, header)
 	if err != nil {
 		return fmt.Errorf("reading file header: %w", err)

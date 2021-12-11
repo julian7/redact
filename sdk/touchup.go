@@ -11,7 +11,7 @@ import (
 )
 
 // TouchUp touches and checks out encrypted files, generally fixing them.
-func TouchUp(masterkey *files.MasterKey, softErrHandler func(error)) error {
+func TouchUp(secretkey *files.SecretKey, softErrHandler func(error)) error {
 	files, err := gitutil.LsFiles(nil)
 	if err != nil {
 		return fmt.Errorf("list git files: %w", err)
@@ -36,11 +36,11 @@ func TouchUp(masterkey *files.MasterKey, softErrHandler func(error)) error {
 		}
 	}
 
-	return TouchUpFiles(masterkey, affectedFiles, softErrHandler)
+	return TouchUpFiles(secretkey, affectedFiles, softErrHandler)
 }
 
 // TouchUpFiles force-checkouts specific files in a repo
-func TouchUpFiles(masterkey *files.MasterKey, files []string, softErrHandler func(error)) error {
+func TouchUpFiles(secretkey *files.SecretKey, files []string, softErrHandler func(error)) error {
 	if len(files) < 1 {
 		return nil
 	}
@@ -48,8 +48,8 @@ func TouchUpFiles(masterkey *files.MasterKey, files []string, softErrHandler fun
 	touched := make([]string, 0, len(files))
 
 	for _, entry := range files {
-		fullpath := filepath.Join(masterkey.RepoInfo.Toplevel, entry)
-		if err := TouchFile(masterkey.Fs, fullpath); err != nil && softErrHandler != nil {
+		fullpath := filepath.Join(secretkey.RepoInfo.Toplevel, entry)
+		if err := TouchFile(secretkey.Fs, fullpath); err != nil && softErrHandler != nil {
 			softErrHandler(err)
 			continue
 		}

@@ -13,7 +13,7 @@ func (rt *Runtime) keyGenerateCmd() (*cobra.Command, error) {
 		Use:     "generate",
 		Aliases: []string{"gen", "g"},
 		Short:   "Generates redact key",
-		PreRunE: rt.RetrieveMasterKey,
+		PreRunE: rt.RetrieveSecretKey,
 		RunE:    rt.generateDo,
 	}
 
@@ -25,29 +25,29 @@ func (rt *Runtime) generateDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := rt.MasterKey.Generate(); err != nil {
-		return fmt.Errorf("generating master key: %w", err)
+	if err := rt.SecretKey.Generate(); err != nil {
+		return fmt.Errorf("generating secret key: %w", err)
 	}
 
-	rt.Logger.Infof("New repo key created: %v", rt.MasterKey)
+	rt.Logger.Infof("New repo key created: %v", rt.SecretKey)
 
-	if err := rt.MasterKey.Save(); err != nil {
-		return fmt.Errorf("saving master key: %w", err)
+	if err := rt.SecretKey.Save(); err != nil {
+		return fmt.Errorf("saving secret key: %w", err)
 	}
 
-	updatedKeys, err := sdk.UpdateMasterExchangeKeys(rt.MasterKey)
+	updatedKeys, err := sdk.UpdateSecretExchangeKeys(rt.SecretKey)
 	if err != nil {
 		var exchangedir *sdk.ErrExchangeDir
 		if errors.As(err, &exchangedir) {
 			return nil
 		}
-		rt.Logger.Warn(`unable to update master keys; restore original key with "redact unlock", and try again`)
-		return fmt.Errorf("updating key exchange master keys: %w", err)
+		rt.Logger.Warn(`unable to update secret keys; restore original key with "redact unlock", and try again`)
+		return fmt.Errorf("updating key exchange secret keys: %w", err)
 	}
 
 	if updatedKeys > 0 {
 		fmt.Printf(
-			"Updated %d key%s. Don't forget to commit new encrypted master keys into the repo.\n",
+			"Updated %d key%s. Don't forget to commit new encrypted secret keys into the repo.\n",
 			updatedKeys,
 			map[bool]string{false: "s", true: ""}[updatedKeys == 1],
 		)

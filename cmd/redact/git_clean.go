@@ -16,7 +16,7 @@ func (rt *Runtime) gitCleanCmd() (*cobra.Command, error) {
 		Use:     "clean",
 		Args:    cobra.NoArgs,
 		Short:   "Encoding file from STDIN, to STDOUT",
-		PreRunE: rt.RetrieveMasterKey,
+		PreRunE: rt.RetrieveSecretKey,
 		RunE:    rt.gitCleanDo,
 	}
 
@@ -49,10 +49,10 @@ func (rt *Runtime) gitCleanDo(cmd *cobra.Command, args []string) error {
 	}
 
 	if keyEpoch == 0 {
-		keyEpoch = rt.MasterKey.LatestKey
+		keyEpoch = rt.SecretKey.LatestKey
 	}
 
-	err = rt.MasterKey.Encode(encoder.TypeAES256GCM96, keyEpoch, os.Stdin, os.Stdout)
+	err = rt.SecretKey.Encode(encoder.TypeAES256GCM96, keyEpoch, os.Stdin, os.Stdout)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (rt *Runtime) epochByFilename(filename string) (uint32, error) {
 			return 0, err
 		}
 
-		epoch, err := rt.MasterKey.FileStatus(fReader)
+		epoch, err := rt.SecretKey.FileStatus(fReader)
 		if err == nil {
 			return epoch, nil
 		}

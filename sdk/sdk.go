@@ -13,7 +13,7 @@ const (
 	AttrName = "redact"
 )
 
-// RedactRepo returns the loaded master key if it is unlocked. Otherwise,
+// RedactRepo returns the loaded secret key if it is unlocked. Otherwise,
 // it returns appropriate error:
 //
 // - not a git repository: if git repository cannot be detected
@@ -22,9 +22,9 @@ const (
 // - repository is locked: when there is an exchange dir
 //
 // Checks key file permissions optionally.
-func RedactRepo(masterkey *files.MasterKey, strict bool) error {
-	if err := masterkey.Load(strict); err != nil {
-		if _, err2 := masterkey.ExchangeDir(); err2 != nil {
+func RedactRepo(secretkey *files.SecretKey, strict bool) error {
+	if err := secretkey.Load(strict); err != nil {
+		if _, err2 := secretkey.ExchangeDir(); err2 != nil {
 			return errors.New("repository is not using redact")
 		}
 

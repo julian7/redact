@@ -27,7 +27,7 @@ have been.
 It also shows if a file is encrypted with an older key. While re-encryption
 as-is is possible with --rekey option, it's strongly recommended to replace
 these secrets instead.`,
-		PreRunE: rt.RetrieveMasterKey,
+		PreRunE: rt.RetrieveSecretKey,
 		RunE:    rt.statusDo,
 	}
 
@@ -53,7 +53,7 @@ type statusOptions struct {
 	quiet      bool
 	fixRepo    bool
 	rekeyFiles bool
-	key        *files.MasterKey
+	key        *files.SecretKey
 	args       []string
 	toFix      []string
 	toRekey    []string
@@ -73,7 +73,7 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error { //nolint:
 		return err
 	}
 
-	opts.key = rt.MasterKey
+	opts.key = rt.SecretKey
 
 	files, err := gitutil.LsFiles(opts.args)
 	if err != nil {
@@ -103,7 +103,7 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error { //nolint:
 	var msgFix string
 
 	if opts.fixRepo {
-		err := sdk.TouchUpFiles(rt.MasterKey, opts.toFix, func(err error) {
+		err := sdk.TouchUpFiles(rt.SecretKey, opts.toFix, func(err error) {
 			rt.Logger.Warn(err.Error())
 		})
 
@@ -122,7 +122,7 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error { //nolint:
 	var msgRekey string
 
 	if opts.rekeyFiles {
-		err := sdk.TouchUpFiles(rt.MasterKey, opts.toRekey, func(err error) {
+		err := sdk.TouchUpFiles(rt.SecretKey, opts.toRekey, func(err error) {
 			rt.Logger.Warn(err.Error())
 		})
 		if err != nil {

@@ -32,23 +32,23 @@ func (rt *Runtime) initDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	masterkey, err := files.NewMasterKey(rt.Logger)
+	secretkey, err := files.NewSecretKey(rt.Logger)
 	if err != nil {
 		return err
 	}
 
-	if err := masterkey.Load(rt.StrictPermissionChecks); err == nil {
-		return fmt.Errorf("repo already has master key: %s", masterkey)
+	if err := secretkey.Load(rt.StrictPermissionChecks); err == nil {
+		return fmt.Errorf("repo already has secret key: %s", secretkey)
 	}
 
-	if err := masterkey.Generate(); err != nil {
-		return fmt.Errorf("generating master key: %w", err)
+	if err := secretkey.Generate(); err != nil {
+		return fmt.Errorf("generating secret key: %w", err)
 	}
 
-	rt.Logger.Infof("New repo key created: %v", masterkey)
+	rt.Logger.Infof("New repo key created: %v", secretkey)
 
-	if err := masterkey.Save(); err != nil {
-		return fmt.Errorf("saving master key: %w", err)
+	if err := secretkey.Save(); err != nil {
+		return fmt.Errorf("saving secret key: %w", err)
 	}
 
 	return nil
