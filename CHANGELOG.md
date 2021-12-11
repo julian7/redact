@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Fixed:
 
 * Don't throw error on `redact generate` if key exchange dir doesn't exist
+* `redact git clean` never received `--epoch`
 
 ## [v0.5.0] - October 21, 2021
 

@@ -29,7 +29,7 @@ func (rt *Runtime) gitCleanCmd() (*cobra.Command, error) {
 }
 
 func (rt *Runtime) gitCleanDo(cmd *cobra.Command, args []string) error {
-	keyEpoch, err := cast.ToUint32E(viper.Get("git.clean.epoch"))
+	keyEpoch, err := cast.ToUint32E(rt.Viper.Get("git.clean.epoch"))
 	if err != nil {
 		return err
 	}
