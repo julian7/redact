@@ -27,6 +27,7 @@ func (e *ErrExchangeDir) Unwrap() error {
 	if ok {
 		return err.Unwrap()
 	}
+
 	return nil
 }
 
