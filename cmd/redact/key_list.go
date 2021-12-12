@@ -9,7 +9,7 @@ func (rt *Runtime) keyListCmd() (*cobra.Command, error) {
 	cmd := &cobra.Command{
 		Use:     "list",
 		Short:   "Lists redact keys",
-		PreRunE: rt.RetrieveSecretKey,
+		PreRunE: rt.LoadSecretKey,
 		RunE:    rt.listDo,
 	}
 
@@ -21,6 +21,7 @@ func (rt *Runtime) listDo(cmd *cobra.Command, args []string) error {
 
 	return files.EachKey(rt.SecretKey.Keys, func(idx uint32, key files.KeyHandler) error {
 		rt.Logger.Infof(" - %s", key)
+
 		return nil
 	})
 }

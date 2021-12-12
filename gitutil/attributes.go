@@ -85,7 +85,7 @@ func (e FileEntries) readCheckAttrs(reader io.ReadCloser) error {
 
 		line, err = outbuf.ReadString('\n')
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				err = nil
 			}
 
@@ -97,6 +97,7 @@ func (e FileEntries) readCheckAttrs(reader io.ReadCloser) error {
 
 		if len(items) != 2 {
 			err = fmt.Errorf(`finding filter entry in line: "%s": %w`, line, err)
+
 			break
 		}
 

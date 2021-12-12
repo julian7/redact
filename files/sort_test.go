@@ -8,8 +8,7 @@ import (
 func TestLen(t *testing.T) {
 	testSlice := keyIdxSlice([]uint32{1, 2, 3, 4, 5})
 
-	len := testSlice.Len()
-	if len != 5 {
+	if len := testSlice.Len(); len != 5 {
 		t.Errorf("unexpected length: %d", len)
 	}
 }
@@ -109,6 +108,7 @@ func TestEachKey(t *testing.T) {
 					return fmt.Errorf("throwing error at %d", tc.errorAt)
 				}
 				visited = append(visited, id)
+
 				return nil
 			})
 			if len(tc.err) != 0 {

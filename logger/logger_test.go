@@ -16,8 +16,7 @@ func TestNew(t *testing.T) {
 		t.Errorf("internal logger is nil")
 	}
 
-	lvl := got.Level()
-	if lvl != InfoLevel {
+	if lvl := got.Level(); lvl != InfoLevel {
 		t.Errorf("default level is %s, not INFO", prefixes[lvl])
 	}
 }
@@ -140,6 +139,7 @@ func (r *logRecorder) Verify(items []string) error {
 		for _, rec := range r.Logs {
 			if item == rec {
 				found = true
+
 				break
 			}
 		}

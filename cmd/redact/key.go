@@ -1,9 +1,6 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/julian7/redact/files"
 	"github.com/spf13/cobra"
 )
 
@@ -36,16 +33,12 @@ key's epoch and signature. For more detailed look, please see
 }
 
 func (rt *Runtime) keyDo(cmd *cobra.Command, args []string) error {
-	secretkey, err := files.NewSecretKey(rt.Logger)
+	err := rt.LoadSecretKey(cmd, args)
 	if err != nil {
-		return fmt.Errorf("building secret key: %w", err)
+		return err
 	}
 
-	if err := secretkey.Load(rt.StrictPermissionChecks); err != nil {
-		return fmt.Errorf("loading secret key: %w", err)
-	}
-
-	rt.Logger.Infof("repo key: %v", secretkey)
+	rt.Logger.Infof("repo key: %v", rt.SecretKey)
 
 	return nil
 }

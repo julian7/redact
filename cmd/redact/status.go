@@ -8,6 +8,7 @@ import (
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/sdk"
+	"github.com/julian7/redact/sdk/git"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +28,7 @@ have been.
 It also shows if a file is encrypted with an older key. While re-encryption
 as-is is possible with --rekey option, it's strongly recommended to replace
 these secrets instead.`,
-		PreRunE: rt.RetrieveSecretKey,
+		PreRunE: rt.LoadSecretKey,
 		RunE:    rt.statusDo,
 	}
 
@@ -59,7 +60,7 @@ type statusOptions struct {
 	toRekey    []string
 }
 
-func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error { //nolint:funlen
+func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error {
 	opts := statusOptions{
 		repoOnly:   rt.Viper.GetBool("status.repo"),
 		encOnly:    rt.Viper.GetBool("status.encrypted"),
@@ -100,42 +101,11 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error { //nolint:
 		}
 	}
 
-	var msgFix string
-
-	if opts.fixRepo {
-		err := sdk.TouchUpFiles(rt.SecretKey, opts.toFix, func(err error) {
-			rt.Logger.Warn(err.Error())
-		})
-
-		if err != nil {
-			return err
+	if opts.fixRepo || opts.rekeyFiles {
+		if err := gitutil.Renormalize(rt.Repo.Toplevel, false); err != nil {
+			return fmt.Errorf("fixing problems: %w", err)
 		}
-
-		msgFix = "Fixed %d file%s.\n"
-	} else {
-		msgFix = "There are %d file%s to be fixed.\n"
 	}
-
-	l := len(opts.toFix)
-	fmt.Printf(msgFix, l, map[bool]string{false: "s", true: ""}[l == 1])
-
-	var msgRekey string
-
-	if opts.rekeyFiles {
-		err := sdk.TouchUpFiles(rt.SecretKey, opts.toRekey, func(err error) {
-			rt.Logger.Warn(err.Error())
-		})
-		if err != nil {
-			return err
-		}
-
-		msgRekey = "Re-encrypted %d file%s.\n"
-	} else {
-		msgRekey = "There are %d file%s to be re-encrypted.\n"
-	}
-
-	l = len(opts.toRekey)
-	fmt.Printf(msgRekey, l, map[bool]string{false: "s", true: ""}[l == 1])
 
 	return nil
 }
@@ -156,7 +126,7 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 
 	msg := []string{}
 
-	if strings.HasPrefix(entry.Name, files.DefaultKeyExchangeDir+"/") {
+	if strings.HasPrefix(entry.Name, git.DefaultKeyExchangeDir+"/") {
 		if isEncrypted {
 			msg = append(msg, "should NEVER be encrypted")
 			opts.toFix = append(opts.toFix, entry.Name)

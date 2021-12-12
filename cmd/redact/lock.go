@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +19,7 @@ turns secret files into their unencrypted form. The git repo will behave
 as like being not redact-aware. Locally modified or staged files can cause
 leaking of secrets, and it's recommended to cancel all local modifications
 beforehand.`,
-		PreRunE: rt.RetrieveSecretKey,
+		PreRunE: rt.LoadSecretKey,
 		RunE:    rt.lockDo,
 	}
 
@@ -33,14 +34,11 @@ func (rt *Runtime) lockDo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 
-	if err := rt.SecretKey.Remove(rt.SecretKey.KeyFile()); err != nil {
+	if err := rt.SecretKey.Remove(rt.Repo.Keyfile()); err != nil {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 
-	err = sdk.TouchUp(rt.SecretKey, func(err error) {
-		rt.Logger.Warn(err.Error())
-	})
-	if err != nil {
+	if err := gitutil.Renormalize(rt.Repo.Toplevel, false); err != nil {
 		return err
 	}
 

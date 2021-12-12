@@ -11,7 +11,7 @@ func (rt *Runtime) gitSmudgeCmd() (*cobra.Command, error) {
 		Use:     "smudge",
 		Args:    cobra.NoArgs,
 		Short:   "Decoding file from STDIN, to STDOUT",
-		PreRunE: rt.RetrieveSecretKey,
+		PreRunE: rt.LoadSecretKey,
 		RunE:    rt.gitSmudgeDo,
 	}
 

@@ -4,8 +4,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
+	"github.com/julian7/redact/sdk/git"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -22,32 +22,32 @@ func (rt *Runtime) accessListCmd() (*cobra.Command, error) {
 }
 
 func (rt *Runtime) accessListDo(cmd *cobra.Command, args []string) error {
-	_ = rt.RetrieveSecretKey(cmd, args)
+	_ = rt.LoadSecretKey(cmd, args)
 
-	kxdir, err := rt.SecretKey.ExchangeDir()
-	if err != nil {
-		return err
-	}
-
-	err = afero.Walk(rt.SecretKey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
+	kxdir := rt.Repo.ExchangeDir()
+	err := afero.Walk(rt.Repo.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // nolint:nilerr
 		}
-		if !strings.HasSuffix(path, files.ExtKeyArmor) {
+		if !strings.HasSuffix(path, git.ExtKeyArmor) {
 			return nil
 		}
 		entities, err := gpgutil.LoadPubKeyFromFile(path, true)
 		if err != nil {
 			rt.Logger.Warnf("cannot load public key: %v", err)
+
 			return nil
 		}
 		if len(entities) != 1 {
 			rt.Logger.Warnf("multiple entities in key file %s", path)
+
 			return nil
 		}
 		gpgutil.PrintKey(entities[0])
+
 		return nil
 	})
+
 	if err != nil {
 		return err
 	}

@@ -20,6 +20,7 @@ type KeyV0 struct {
 // NewKey creates a new Key struct based on parameter input
 func NewKey(epoch uint32) *KeyV0 {
 	key := &KeyV0{Epoch: epoch}
+
 	return key
 }
 

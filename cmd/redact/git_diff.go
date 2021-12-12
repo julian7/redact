@@ -14,7 +14,7 @@ func (rt *Runtime) gitDiffCmd() (*cobra.Command, error) {
 		Use:     "diff FILENAME",
 		Args:    cobra.ExactArgs(1),
 		Short:   "Decoding file from arg, to STDOUT",
-		PreRunE: rt.RetrieveSecretKey,
+		PreRunE: rt.LoadSecretKey,
 		RunE:    rt.gitDiffDo,
 	}
 

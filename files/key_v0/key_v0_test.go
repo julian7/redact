@@ -16,6 +16,7 @@ func TestNewKey(t *testing.T) {
 	key := keyv0.NewKey(epoch)
 	if key == nil {
 		t.Error("No key returned")
+
 		return
 	}
 
@@ -31,8 +32,7 @@ func TestNewKey(t *testing.T) {
 func TestKeyVersion(t *testing.T) {
 	key := keyv0.KeyV0{}
 
-	expected := uint32(0)
-	if key.Version() != expected {
+	if expected := uint32(0); key.Version() != expected {
 		t.Errorf(
 			"invalid version\nExpected: %d\nReceived: %d",
 			expected,
@@ -53,6 +53,7 @@ func TestGenerate(t *testing.T) {
 
 	if err := key.Generate(); err != nil {
 		t.Errorf("unexpected error: %v", err)
+
 		return
 	}
 
@@ -70,8 +71,8 @@ func TestString(t *testing.T) {
 		Epoch: 1,
 	}
 	copy(key.SecretData[:], sampleCode+sampleCode+sampleCode)
-	strval := key.String()
-	expected := "#1 0006b8c0"
+	strval := key.String()    // nolint:ifshort
+	expected := "#1 0006b8c0" // nolint:ifshort
 
 	if strval != expected {
 		t.Errorf(

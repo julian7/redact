@@ -9,8 +9,7 @@ import (
 	"os"
 
 	keyV0 "github.com/julian7/redact/files/key_v0"
-	"github.com/julian7/redact/gitutil"
-	"github.com/julian7/redact/logger"
+	"github.com/julian7/redact/sdk/git"
 	"github.com/spf13/afero"
 )
 
@@ -21,33 +20,19 @@ const (
 	KeyCurrentType = 0
 )
 
-var GitDirFunc = gitutil.GitDir
-
 // SecretKey contains secret key in a git repository
 type SecretKey struct {
-	afero.Fs
-	*logger.Logger
-	RepoInfo  gitutil.GitRepoInfo
-	KeyDir    string
+	*git.Repo
 	Keys      map[uint32]KeyHandler
 	LatestKey uint32
 	Cache     map[string]string
 }
 
 // NewSecretKey generates a new repo key in the OS' filesystem
-func NewSecretKey(l *logger.Logger) (*SecretKey, error) {
-	var secretkey SecretKey
-
-	err := GitDirFunc(&secretkey.RepoInfo)
-	if err != nil {
-		return nil, errors.New("not a git repository")
-	}
-
+func NewSecretKey(repo *git.Repo) (*SecretKey, error) {
 	return &SecretKey{
-		Fs:     NewOsFs(),
-		Logger: l,
-		KeyDir: buildKeyDir(secretkey.RepoInfo.Common),
-		Cache:  make(map[string]string),
+		Repo:  repo,
+		Cache: make(map[string]string),
 	}, nil
 }
 
@@ -60,11 +45,6 @@ func (k *SecretKey) Generate() error {
 	k.LatestKey = epoch
 
 	return k.Keys[epoch].Generate()
-}
-
-// KeyFile returns secret key's file name
-func (k *SecretKey) KeyFile() string {
-	return buildKeyFileName(k.KeyDir)
 }
 
 // Read loads key from reader stream
@@ -127,14 +107,14 @@ func (k *SecretKey) Load(strict bool) error {
 		return err
 	}
 
-	keyfile := buildKeyFileName(k.KeyDir)
+	keyfile := k.Repo.Keyfile()
 
-	err = checkFileMode(k.Fs, "key file", keyfile, 0600, strict)
+	err = checkFileMode(k.Repo.Fs, "key file", keyfile, 0600, strict)
 	if err != nil {
 		return err
 	}
 
-	f, err := k.OpenFile(keyfile, os.O_RDONLY, 0600)
+	f, err := k.Repo.OpenFile(keyfile, os.O_RDONLY, 0600)
 	if err != nil {
 		return fmt.Errorf("opening key file for reading: %w", err)
 	}
@@ -178,7 +158,7 @@ func (k *SecretKey) Save() error {
 		return err
 	}
 
-	f, err := afero.TempFile(k.Fs, k.KeyDir, "temp")
+	f, err := afero.TempFile(k.Repo.Fs, k.Repo.Keydir(), "temp")
 	if err != nil {
 		return fmt.Errorf("saving key file: %w", err)
 	}
@@ -191,12 +171,12 @@ func (k *SecretKey) Save() error {
 		return fmt.Errorf("closing temp file for key: %w", err)
 	}
 
-	keyFileName := buildKeyFileName(k.KeyDir)
-	if err = k.Rename(f.Name(), keyFileName); err != nil {
+	keyFileName := k.Repo.Keyfile()
+	if err = k.Repo.Rename(f.Name(), keyFileName); err != nil {
 		return fmt.Errorf("placing secret key: %w", err)
 	}
 
-	if err := k.Fs.Chmod(keyFileName, 0600); err != nil {
+	if err := k.Repo.Fs.Chmod(keyFileName, 0600); err != nil {
 		return fmt.Errorf("setting permissions on secret key: %w", err)
 	}
 
@@ -229,13 +209,13 @@ func (k *SecretKey) ensureKeys() {
 }
 
 func (k *SecretKey) getOrCreateKeyDir() error {
-	fs, err := k.Stat(k.KeyDir)
+	fs, err := k.Repo.Stat(k.Repo.Keydir())
 	if err != nil {
-		if err := k.Mkdir(k.KeyDir, 0700); err != nil {
+		if err := k.Repo.Mkdir(k.Repo.Keydir(), 0700); err != nil {
 			return fmt.Errorf("creating keydir: %w", err)
 		}
 
-		fs, err = k.Stat(k.KeyDir)
+		fs, err = k.Repo.Stat(k.Repo.Keydir())
 	}
 
 	if err != nil {
@@ -250,7 +230,7 @@ func (k *SecretKey) getOrCreateKeyDir() error {
 }
 
 func (k *SecretKey) checkKeyDir(strict bool) error {
-	fs, err := k.Stat(k.KeyDir)
+	fs, err := k.Repo.Stat(k.Repo.Keydir())
 	if err != nil {
 		return fmt.Errorf("keydir not available: %w", err)
 	}
@@ -259,7 +239,7 @@ func (k *SecretKey) checkKeyDir(strict bool) error {
 		return errors.New("keydir is not a directory")
 	}
 
-	err = checkFileMode(k.Fs, "key dir", k.KeyDir, 0700, strict)
+	err = checkFileMode(k.Repo.Fs, "key dir", k.Repo.Keydir(), 0700, strict)
 	if err != nil {
 		return err
 	}
@@ -279,7 +259,7 @@ func (k *SecretKey) String() string {
 
 	return fmt.Sprintf(
 		"%s (%s)",
-		k.KeyDir,
+		k.Repo.Keydir(),
 		keymsg,
 	)
 }

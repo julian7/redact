@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/logger"
 	"github.com/julian7/redact/sdk"
+	"github.com/julian7/redact/sdk/git"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -19,6 +21,7 @@ type cmdFactory func() (*cobra.Command, error)
 type Runtime struct {
 	*logger.Logger
 	*files.SecretKey
+	*git.Repo
 	*viper.Viper
 	Config                 string
 	StrictPermissionChecks bool
@@ -87,15 +90,36 @@ func (rt *Runtime) RegisterFlags(group string, l *pflag.FlagSet) (err error) {
 	return err
 }
 
-func (rt *Runtime) RetrieveSecretKey(cmd *cobra.Command, args []string) error {
+func (rt *Runtime) SetupRepo() error {
 	var err error
 
-	rt.SecretKey, err = files.NewSecretKey(rt.Logger)
+	rt.Repo, err = git.NewRepo(rt.Logger)
 	if err != nil {
 		return err
 	}
 
-	return sdk.RedactRepo(rt.SecretKey, rt.StrictPermissionChecks)
+	rt.SecretKey, err = files.NewSecretKey(rt.Repo)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rt *Runtime) LoadSecretKey(cmd *cobra.Command, args []string) error {
+	if err := rt.SetupRepo(); err != nil {
+		return fmt.Errorf("detecting repo config: %w", err)
+	}
+
+	if err := rt.SecretKey.Load(rt.StrictPermissionChecks); err != nil {
+		if err2 := rt.Repo.CheckExchangeDir(); err2 != nil {
+			return errors.New("repository is not using redact")
+		}
+
+		return fmt.Errorf("repository is locked: %w", err)
+	}
+
+	return nil
 }
 
 func (rt *Runtime) SaveGitSettings() error {

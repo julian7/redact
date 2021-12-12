@@ -25,12 +25,14 @@ func TestRegisterEncoder(t *testing.T) {
 	err := encoder.RegisterEncoder(id, newFakeEncoder)
 	if err != nil {
 		t.Error(err)
+
 		return
 	}
 
 	enc, err := encoder.NewEncoder(id, key)
 	if err != nil {
 		t.Error(err)
+
 		return
 	}
 
@@ -64,12 +66,14 @@ func TestRegisterEncoderError(t *testing.T) {
 	err := encoder.RegisterEncoder(id, newFakeEncoder)
 	if err != nil {
 		t.Error(err)
+
 		return
 	}
 
 	err = encoder.RegisterEncoder(id, newFakeEncoder)
 	if err == nil || err.Error() != "encoder type 20 already exists" {
 		t.Errorf("unexpected error: %v", err)
+
 		return
 	}
 }
@@ -80,6 +84,7 @@ func TestUnegisterEncoderError(t *testing.T) {
 	err := encoder.UnregisterEncoder(id)
 	if err == nil || err.Error() != "encoder type 25 doesn't exist" {
 		t.Errorf("unexpected error: %v", err)
+
 		return
 	}
 }

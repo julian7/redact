@@ -8,7 +8,7 @@ import (
 
 const (
 	sampleCode = "0123456789abcdefghijklmnopqrstuv"
-	//sampleHMAC      = "0123456789abcdefghijklmnopqrstuv0123456789abcdefghijklmnopqrstuv"
+	// sampleHMAC      = "0123456789abcdefghijklmnopqrstuv0123456789abcdefghijklmnopqrstuv"
 	samplePlaintext = "Lorem ipsum dolor sit amet, consectetur adipiscing " +
 		"elit. Fusce odio lacus, feugiat a elit ut, hendrerit venenatis en" +
 		"im. Duis vehicula, purus nec cursus iaculis, purus magna elementu" +
@@ -64,12 +64,14 @@ func TestEncode(t *testing.T) {
 	enc, err := encoder.NewAES256GCM96([]byte(sampleCode + sampleCode + sampleCode))
 	if err != nil {
 		t.Errorf("cannot create encoder: %v", err)
+
 		return
 	}
 
 	ret, err := enc.Encode([]byte(samplePlaintext))
 	if err != nil {
 		t.Errorf("cannot encode: %v", err)
+
 		return
 	}
 
@@ -82,12 +84,14 @@ func TestDecode(t *testing.T) {
 	enc, err := encoder.NewAES256GCM96([]byte(sampleCode + sampleCode + sampleCode))
 	if err != nil {
 		t.Errorf("cannot create encoder: %v", err)
+
 		return
 	}
 
 	ret, err := enc.Decode([]byte(sampleCiphertext))
 	if err != nil {
 		t.Errorf("cannot decode: %v", err)
+
 		return
 	}
 

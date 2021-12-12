@@ -4,8 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/julian7/redact/files"
-	"github.com/julian7/redact/sdk"
+	"github.com/julian7/redact/gitutil"
 	"github.com/spf13/cobra"
 )
 
@@ -51,11 +50,11 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 	keyFile := rt.Viper.GetString("key")
 	if keyFile == "" {
 		_ = cmd.Usage()
+
 		return errors.New("--key is required")
 	}
 
-	rt.SecretKey, err = files.NewSecretKey(rt.Logger)
-	if err != nil {
+	if err := rt.SetupRepo(); err != nil {
 		return fmt.Errorf("building secret key: %w", err)
 	}
 
@@ -68,10 +67,7 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = sdk.TouchUp(rt.SecretKey, func(err error) {
-		rt.Logger.Warn(err.Error())
-	})
-	if err != nil {
+	if err := gitutil.Renormalize(rt.Repo.Toplevel, false); err != nil {
 		return err
 	}
 

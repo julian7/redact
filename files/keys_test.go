@@ -12,53 +12,9 @@ import (
 	"github.com/spf13/afero"
 
 	"github.com/julian7/redact/files"
-	"github.com/julian7/redact/gitutil"
-	"github.com/julian7/redact/logger"
 	"github.com/julian7/tester"
 	"github.com/julian7/tester/ioprobe"
 )
-
-func TestNewSecretKey(t *testing.T) {
-	oldgitdir := files.GitDirFunc
-	files.GitDirFunc = func(info *gitutil.GitRepoInfo) error { return errors.New("no git dir") }
-	_, err := files.NewSecretKey(logger.New())
-	files.GitDirFunc = oldgitdir
-
-	if err == nil || err.Error() != "not a git repository" {
-		t.Errorf("Unexpected error: %v", err)
-	}
-
-	files.GitDirFunc = func(info *gitutil.GitRepoInfo) error {
-		info.Common = ".git"
-		info.Toplevel = "/git/repo"
-
-		return nil
-	}
-	k, err := files.NewSecretKey(logger.New())
-	files.GitDirFunc = oldgitdir
-
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-		return
-	}
-
-	if _, ok := k.Fs.(afero.Fs); !ok {
-		t.Errorf("Unexpected filesystem type: %T", k.Fs)
-	}
-
-	if k.KeyDir != ".git/redact" {
-		t.Errorf("invalid keydir: %s", k.KeyDir)
-	}
-}
-
-func TestKeyFile(t *testing.T) {
-	k := files.SecretKey{KeyDir: ".git/redact"}
-	keyfile := k.KeyFile()
-
-	if keyfile != ".git/redact/key" {
-		t.Errorf("invalid keyfile: %s", keyfile)
-	}
-}
 
 type key struct {
 	epoch uint32
@@ -152,11 +108,13 @@ func TestGenerate(t *testing.T) {
 	k, err := genGitRepo()
 	if err != nil {
 		t.Error(err)
+
 		return
 	}
 
 	if k == nil {
 		t.Error("cannot generate git repo")
+
 		return
 	}
 
@@ -164,6 +122,7 @@ func TestGenerate(t *testing.T) {
 		err := k.Generate()
 		if err != nil {
 			t.Errorf("Error generating %s keypair: %v", name, err.Error())
+
 			return
 		}
 	}
@@ -174,6 +133,7 @@ func TestGenerate(t *testing.T) {
 			key, err := k.Key(uint32(idx))
 			if err != nil {
 				t.Errorf("cannot retrieve %s key: %v", name, err)
+
 				return
 			}
 			val := key.Secret()
@@ -220,7 +180,7 @@ func TestLoad(t *testing.T) { //nolint:funlen
 			"uninitialized",
 			false,
 			func(*files.SecretKey) {},
-			errors.New("open /git/repo/.git/test/key: file does not exist"),
+			errors.New("open .git/redact/key: file does not exist"),
 		},
 		{
 			"initialized",
@@ -231,8 +191,8 @@ func TestLoad(t *testing.T) { //nolint:funlen
 		{
 			"no key dir",
 			true,
-			func(k *files.SecretKey) { k.KeyDir = "/a/b/c" },
-			errors.New("keydir not available: open /a/b/c: file does not exist"),
+			func(k *files.SecretKey) { _ = k.Repo.RemoveAll(k.Repo.Keydir()) },
+			errors.New("keydir not available: open .git/redact: file does not exist"),
 		},
 		{
 			"excessive rights",
@@ -265,11 +225,13 @@ func TestLoad(t *testing.T) { //nolint:funlen
 			k, err := genGitRepo()
 			if err != nil {
 				t.Error(err)
+
 				return
 			}
 			if tc.hasKey {
 				if err := writeKey(k); err != nil {
 					t.Error(err)
+
 					return
 				}
 			}
@@ -277,6 +239,7 @@ func TestLoad(t *testing.T) { //nolint:funlen
 			err = k.Load(true)
 			if err2 := tester.AssertError(tc.expectedError, err); err2 != nil {
 				t.Error(err2)
+
 				return
 			}
 			if err != nil {
@@ -285,6 +248,7 @@ func TestLoad(t *testing.T) { //nolint:funlen
 			key, err := k.Key(0)
 			if err != nil {
 				t.Errorf("Cannot retrieve latest key: %v", err)
+
 				return
 			}
 			received := key.Secret()
@@ -360,6 +324,7 @@ func TestSaveTo(t *testing.T) { //nolint:funlen
 				err := k.Generate()
 				if err != nil {
 					t.Errorf("cannot generate key: %v", err)
+
 					return
 				}
 			}
@@ -405,7 +370,7 @@ func TestSave(t *testing.T) { //nolint:funlen
 			"error getting keydir",
 			false,
 			func(k *files.SecretKey) {
-				_ = k.RemoveAll(k.KeyDir)
+				_ = k.RemoveAll(k.Repo.Keydir())
 				k.Fs = &noMkdir{Fs: k.Fs}
 			},
 			errors.New("creating keydir: Mkdir returns error"),
@@ -425,16 +390,19 @@ func TestSave(t *testing.T) { //nolint:funlen
 			k, err := genGitRepo()
 			if err != nil {
 				t.Error(err)
+
 				return
 			}
 			err = k.Generate()
 			if err != nil {
 				t.Errorf("Error generating keys: %v", err.Error())
+
 				return
 			}
 			if tc.hasKey {
 				if err := writeKey(k); err != nil {
 					t.Error(err)
+
 					return
 				}
 			}
@@ -443,15 +411,17 @@ func TestSave(t *testing.T) { //nolint:funlen
 			err = k.Save()
 			if err2 := tester.AssertError(tc.err, err); err2 != nil {
 				t.Error(err2)
+
 				return
 			}
 
 			if err != nil {
 				return
 			}
-			finfo, err := k.Stat("/git/repo/.git/test/key")
+			finfo, err := k.Stat(".git/redact/key")
 			if err != nil {
 				t.Errorf("key not created: %v", err)
+
 				return
 			}
 			if !finfo.Mode().IsRegular() {

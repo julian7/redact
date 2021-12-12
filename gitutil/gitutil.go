@@ -36,8 +36,7 @@ type GitRepoInfo struct {
 	Toplevel string
 }
 
-// GitDir detects current git repository's top level and common directories
-func GitDir(info *GitRepoInfo) error {
+func DetectGitRepo() (*GitRepoInfo, error) {
 	out, err := exec.Command(
 		"git",
 		"rev-parse",
@@ -46,29 +45,34 @@ func GitDir(info *GitRepoInfo) error {
 		"--git-common-dir",
 	).Output()
 	if err != nil {
-		return fmt.Errorf("retrieving git rev-parse output: %w", err)
+		return nil, fmt.Errorf("retrieving git rev-parse output: %w", err)
 	}
 
 	data := strings.Split(string(out), "\n")
 	if len(data) != 4 {
-		return errors.New("error parsing git rev-parse")
+		return nil, errors.New("error parsing git rev-parse")
 	}
 
-	info.Toplevel = data[0]
-	info.LegacyCommon = data[1]
-	info.Common = data[2]
+	info := &GitRepoInfo{
+		Common:       data[2],
+		LegacyCommon: data[1],
+		Toplevel:     data[0],
+	}
 
 	if info.Common == "--git-common-dir" {
-		return info.FixCommon()
+		if err := info.FixCommon(); err != nil {
+			return nil, err
+		}
 	}
 
-	return nil
+	return info, nil
 }
 
 // FixCommon fixes common dir setting if legacy git CLI is in use
 func (i *GitRepoInfo) FixCommon() error {
 	if !filepath.IsAbs(i.LegacyCommon) {
 		i.Common = i.LegacyCommon
+
 		return nil
 	}
 

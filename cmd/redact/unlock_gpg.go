@@ -6,9 +6,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/julian7/redact/files"
+	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk"
+	"github.com/julian7/redact/sdk/git"
 	"github.com/spf13/cobra"
 )
 
@@ -41,8 +42,7 @@ this case, you have to provide the appropriate key with the --gpgkey option.`,
 func (rt *Runtime) unlockGpgDo(cmd *cobra.Command, args []string) error {
 	var err error
 
-	rt.SecretKey, err = files.NewSecretKey(rt.Logger)
-	if err != nil {
+	if err := rt.SetupRepo(); err != nil {
 		return fmt.Errorf("building secret key: %w", err)
 	}
 
@@ -50,7 +50,7 @@ func (rt *Runtime) unlockGpgDo(cmd *cobra.Command, args []string) error {
 
 	key, err = rt.loadKeyFromGPG(rt.Viper.GetString("gpgkey"))
 	if err != nil {
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return nil
 		}
 
@@ -72,10 +72,7 @@ func (rt *Runtime) unlockGpgDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = sdk.TouchUp(rt.SecretKey, func(err error) {
-		rt.Logger.Warn(err.Error())
-	})
-	if err != nil {
+	if err := gitutil.Renormalize(rt.Repo.Toplevel, false); err != nil {
 		return err
 	}
 
@@ -112,10 +109,11 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 		stub, err := rt.SecretKey.GetExchangeFilenameStubFor(key)
 		if err != nil {
 			rt.Logger.Warnf("cannot get exchange filename for %x: %v", key, err)
+
 			continue
 		}
 
-		secretKeyFilename := files.ExchangeSecretKeyFile(stub)
+		secretKeyFilename := git.ExchangeSecretKeyFile(stub)
 
 		st, err := rt.SecretKey.Stat(secretKeyFilename)
 		if err != nil || st.IsDir() {
@@ -129,9 +127,10 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 		fmt.Println("Multiple keys found. Please specify one:")
 
 		for _, idx := range availableKeys {
-			pubKey, err := sdk.LoadPubkeysFromExchange(rt.SecretKey, keys[idx])
+			pubKey, err := sdk.LoadPubkeysFromExchange(rt.Repo, keys[idx])
 			if err != nil {
 				rt.Logger.Warnf("%v", err)
+
 				continue
 			}
 
@@ -156,5 +155,12 @@ func (rt *Runtime) loadKeyFromGPG(gpgkey string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%x", *key), sdk.LoadSecretKeyFromExchange(rt.SecretKey, *key)
+	reader, err := sdk.SecretKeyFromExchange(rt.Repo, *key)
+	if err != nil {
+		return "", err
+	}
+
+	defer reader.Close()
+
+	return fmt.Sprintf("%x", *key), sdk.LoadSecretKeyFromReader(rt.SecretKey, reader)
 }

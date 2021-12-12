@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/julian7/redact/files"
 	"github.com/spf13/cobra"
 )
 
@@ -32,22 +31,22 @@ func (rt *Runtime) initDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	secretkey, err := files.NewSecretKey(rt.Logger)
+	err := rt.SetupRepo()
 	if err != nil {
 		return err
 	}
 
-	if err := secretkey.Load(rt.StrictPermissionChecks); err == nil {
-		return fmt.Errorf("repo already has secret key: %s", secretkey)
+	if err := rt.SecretKey.Load(rt.StrictPermissionChecks); err == nil {
+		return fmt.Errorf("repo already has secret key: %s", rt.SecretKey)
 	}
 
-	if err := secretkey.Generate(); err != nil {
+	if err := rt.SecretKey.Generate(); err != nil {
 		return fmt.Errorf("generating secret key: %w", err)
 	}
 
-	rt.Logger.Infof("New repo key created: %v", secretkey)
+	rt.Logger.Infof("New repo key created: %v", rt.SecretKey)
 
-	if err := secretkey.Save(); err != nil {
+	if err := rt.SecretKey.Save(); err != nil {
 		return fmt.Errorf("saving secret key: %w", err)
 	}
 

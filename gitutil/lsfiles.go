@@ -66,35 +66,40 @@ func parseEntry(entry string) (*FileEntry, error) {
 	if fileEntry.Status == StatusOther {
 		// unknown files: "? <SPACE> <file name>"
 		fileEntry.Name = entry[2:]
-	} else {
-		// known files: "<metadata <TAB> <file name>"
-		contents := strings.Split(entry, "\t")
-		if len(contents) != 2 {
-			return nil, fmt.Errorf("invalid output from git command: %v", entry)
-		}
-		fileEntry.Name = contents[1]
 
-		// metadata: "<status> <SPACE> <file mode> <SPACE> <sha1> <SPACE> <stage>"
-		meta := strings.Split(contents[0], " ")
-
-		mode, err := strconv.ParseInt(meta[1], 8, 64)
-		if err != nil {
-			return nil, fmt.Errorf(`parsing mode for file entry "%s": %w`, entry, err)
-		}
-		fileEntry.Mode = mode
-
-		sha1, err := hex.DecodeString(meta[2])
-		if err != nil {
-			return nil, fmt.Errorf(`parsing SHA1 entry for file entry "%s": %w`, entry, err)
-		}
-		copy(fileEntry.SHA1[:], sha1)
-
-		stage, err := strconv.ParseInt(meta[3], 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf(`parsing stage for file entry "%s": %w`, entry, err)
-		}
-		fileEntry.Stage = stage
+		return fileEntry, nil
 	}
+	// known files: "<metadata <TAB> <file name>"
+	contents := strings.Split(entry, "\t")
+	if len(contents) != 2 {
+		return nil, fmt.Errorf("invalid output from git command: %v", entry)
+	}
+
+	fileEntry.Name = contents[1]
+
+	// metadata: "<status> <SPACE> <file mode> <SPACE> <sha1> <SPACE> <stage>"
+	meta := strings.Split(contents[0], " ")
+
+	mode, err := strconv.ParseInt(meta[1], 8, 64)
+	if err != nil {
+		return nil, fmt.Errorf(`parsing mode for file entry "%s": %w`, entry, err)
+	}
+
+	fileEntry.Mode = mode
+
+	sha1, err := hex.DecodeString(meta[2])
+	if err != nil {
+		return nil, fmt.Errorf(`parsing SHA1 entry for file entry "%s": %w`, entry, err)
+	}
+
+	copy(fileEntry.SHA1[:], sha1)
+
+	stage, err := strconv.ParseInt(meta[3], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf(`parsing stage for file entry "%s": %w`, entry, err)
+	}
+
+	fileEntry.Stage = stage
 
 	return fileEntry, nil
 }

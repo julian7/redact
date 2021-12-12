@@ -101,16 +101,19 @@ func TestEncode(t *testing.T) { //nolint:funlen
 	k, err := genGitRepo()
 	if err != nil {
 		t.Error(err)
+
 		return
 	}
 
 	if err := writeKey(k); err != nil {
 		t.Error(err)
+
 		return
 	}
 
 	if err := k.Load(true); err != nil {
 		t.Error(err)
+
 		return
 	}
 
@@ -202,6 +205,7 @@ func TestEncode(t *testing.T) { //nolint:funlen
 			outbuf, ok := tc.writer.(*bytes.Buffer)
 			if !ok {
 				t.Error("couldn't capture encoded output")
+
 				return
 			}
 			if err := checkString(tc.output, outbuf.String()); err != nil {
@@ -217,16 +221,19 @@ func TestDecode(t *testing.T) { //nolint:funlen
 	k, err := genGitRepo()
 	if err != nil {
 		t.Error(err)
+
 		return
 	}
 
 	if err := writeKey(k); err != nil {
 		t.Error(err)
+
 		return
 	}
 
 	if err := k.Load(true); err != nil {
 		t.Error(err)
+
 		return
 	}
 
@@ -309,6 +316,7 @@ func TestDecode(t *testing.T) { //nolint:funlen
 			outbuf, ok := tc.writer.(*bytes.Buffer)
 			if !ok {
 				t.Error("couldn't capture encoded output")
+
 				return
 			}
 			if err := checkString(tc.output, outbuf.String()); err != nil {
@@ -322,11 +330,13 @@ func TestDecode(t *testing.T) { //nolint:funlen
 
 	if err := k.Decode(reader, writer); err != nil {
 		t.Error(err)
+
 		return
 	}
 
 	if err := checkString(samplePlaintext, writer.String()); err != nil {
 		t.Error(err)
+
 		return
 	}
 }
@@ -349,28 +359,33 @@ func TestFileStatus(t *testing.T) {
 			k, err := genGitRepo()
 			if err != nil {
 				t.Error(err)
+
 				return
 			}
 			if err := writeKey(k); err != nil {
 				t.Error(err)
+
 				return
 			}
 			if err := k.Load(true); err != nil {
 				t.Error(err)
+
 				return
 			}
 			if err := writeFile(k, testFN, 0644, tc.contents); err != nil {
 				t.Error(err)
+
 				return
 			}
 			reader, err := k.Open(testFN)
 			if err != nil {
 				t.Error(err)
+
 				return
 			}
 			epoch, err := k.FileStatus(reader)
 			reader.Close()
-			if err != tc.err {
+			if !errors.Is(err, tc.err) {
 				t.Errorf("expected %v error; received: %v", tc.err, err)
 			}
 			if epoch != tc.epoch {

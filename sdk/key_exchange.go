@@ -11,19 +11,20 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
+	"github.com/julian7/redact/sdk/git"
 	"github.com/spf13/afero"
 )
 
-type ErrExchangeDir struct {
+type ExchangeDirError struct {
 	err error
 }
 
-func (e *ErrExchangeDir) Error() string {
+func (e *ExchangeDirError) Error() string {
 	return e.err.Error()
 }
 
-func (e *ErrExchangeDir) Unwrap() error {
-	err, ok := e.err.(interface{ Unwrap() error })
+func (e *ExchangeDirError) Unwrap() error {
+	err, ok := e.err.(interface{ Unwrap() error }) // nolint:errorlint
 	if ok {
 		return err.Unwrap()
 	}
@@ -31,25 +32,23 @@ func (e *ErrExchangeDir) Unwrap() error {
 	return nil
 }
 
-// LoadSecretKeyFromExchange loads data from an encrypted secret key into provided
+// SecretKeyFromExchange loads data from an encrypted secret key into provided
 // object, and then saves it.
-func LoadSecretKeyFromExchange(secretkey *files.SecretKey, fingerprint []byte) error {
-	stub, err := secretkey.GetExchangeFilenameStubFor(fingerprint)
+func SecretKeyFromExchange(repo *git.Repo, fingerprint []byte) (io.ReadCloser, error) {
+	stub, err := repo.GetExchangeFilenameStubFor(fingerprint)
 	if err != nil {
-		return fmt.Errorf("finding key in exchange dir: %w", err)
+		return nil, fmt.Errorf("finding key in exchange dir: %w", err)
 	}
 
 	reader, err := gpgutil.DecryptWithKey(
-		files.ExchangeSecretKeyFile(stub),
+		git.ExchangeSecretKeyFile(stub),
 		fingerprint,
 	)
 	if err != nil {
-		return fmt.Errorf("decrypt secret key from exchange dir: %w", err)
+		return nil, fmt.Errorf("decrypt secret key from exchange dir: %w", err)
 	}
 
-	defer reader.Close()
-
-	return LoadSecretKeyFromReader(secretkey, reader)
+	return reader, nil
 }
 
 // LoadSecretKeyFromReader reads secret key from an io.Reader, and saves it into its
@@ -67,13 +66,13 @@ func LoadSecretKeyFromReader(secretkey *files.SecretKey, reader io.Reader) error
 }
 
 // SaveSecretExchange saves secret key into key exchange, encrypted with OpenPGP key
-func SaveSecretExchange(secretkey *files.SecretKey, key *openpgp.Entity) error {
-	kxstub, err := secretkey.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
+func SaveSecretExchange(repo *git.Repo, key *openpgp.Entity, writerCallback func(io.Writer)) error {
+	kxstub, err := repo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
 	if err != nil {
 		return err
 	}
 
-	secretName := files.ExchangeSecretKeyFile(kxstub)
+	secretName := git.ExchangeSecretKeyFile(kxstub)
 
 	secretWriter, err := os.OpenFile(secretName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
@@ -84,7 +83,7 @@ func SaveSecretExchange(secretkey *files.SecretKey, key *openpgp.Entity) error {
 	r, w := io.Pipe()
 
 	go func(writer io.WriteCloser) {
-		_ = secretkey.SaveTo(writer)
+		writerCallback(writer)
 		writer.Close()
 	}(w)
 
@@ -92,13 +91,13 @@ func SaveSecretExchange(secretkey *files.SecretKey, key *openpgp.Entity) error {
 }
 
 // LoadPubkeysFromExchange loads a public key from key exchange
-func LoadPubkeysFromExchange(secretkey *files.SecretKey, fingerprint []byte) (openpgp.EntityList, error) {
-	stub, err := secretkey.GetExchangeFilenameStubFor(fingerprint)
+func LoadPubkeysFromExchange(repo *git.Repo, fingerprint []byte) (openpgp.EntityList, error) {
+	stub, err := repo.GetExchangeFilenameStubFor(fingerprint)
 	if err != nil {
 		return nil, fmt.Errorf("finding exchange public key: %w", err)
 	}
 
-	pubkey, err := gpgutil.LoadPubKeyFromFile(files.ExchangePubKeyFile(stub), true)
+	pubkey, err := gpgutil.LoadPubKeyFromFile(git.ExchangePubKeyFile(stub), true)
 	if err != nil {
 		return nil, fmt.Errorf("loading public key for %x: %w", fingerprint, err)
 	}
@@ -107,15 +106,15 @@ func LoadPubkeysFromExchange(secretkey *files.SecretKey, fingerprint []byte) (op
 }
 
 // SavePubkeyExchange saves public OpenPGP key into key exchange
-func SavePubkeyExchange(secretkey *files.SecretKey, key *openpgp.Entity) error {
-	kxstub, err := secretkey.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
+func SavePubkeyExchange(repo *git.Repo, key *openpgp.Entity) error {
+	kxstub, err := repo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
 	if err != nil {
 		return err
 	}
 
-	pubkeyName := files.ExchangePubKeyFile(kxstub)
+	pubkeyName := git.ExchangePubKeyFile(kxstub)
 
-	pubkeyWriter, err := os.OpenFile(pubkeyName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	pubkeyWriter, err := repo.OpenFile(pubkeyName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("opening exchange pubkey file: %w", err)
 	}
@@ -130,33 +129,27 @@ func SavePubkeyExchange(secretkey *files.SecretKey, key *openpgp.Entity) error {
 }
 
 // UpdateSecretExchangeKeys updates all key exchange secret keys with new data
-func UpdateSecretExchangeKeys(secretkey *files.SecretKey) (int, error) {
-	kxdir, err := secretkey.ExchangeDir()
-	if err != nil {
-		return 0, &ErrExchangeDir{
-			err: fmt.Errorf("fetching key exchange dir: %w", err),
-		}
-	}
-
+func UpdateSecretExchangeKeys(repo *git.Repo, writerCallback func(io.Writer)) (int, error) {
+	kxdir := repo.ExchangeDir()
 	updated := 0
 
-	err = afero.Walk(secretkey.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
+	err := afero.Walk(repo.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			return nil // nolint:nilerr
+		}
+
+		if !strings.HasSuffix(path, git.ExtKeyArmor) {
 			return nil
 		}
 
-		if !strings.HasSuffix(path, files.ExtKeyArmor) {
-			return nil
-		}
-
-		fingerprintText := strings.TrimRight(filepath.Base(path), files.ExtKeyArmor)
+		fingerprintText := strings.TrimRight(filepath.Base(path), git.ExtKeyArmor)
 
 		fingerprint, err := hex.DecodeString(fingerprintText)
 		if err != nil {
-			return nil
+			return nil // nolint:nilerr
 		}
 
-		keys, err := LoadPubkeysFromExchange(secretkey, fingerprint)
+		keys, err := LoadPubkeysFromExchange(repo, fingerprint)
 		if err != nil {
 			return fmt.Errorf("loading public key for %s: %w", fingerprintText, err)
 		}
@@ -167,7 +160,7 @@ func UpdateSecretExchangeKeys(secretkey *files.SecretKey) (int, error) {
 
 		updated++
 
-		err = SaveSecretExchange(secretkey, keys[0])
+		err = SaveSecretExchange(repo, keys[0], writerCallback)
 		if err != nil {
 			return fmt.Errorf(
 				"saving secret key encrypted with key %s: %w",

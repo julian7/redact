@@ -3,11 +3,10 @@ package files_test
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/julian7/redact/files"
-	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/logger"
+	"github.com/julian7/redact/sdk/git"
 	"github.com/spf13/afero"
 )
 
@@ -17,19 +16,18 @@ const (
 
 func genGitRepo() (*files.SecretKey, error) {
 	k := &files.SecretKey{
-		Fs:     afero.NewMemMapFs(),
-		Logger: logger.New(),
-		RepoInfo: gitutil.GitRepoInfo{
+		Repo: &git.Repo{
+			Fs:       afero.NewMemMapFs(),
+			Logger:   logger.New(),
 			Common:   ".git",
 			Toplevel: "/git/repo",
 		},
-		KeyDir: "/git/repo/.git/test",
-		Cache:  map[string]string{},
+		Cache: map[string]string{},
 	}
 
-	err := k.Mkdir(k.KeyDir, 0700)
+	err := k.Mkdir(k.Repo.Keydir(), 0700)
 	if err != nil {
-		return nil, fmt.Errorf("creating key dir %s: %w", k.KeyDir, err)
+		return nil, fmt.Errorf("creating key dir %s: %w", k.Repo.Keydir(), err)
 	}
 
 	return k, nil
@@ -38,7 +36,7 @@ func genGitRepo() (*files.SecretKey, error) {
 func writeKey(k *files.SecretKey) error {
 	return writeFile(
 		k,
-		filepath.Join(k.KeyDir, "key"),
+		k.Repo.Keyfile(),
 		0600,
 		"\000REDACT\000"+ // preamble
 			"\000\000\000\000"+ // key type == 0
@@ -46,20 +44,6 @@ func writeKey(k *files.SecretKey) error {
 			sampleCode+sampleCode+sampleCode+ // sample key
 			"\000\000\000\002"+ // second key epoch
 			sampleCode+sampleCode+sampleCode, // sample key
-	)
-}
-
-func writeKX(k *files.SecretKey) error {
-	kxdir := filepath.Join(k.RepoInfo.Toplevel, ".redact")
-	if err := k.MkdirAll(kxdir, 0755); err != nil {
-		return fmt.Errorf("creating exchange dir: %w", err)
-	}
-
-	return writeFile(
-		k,
-		filepath.Join(kxdir, ".gitattributes"),
-		0644,
-		"* !filter !diff\n*.gpg binary\n",
 	)
 }
 

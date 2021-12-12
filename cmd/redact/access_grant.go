@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/julian7/redact/gpgutil"
@@ -16,7 +17,7 @@ func (rt *Runtime) accessGrantCmd() (*cobra.Command, error) {
 		Use:     "grant [KEY...]",
 		Args:    cobra.ArbitraryArgs,
 		Short:   "Grants access to collaborators with OpenPGP keys",
-		PreRunE: rt.RetrieveSecretKey,
+		PreRunE: rt.LoadSecretKey,
 		RunE:    rt.accessGrantDo,
 	}
 
@@ -31,7 +32,7 @@ func (rt *Runtime) accessGrantCmd() (*cobra.Command, error) {
 	return cmd, nil
 }
 
-func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error { //nolint:funlen
+func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error {
 	var keyEntries openpgp.EntityList
 
 	rt.loadKeys(rt.Viper.GetStringSlice("openpgp"), false, &keyEntries)
@@ -62,6 +63,7 @@ func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error { //no
 	for _, key := range keyEntries {
 		if err := rt.saveKey(key); err != nil {
 			rt.Logger.Warnf("cannot save key: %v", err)
+
 			continue
 		}
 		saved++
@@ -85,6 +87,7 @@ func (rt *Runtime) loadKeys(pgpFiles []string, isArmor bool, keyEntries *openpgp
 		entries, err := gpgutil.LoadPubKeyFromFile(pgpFile, isArmor)
 		if err != nil {
 			rt.Logger.Warnf("loading public key: %v", err)
+
 			continue
 		}
 
@@ -95,11 +98,18 @@ func (rt *Runtime) loadKeys(pgpFiles []string, isArmor bool, keyEntries *openpgp
 func (rt *Runtime) saveKey(key *openpgp.Entity) error {
 	gpgutil.PrintKey(key)
 
-	if err := sdk.SaveSecretExchange(rt.SecretKey, key); err != nil {
+	err := sdk.SaveSecretExchange(rt.Repo, key, func(w io.Writer) {
+		err := rt.SecretKey.SaveTo(w)
+		if err != nil {
+			rt.Repo.Warn(err)
+		}
+	})
+
+	if err != nil {
 		return err
 	}
 
-	if err := sdk.SavePubkeyExchange(rt.SecretKey, key); err != nil {
+	if err := sdk.SavePubkeyExchange(rt.Repo, key); err != nil {
 		return err
 	}
 

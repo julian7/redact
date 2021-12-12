@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cobra"
@@ -13,7 +14,7 @@ func (rt *Runtime) keyGenerateCmd() (*cobra.Command, error) {
 		Use:     "generate",
 		Aliases: []string{"gen", "g"},
 		Short:   "Generates redact key",
-		PreRunE: rt.RetrieveSecretKey,
+		PreRunE: rt.LoadSecretKey,
 		RunE:    rt.generateDo,
 	}
 
@@ -35,13 +36,19 @@ func (rt *Runtime) generateDo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("saving secret key: %w", err)
 	}
 
-	updatedKeys, err := sdk.UpdateSecretExchangeKeys(rt.SecretKey)
+	updatedKeys, err := sdk.UpdateSecretExchangeKeys(rt.Repo, func(w io.Writer) {
+		if err := rt.SecretKey.SaveTo(w); err != nil {
+			rt.Logger.Warn(err)
+		}
+	})
 	if err != nil {
-		var exchangedir *sdk.ErrExchangeDir
+		var exchangedir *sdk.ExchangeDirError
 		if errors.As(err, &exchangedir) {
 			return nil
 		}
+
 		rt.Logger.Warn(`unable to update secret keys; restore original key with "redact unlock", and try again`)
+
 		return fmt.Errorf("updating key exchange secret keys: %w", err)
 	}
 

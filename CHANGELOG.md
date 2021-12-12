@@ -12,6 +12,8 @@ Changed:
 * Renaming "master key" with "secret key", "master" branch with "main."
 * Breaking change: Unlocking with GPG key moved to `redact unlock gpg` command.
 * Breaking change: Unlocking with secret key needs argument: `redact unlock --key <secret key>`.
+* Breaking change: instead of touching files, redact runs `git add --renormalize <toplevel>` to re-run clean filter.
+* Internal: separated repo/file management from of key management
 
 Fixed:
 

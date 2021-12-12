@@ -7,6 +7,9 @@ linters:
     - dogsled
     - dupl
     - errcheck
+    - errname
+    - errorlint
+    - exportloopref
     - funlen
     - gocognit
     - goconst
@@ -15,18 +18,18 @@ linters:
     - godox
     - gofmt
     - goimports
-    - golint
     - gosec
     - gosimple
     - govet
+    - ifshort
     - ineffassign
-    - interfacer
     - lll
-    - maligned
     - misspell
     - nakedret
+    - nilerr
+    - nlreturn
     - prealloc
-    - scopelint
+    - revive
     - staticcheck
     - structcheck
     - stylecheck
