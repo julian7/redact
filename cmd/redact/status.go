@@ -7,6 +7,7 @@ import (
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
+	"github.com/julian7/redact/logger"
 	"github.com/julian7/redact/sdk/git"
 	"github.com/spf13/cobra"
 )
@@ -47,6 +48,7 @@ these secrets instead.`,
 }
 
 type statusOptions struct {
+	Logger     *logger.Logger
 	repoOnly   bool
 	encOnly    bool
 	plainOnly  bool
@@ -61,6 +63,7 @@ type statusOptions struct {
 
 func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error {
 	opts := statusOptions{
+		Logger:     rt.Logger,
 		repoOnly:   rt.Viper.GetBool("status.repo"),
 		encOnly:    rt.Viper.GetBool("status.encrypted"),
 		plainOnly:  rt.Viper.GetBool("status.unencrypted"),
@@ -117,12 +120,18 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 	var encKeyVersion uint32
 
 	reader, err := gitutil.Cat(entry.SHA1[:])
+	if err != nil {
+		opts.Logger.Warnf("git cat-file %s: %w", entry.Name, err)
+
+		return
+	}
+
+	defer reader.Close()
+
+	epoch, err := opts.key.FileStatus(reader)
 	if err == nil {
-		epoch, err := opts.key.FileStatus(reader)
-		if err == nil {
-			encKeyVersion = epoch
-		}
-		defer reader.Close()
+		encKeyVersion = epoch
+		isEncrypted = true
 	}
 
 	msg := []string{}
