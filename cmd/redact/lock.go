@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/sdk"
 	"github.com/spf13/cobra"
 )
@@ -34,11 +33,13 @@ func (rt *Runtime) lockDo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 
-	if err := rt.SecretKey.Remove(rt.Repo.Keyfile()); err != nil {
+	if err := rt.Repo.Remove(rt.Repo.Keyfile()); err != nil {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 
-	if err := gitutil.Renormalize(rt.Repo.Toplevel, false); err != nil {
+	if err := rt.Repo.ForceReencrypt(false, func(err error) {
+		rt.Logger.Warn(err.Error())
+	}); err != nil {
 		return err
 	}
 

@@ -22,7 +22,7 @@ func (rt *Runtime) gitCleanCmd() (*cobra.Command, error) {
 	}
 
 	flags := cmd.Flags()
-	flags.Int32P("epoch", "e", -1, "Use specific key epoch (by default it uses the latest key)")
+	flags.Uint32P("epoch", "e", 0, "Use specific key epoch (by default it uses the latest key)")
 	flags.StringP("file", "f", "", "file path being filtered; ignored when --epoch is set")
 
 	if err := rt.RegisterFlags("git.clean", flags); err != nil {
@@ -36,13 +36,13 @@ func (rt *Runtime) gitCleanDo(cmd *cobra.Command, args []string) error {
 	var keyEpoch uint32
 
 	if rt.Viper.IsSet("git.clean.epoch") {
-		epoch, err := cast.ToInt32E(rt.Viper.Get("git.clean.epoch"))
+		epoch, err := cast.ToUint32E(rt.Viper.Get("git.clean.epoch"))
 		if err != nil {
 			return err
 		}
 
 		if epoch > 0 {
-			keyEpoch = uint32(epoch)
+			keyEpoch = epoch
 		}
 	} else {
 		fname := rt.Viper.GetString("git.clean.file")

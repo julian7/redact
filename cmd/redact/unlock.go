@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/julian7/redact/gitutil"
 	"github.com/spf13/cobra"
 )
 
@@ -67,7 +66,9 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := gitutil.Renormalize(rt.Repo.Toplevel, false); err != nil {
+	if err := rt.Repo.ForceReencrypt(false, func(err error) {
+		rt.Logger.Warn(err.Error())
+	}); err != nil {
 		return err
 	}
 

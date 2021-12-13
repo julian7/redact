@@ -7,7 +7,6 @@ import (
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
-	"github.com/julian7/redact/sdk"
 	"github.com/julian7/redact/sdk/git"
 	"github.com/spf13/cobra"
 )
@@ -90,7 +89,7 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, entry := range files.Items {
-		if entry.Filter == sdk.AttrName && entry.Status != gitutil.StatusOther {
+		if entry.Filter == git.AttrName && entry.Status != gitutil.StatusOther {
 			if opts.encOnly || !opts.plainOnly {
 				opts.handleFileEntry(entry, true)
 			}
@@ -102,7 +101,9 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error {
 	}
 
 	if opts.fixRepo || opts.rekeyFiles {
-		if err := gitutil.Renormalize(rt.Repo.Toplevel, false); err != nil {
+		if err := rt.Repo.ForceReencrypt(opts.rekeyFiles, func(err error) {
+			rt.Logger.Warn(err.Error())
+		}); err != nil {
 			return fmt.Errorf("fixing problems: %w", err)
 		}
 	}

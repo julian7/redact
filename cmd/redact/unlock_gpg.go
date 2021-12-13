@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk"
 	"github.com/julian7/redact/sdk/git"
@@ -72,7 +71,9 @@ func (rt *Runtime) unlockGpgDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := gitutil.Renormalize(rt.Repo.Toplevel, false); err != nil {
+	if err := rt.Repo.ForceReencrypt(false, func(err error) {
+		rt.Logger.Warn(err.Error())
+	}); err != nil {
 		return err
 	}
 
@@ -82,7 +83,7 @@ func (rt *Runtime) unlockGpgDo(cmd *cobra.Command, args []string) error {
 }
 
 func (rt *Runtime) loadKeyFromFile(keyfile string) error {
-	f, err := rt.SecretKey.Fs.OpenFile(keyfile, os.O_RDONLY, 0600)
+	f, err := rt.Repo.Fs.OpenFile(keyfile, os.O_RDONLY, 0600)
 	if err != nil {
 		return fmt.Errorf("loading secret key from %s: %w", keyfile, err)
 	}
@@ -106,7 +107,7 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 	availableKeys := make([]int, 0, len(keys))
 
 	for idx, key := range keys {
-		stub, err := rt.SecretKey.GetExchangeFilenameStubFor(key)
+		stub, err := rt.Repo.GetExchangeFilenameStubFor(key)
 		if err != nil {
 			rt.Logger.Warnf("cannot get exchange filename for %x: %v", key, err)
 
@@ -115,7 +116,7 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 
 		secretKeyFilename := git.ExchangeSecretKeyFile(stub)
 
-		st, err := rt.SecretKey.Stat(secretKeyFilename)
+		st, err := rt.Repo.Stat(secretKeyFilename)
 		if err != nil || st.IsDir() {
 			continue
 		}
