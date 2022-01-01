@@ -2,6 +2,7 @@ package files_test
 
 import (
 	"bytes"
+	"crypto/cipher"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -69,13 +70,13 @@ var (
 
 type failingEncoder struct{}
 
-func (e *failingEncoder) Encode([]byte) ([]byte, error) {
+func (e *failingEncoder) AEAD() (cipher.AEAD, error) {
 	return nil, errors.New("failing encoder error: cannot encode")
 }
-func (e *failingEncoder) Decode([]byte) ([]byte, error) {
-	return nil, errors.New("failing encoder error: cannot decode")
-}
-func newFailingEncoder(key []byte) (encoder.Encoder, error) {
+func (e *failingEncoder) KeySize() int   { return 0 }
+func (e *failingEncoder) String() string { return "failing-encoder" }
+
+func newFailingEncoder(key []byte) (encoder.AEAD, error) {
 	return &failingEncoder{}, nil
 }
 

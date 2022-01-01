@@ -1,52 +1,60 @@
 package encoder_test
 
 import (
-	"bytes"
+	"crypto/cipher"
 	"errors"
 	"testing"
 
 	"github.com/julian7/redact/encoder"
+	"github.com/julian7/tester"
 )
 
 type fakeEncoder struct {
 	key []byte
 }
 
-func newFakeEncoder(key []byte) (encoder.Encoder, error) {
+func newFakeEncoder(key []byte) (encoder.AEAD, error) {
 	return &fakeEncoder{key: key}, nil
 }
-func (e *fakeEncoder) Encode([]byte) ([]byte, error) { return nil, errors.New("not implemented") }
-func (e *fakeEncoder) Decode([]byte) ([]byte, error) { return nil, errors.New("not implemented") }
+
+func (e *fakeEncoder) AEAD() (cipher.AEAD, error) { return nil, errors.New("not implemented") }
+func (e *fakeEncoder) KeySize() int               { return 0 }
+func (e *fakeEncoder) String() string             { return "fake-encoder" }
 
 func TestRegisterEncoder(t *testing.T) {
 	id := 10
-	key := []byte("foo")
 
-	err := encoder.RegisterEncoder(id, newFakeEncoder)
-	if err != nil {
-		t.Error(err)
-
-		return
+	tt := []struct {
+		name string
+		key  string
+		err  error
+	}{
+		{name: "empty key", key: "", err: encoder.ErrKeyTooSmall},
+		{name: "short key", key: "foo", err: encoder.ErrKeyTooSmall},
+		{name: "appropriate keysize", key: "0123456789012345678901234567890123456789012345678901234567890123", err: nil},
+		{name: "long key", key: "0123456789012345678901234567890123456789012345678901234567890123xtraXTRA", err: nil},
 	}
 
-	enc, err := encoder.NewEncoder(id, key)
-	if err != nil {
-		t.Error(err)
+	for _, tc := range tt {
+		tc := tc
 
-		return
-	}
+		t.Run(tc.name, func(t *testing.T) {
+			err := encoder.RegisterEncoder(id, newFakeEncoder)
+			if err != nil {
+				t.Error(err)
 
-	fakeEnc, ok := enc.(*fakeEncoder)
-	if !ok {
-		t.Errorf("unexpected received encoder: %T", enc)
-	}
+				return
+			}
 
-	if !bytes.Equal(fakeEnc.key, key) {
-		t.Errorf("Secret key doesn't match.\nExpected: %q\nReceived: %q", key, fakeEnc.key)
-	}
+			_, err = encoder.NewEncoder(id, []byte(tc.key))
+			if err := tester.AssertError(tc.err, err); err != nil {
+				t.Error(err)
+			}
 
-	if err := encoder.UnregisterEncoder(id); err != nil {
-		t.Errorf("unregistering encoder: %v", err)
+			if err := encoder.UnregisterEncoder(id); err != nil {
+				t.Errorf("unregistering encoder: %v", err)
+			}
+		})
 	}
 }
 
