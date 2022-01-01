@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+No changes so far.
+
+## [v0.6.0] - January 1, 2022
+
 Breaking changes:
 
 * Unlocking with GPG key moved to `redact unlock gpg` command.
@@ -154,6 +158,7 @@ Added:
 * secret key distribution using OpenPGP keys
 
 [Unreleased]: https://github.com/julian7/redact
+[v0.6.0]: https://github.com/julian7/redact/releases/tag/v0.6.0
 [v0.5.0]: https://github.com/julian7/redact/releases/tag/v0.5.0
 [v0.4.5]: https://github.com/julian7/redact/releases/tag/v0.4.5
 [v0.4.4]: https://github.com/julian7/redact/releases/tag/v0.4.4
