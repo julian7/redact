@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/julian7/redact/encoder"
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/logger"
@@ -117,7 +118,7 @@ func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error {
 func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEncrypted bool) {
 	var isEncrypted bool
 
-	var encKeyVersion uint32
+	var encKeyVersion, encType uint32
 
 	reader, err := gitutil.Cat(entry.SHA1[:])
 	if err != nil {
@@ -128,9 +129,10 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 
 	defer reader.Close()
 
-	epoch, err := opts.key.FileStatus(reader)
+	hdr, err := opts.key.FileStatus(reader)
 	if err == nil {
-		encKeyVersion = epoch
+		encKeyVersion = hdr.Epoch
+		encType = hdr.Encoding
 		isEncrypted = true
 	}
 
@@ -152,6 +154,7 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 	}
 
 	if isEncrypted {
+		msg = append(msg, fmt.Sprintf("encoded with %s", encoder.Name(encType)))
 		if encKeyVersion != opts.key.LatestKey {
 			msg = append(msg, fmt.Sprintf("encrypted with key epoch %d, update to %d", encKeyVersion, opts.key.LatestKey))
 			opts.toRekey = append(opts.toRekey, entry.Name)
@@ -175,7 +178,7 @@ func printFileEntry(entry *gitutil.FileEntry, shouldBeEncrypted bool, msg string
 	data := fmt.Sprintf("%s %s", encryptedString[shouldBeEncrypted], entry.Name)
 
 	if len(msg) > 0 {
-		data = fmt.Sprintf("%s WARNING: %s", data, msg)
+		data = fmt.Sprintf("%s NOTE: %s", data, msg)
 	}
 
 	fmt.Println(data)

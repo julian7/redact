@@ -110,6 +110,12 @@ Keys are prepared for AES-256 (256 bits) and HMAC-256 (512 bits). The system is 
 
 File encoding uses AES256-GCM96 encoding. Encryption nonce is calculated from the plaintext's HMAC key, taking the first 96 bits. Encrypted file stores this calculated nonce, and ciphertext. During decoding, the saved nonce is checked against calculated HMAC, whether its first 96 bits are matching.
 
+Alternatively, ChaCha20-Poly1305 can be used in place of AES256-GCM96. According to the [Automatic cipher suite ordering in crypto/tls](https://go.dev/blog/tls-cipher-suites) blog entry in the Go Blog, AES128-GCM96 is not suitable for the post-quantumcomputing world, which is still just fine for TLS encryption, but not in our case. However, AES256-GCM96 provides adequate protection for that case too. On the other hand, the consensus on using AES+GCM with no hardware acceleration is pretty much discouraged as it's very hard to implement it effectively and securely.
+
+Therefore, if encryption is used in environments which lacks hardware AES acceleration, it's more secure to use ChaCha20-Poly1305 instead.
+
+To switch, either set `REDACT_GIT_CLEAN_TYPE` environment variable, or set `git.clean.type` in configuration to `chacha20-poly1305` (case insensitive).
+
 ## Subcommands
 
 * key: secret key commands:
@@ -141,6 +147,38 @@ historical access to secrets stored in the repository. We can do something about
 * replacing secrets: when encrypted files are supposed to be exposed, the best thing we can do is not just replacing their encryptions, but replacing secrets too. For example, if encrypted files are secret parts of key pairs (like a TLS certificate), we might want to revoke the full certificate altogether, generating new ones.
 
 As always, play safe, and revoke all secrets if there is any chance it can cause damage.
+
+## Configuration
+
+Every configuration option can be replaced in a configuration file (with the exception of setting a configuration file in a non-default location, of course). Precedence: CLI option > environment variable > configuration file.
+
+### Configuration file
+
+By default, the app searches for a `.redact.EXT` configuration in the user's home directory. Multiple formats are accepted, specified by extension names: JSON (.json), TOML (.toml), YAML (.yaml, .yml), HCL (.hcl, .tfvars), INI (.ini), envfile (.dotenv, .env) and Java properties (.properties, .props, .prop).
+
+An example configuration file in YAML:
+
+```yaml
+verbosity: debug
+logfile: /var/log/redact.log
+git:
+  clean:
+    type: chacha20-poly1305
+status:
+  encrypted: true
+```
+
+Currently only `git clean` and `status` settings are nested.
+
+### Configure with environment variables
+
+Anything which can be configured with the configuration file, can be configured with environment variables too. Variable name format has a few rules:
+
+* Environment variables start with "REDACT_"
+* names are in ALL_CAPS
+* nested settings are separated by "_"
+
+Example: `git.clean.type` is configurable by setting `REDACT_GIT_CLEAN_TYPE` environment variable.
 
 ## Any issues?
 

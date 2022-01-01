@@ -19,10 +19,9 @@ func newFakeEncoder(key []byte) (encoder.AEAD, error) {
 
 func (e *fakeEncoder) AEAD() (cipher.AEAD, error) { return nil, errors.New("not implemented") }
 func (e *fakeEncoder) KeySize() int               { return 0 }
-func (e *fakeEncoder) String() string             { return "fake-encoder" }
 
 func TestRegisterEncoder(t *testing.T) {
-	id := 10
+	id := uint32(10)
 
 	tt := []struct {
 		name string
@@ -39,7 +38,7 @@ func TestRegisterEncoder(t *testing.T) {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
-			err := encoder.RegisterEncoder(id, newFakeEncoder)
+			err := encoder.RegisterEncoder(id, "fake-encoder", newFakeEncoder)
 			if err != nil {
 				t.Error(err)
 
@@ -59,7 +58,7 @@ func TestRegisterEncoder(t *testing.T) {
 }
 
 func TestNewEncoderError(t *testing.T) {
-	id := 15
+	id := uint32(15)
 	key := []byte("foo")
 
 	_, err := encoder.NewEncoder(id, key)
@@ -69,16 +68,16 @@ func TestNewEncoderError(t *testing.T) {
 }
 
 func TestRegisterEncoderError(t *testing.T) {
-	id := 20
+	id := uint32(20)
 
-	err := encoder.RegisterEncoder(id, newFakeEncoder)
+	err := encoder.RegisterEncoder(id, "fake-encoder", newFakeEncoder)
 	if err != nil {
 		t.Error(err)
 
 		return
 	}
 
-	err = encoder.RegisterEncoder(id, newFakeEncoder)
+	err = encoder.RegisterEncoder(id, "fake-encoder", newFakeEncoder)
 	if err == nil || err.Error() != "encoder type 20 already exists" {
 		t.Errorf("unexpected error: %v", err)
 
@@ -87,7 +86,7 @@ func TestRegisterEncoderError(t *testing.T) {
 }
 
 func TestUnegisterEncoderError(t *testing.T) {
-	id := 25
+	id := uint32(25)
 
 	err := encoder.UnregisterEncoder(id)
 	if err == nil || err.Error() != "encoder type 25 doesn't exist" {

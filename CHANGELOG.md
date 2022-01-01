@@ -7,12 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+Breaking changes:
+
+* Unlocking with GPG key moved to `redact unlock gpg` command.
+* Unlocking with secret key needs argument: `redact unlock --key <secret key>`.
+* instead of touching files, redact runs `git add --renormalize <toplevel>` to re-run clean filter.
+* environment variable mapping prefixed with "REDACT_"
+
 Changed:
 
 * Renaming "master key" with "secret key", "master" branch with "main."
-* Breaking change: Unlocking with GPG key moved to `redact unlock gpg` command.
-* Breaking change: Unlocking with secret key needs argument: `redact unlock --key <secret key>`.
-* Breaking change: instead of touching files, redact runs `git add --renormalize <toplevel>` to re-run clean filter.
+* Enable ChaCha20-Poly1305 encryption for platforms with no AES-NI instruction set. Use with setting `--type` with `redact git clean`, setting `git.clean.type` in configuration, or setting `REDACT_GIT_CLEAN_TYPE` environment variable.
 * Internal: separated repo/file management from of key management
 
 Fixed:

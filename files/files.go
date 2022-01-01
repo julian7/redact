@@ -18,7 +18,7 @@ const (
 
 var ErrInvalidPreamble = errors.New("invalid file preamble")
 
-type fileHeader struct {
+type FileHeader struct {
 	Preamble [10]byte
 	Encoding uint32
 	Epoch    uint32
@@ -31,7 +31,7 @@ func (k *SecretKey) Encode(encodingFormat uint32, epoch uint32, reader io.Reader
 		return fmt.Errorf("encoding stream: %w", err)
 	}
 
-	enc, err := encoder.NewEncoder(int(encodingFormat), key.Secret())
+	enc, err := encoder.NewEncoder(encodingFormat, key.Secret())
 	if err != nil {
 		return fmt.Errorf("setting up encoder: %w", err)
 	}
@@ -46,7 +46,7 @@ func (k *SecretKey) Encode(encodingFormat uint32, epoch uint32, reader io.Reader
 		return fmt.Errorf("encoding stream: %w", err)
 	}
 
-	header := fileHeader{Encoding: encodingFormat, Epoch: epoch}
+	header := FileHeader{Encoding: encodingFormat, Epoch: epoch}
 	copy(header.Preamble[:], FileMagic)
 
 	err = binary.Write(writer, binary.BigEndian, header)
@@ -64,7 +64,7 @@ func (k *SecretKey) Encode(encodingFormat uint32, epoch uint32, reader io.Reader
 
 // Decode encodes an IO stream into another IO stream
 func (k *SecretKey) Decode(reader io.Reader, writer io.Writer) error {
-	var header fileHeader
+	var header FileHeader
 
 	err := k.readHeader(reader, &header)
 	if err != nil {
@@ -76,7 +76,7 @@ func (k *SecretKey) Decode(reader io.Reader, writer io.Writer) error {
 		return fmt.Errorf("retrieving key: %w", err)
 	}
 
-	enc, err := encoder.NewEncoder(int(header.Encoding), key.Secret())
+	enc, err := encoder.NewEncoder(header.Encoding, key.Secret())
 	if err != nil {
 		return fmt.Errorf("setting up encoder: %w", err)
 	}
@@ -100,18 +100,18 @@ func (k *SecretKey) Decode(reader io.Reader, writer io.Writer) error {
 }
 
 // FileStatus returns file encryption status and key used
-func (k *SecretKey) FileStatus(reader io.Reader) (uint32, error) {
-	var header fileHeader
+func (k *SecretKey) FileStatus(reader io.Reader) (*FileHeader, error) {
+	var header FileHeader
 
 	err := k.readHeader(reader, &header)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return header.Epoch, nil
+	return &header, nil
 }
 
-func (k *SecretKey) readHeader(reader io.Reader, header *fileHeader) error {
+func (k *SecretKey) readHeader(reader io.Reader, header *FileHeader) error {
 	err := binary.Read(reader, binary.BigEndian, header)
 	if err != nil {
 		return fmt.Errorf("reading file header: %w", err)

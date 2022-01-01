@@ -73,14 +73,13 @@ type failingEncoder struct{}
 func (e *failingEncoder) AEAD() (cipher.AEAD, error) {
 	return nil, errors.New("failing encoder error: cannot encode")
 }
-func (e *failingEncoder) KeySize() int   { return 0 }
-func (e *failingEncoder) String() string { return "failing-encoder" }
+func (e *failingEncoder) KeySize() int { return 0 }
 
 func newFailingEncoder(key []byte) (encoder.AEAD, error) {
 	return &failingEncoder{}, nil
 }
 
-func genCiphertextHeader(encType, epoch int) []byte {
+func genCiphertextHeader(encType, epoch uint32) []byte {
 	out := bytes.NewBuffer(nil)
 	_, _ = out.WriteString("\x00REDACTED\x00")
 	_ = binary.Write(out, binary.BigEndian, uint32(encType))
@@ -89,9 +88,9 @@ func genCiphertextHeader(encType, epoch int) []byte {
 	return out.Bytes()
 }
 
-func ensureFailingEncoder() int {
-	failEncoderID := 50000
-	_ = encoder.RegisterEncoder(failEncoderID, newFailingEncoder)
+func ensureFailingEncoder() uint32 {
+	failEncoderID := uint32(50000)
+	_ = encoder.RegisterEncoder(failEncoderID, "failing-encoder", newFailingEncoder)
 
 	return failEncoderID
 }
@@ -384,13 +383,13 @@ func TestFileStatus(t *testing.T) {
 
 				return
 			}
-			epoch, err := k.FileStatus(reader)
+			hdr, err := k.FileStatus(reader)
 			reader.Close()
 			if !errors.Is(err, tc.err) {
 				t.Errorf("expected %v error; received: %v", tc.err, err)
 			}
-			if epoch != tc.epoch {
-				t.Errorf("expected epoch == %d; received: %d", tc.epoch, epoch)
+			if hdr.Epoch != tc.epoch {
+				t.Errorf("expected epoch == %d; received: %d", tc.epoch, hdr.Epoch)
 			}
 		})
 	}

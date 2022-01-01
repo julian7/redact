@@ -66,6 +66,7 @@ func (rt *Runtime) Init() {
 	}
 
 	rt.Viper.AutomaticEnv()
+	rt.Viper.SetEnvPrefix("REDACT")
 	rt.Viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	if err := rt.Viper.ReadInConfig(); err == nil {
