@@ -27,3 +27,11 @@ func main() {
 		rt.Logger.Fatal(err.Error())
 	}
 }
+
+func openFileToRead(filename string) (*os.File, error) {
+	if filename == "" || filename == "-" {
+		return os.Stdin, nil
+	}
+
+	return os.Open(filename)
+}

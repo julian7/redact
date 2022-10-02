@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk"
@@ -77,19 +76,9 @@ func (rt *Runtime) unlockGpgDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("Key is unlocked.")
+	fmt.Println("Repo is unlocked.")
 
 	return nil
-}
-
-func (rt *Runtime) loadKeyFromFile(keyfile string) error {
-	f, err := rt.Repo.Fs.OpenFile(keyfile, os.O_RDONLY, 0600)
-	if err != nil {
-		return fmt.Errorf("loading secret key from %s: %w", keyfile, err)
-	}
-	defer f.Close()
-
-	return sdk.LoadSecretKeyFromReader(rt.SecretKey, f)
 }
 
 func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {

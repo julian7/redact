@@ -120,15 +120,17 @@ To switch, either set `REDACT_GIT_CLEAN_TYPE` environment variable, or set `git.
 
 * key: secret key commands:
   * init: initializes secret key
+  * export: exports secret key in a PEM-encoded (readable) format
   * generate: generates new secret key
   * info (default): shows secret key info
   * list: lists all keys
 * lock: locks repository (deletes local key and removes diff/filter configs)
 * unlock: unlocks repository with local key
+  * gpg: unlocks repository with GPG-encrypted key from key exchange
 * access: key exchange commands
   * ls/list: list user access
   * grant: add OpenPGP key access
-  * update: re-encrypt secret key with OpenPGP keys
+  * update: re-encrypt secret key with OpenPGP keys (not implemented yet)
 * git: git filter commands
   * clean: acts as clean filter for git
   * diff: acts as diff filter for git

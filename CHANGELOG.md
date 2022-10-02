@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Added:
 
 * New command: `redact key export` to export redact private key in PEM format.
+* New option: `redact unlock --exported-key <filename>` unlocks repository with exported, PEM-encrypted key.
+* Standard input is accepted for `redact unlock --key` and `redact unlock --exported-key` commands by providing "-" as file name.
 
 ## [v0.6.0] - January 1, 2022
 

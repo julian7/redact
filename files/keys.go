@@ -19,6 +19,7 @@ const (
 	KeyMagic = "\000REDACT\000"
 	// KeyCurrentType current key file version
 	KeyCurrentType = 0
+	PEMType        = "REDACT SECRET KEY"
 )
 
 // SecretKey contains secret key in a git repository
@@ -125,9 +126,27 @@ func (k *SecretKey) Load(strict bool) error {
 	return k.Read(f)
 }
 
+func (k *SecretKey) Import(reader io.Reader) error {
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return fmt.Errorf("importing: %w", err)
+	}
+
+	blk, _ := pem.Decode(data)
+	if blk == nil {
+		return errors.New("no export found")
+	}
+
+	if blk.Type != PEMType {
+		return errors.New("PEM type mismatch")
+	}
+
+	return k.Read(bytes.NewReader(blk.Bytes))
+}
+
 func (k *SecretKey) Export(writer io.Writer) error {
 	blk := &pem.Block{
-		Type: "REDACT SECRET KEY",
+		Type: PEMType,
 	}
 
 	buf := bytes.Buffer{}

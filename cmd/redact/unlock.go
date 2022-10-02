@@ -26,7 +26,8 @@ repository where other ways are not available.`,
 	}
 
 	flags := cmd.Flags()
-	flags.StringP("key", "k", "", "Use specific secret key")
+	flags.StringP("key", "k", "", "Use specific raw secret key")
+	flags.StringP("exported-key", "e", "", "Use specific exported secret key")
 
 	if err := rt.RegisterFlags("", flags); err != nil {
 		return nil, err
@@ -47,18 +48,48 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 	var err error
 
 	keyFile := rt.Viper.GetString("key")
-	if keyFile == "" {
+	pemFile := rt.Viper.GetString("export")
+
+	if keyFile == "" && pemFile == "" {
 		_ = cmd.Usage()
 
-		return errors.New("--key is required")
+		return errors.New("--key or --export is required")
+	}
+
+	if keyFile != "" && pemFile != "" {
+		_ = cmd.Usage()
+
+		return errors.New("--key and --export are mutully exclusive")
 	}
 
 	if err := rt.SetupRepo(); err != nil {
 		return fmt.Errorf("building secret key: %w", err)
 	}
 
-	err = rt.loadKeyFromFile(keyFile)
+	var fname string
+	if keyFile != "" {
+		fname = keyFile
+	} else {
+		fname = pemFile
+	}
+
+	f, err := openFileToRead(fname)
 	if err != nil {
+		return fmt.Errorf("reading file %q: %w", fname, err)
+	}
+	defer f.Close()
+
+	if keyFile != "" {
+		err = rt.SecretKey.Read(f)
+	} else {
+		err = rt.SecretKey.Import(f)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := rt.SecretKey.Save(); err != nil {
 		return err
 	}
 
@@ -72,7 +103,7 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("Key is unlocked.")
+	fmt.Println("Repo is unlocked.")
 
 	return nil
 }
