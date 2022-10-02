@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+No changes so far.
+
+## [v0.7.0] - October 2, 2022
+
 Added:
 
 * New command: `redact key export` to export redact private key in PEM format.
@@ -162,6 +166,7 @@ Added:
 * secret key distribution using OpenPGP keys
 
 [Unreleased]: https://github.com/julian7/redact
+[v0.7.0]: https://github.com/julian7/redact/releases/tag/v0.7.0
 [v0.6.0]: https://github.com/julian7/redact/releases/tag/v0.6.0
 [v0.5.0]: https://github.com/julian7/redact/releases/tag/v0.5.0
 [v0.4.5]: https://github.com/julian7/redact/releases/tag/v0.4.5
