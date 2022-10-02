@@ -23,6 +23,7 @@ key's epoch and signature. For more detailed look, please see
 		rt.keyGenerateCmd,
 		rt.keyInitCmd,
 		rt.keyListCmd,
+		rt.keyExportCmd,
 	}
 
 	if err := rt.AddCmdTo(cmd, subcommands); err != nil {

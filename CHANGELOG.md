@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+Added:
+
+* New command: `redact key export` to export redact private key in PEM format.
 
 ## [v0.6.0] - January 1, 2022
 

@@ -3,6 +3,7 @@ package files
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io"
@@ -122,6 +123,25 @@ func (k *SecretKey) Load(strict bool) error {
 	defer f.Close()
 
 	return k.Read(f)
+}
+
+func (k *SecretKey) Export(writer io.Writer) error {
+	blk := &pem.Block{
+		Type: "REDACT SECRET KEY",
+	}
+
+	buf := bytes.Buffer{}
+	if err := k.SaveTo(&buf); err != nil {
+		return fmt.Errorf("export: %w", err)
+	}
+
+	blk.Bytes = buf.Bytes()
+
+	if err := pem.Encode(writer, blk); err != nil {
+		return fmt.Errorf("encoding: %w", err)
+	}
+
+	return nil
 }
 
 // SaveTo saves secret key into IO stream
