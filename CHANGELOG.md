@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+Added:
+
+* Universal binary builder for MacOS
 
 ## [v0.7.0] - October 2, 2022
 
