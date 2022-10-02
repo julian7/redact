@@ -60,10 +60,10 @@ There are 0 files to be re-encrypted.
 
 Just check whether it has been encrypted:
 
-```shell
+```text
 $ git ls-tree HEAD
-100644 blob 8fa0eac4c7076b9f10c99460c2feaf905f0e5cd2	.gitattributes
-100644 blob a24b3ae46b388e8ca0011a13d79f94cdd65feb35	private.key
+100644 blob 8fa0eac4c7076b9f10c99460c2feaf905f0e5cd2  .gitattributes
+100644 blob a24b3ae46b388e8ca0011a13d79f94cdd65feb35  private.key
 $ git cat-file blob a24b3ae46b388e8ca0011a13d79f94cdd65feb35 | hexdump -C
 00000000  00 52 45 44 41 43 54 45  44 00 00 00 00 00 00 00  |.REDACTED.......|
 00000010  00 01 3f ef ae 3f 90 aa  73 cd 39 8c 89 1c 2e e8  |..?..?..s.9.....|
@@ -79,7 +79,7 @@ Secret Information
 
 Add contributors:
 
-```shell
+```text
 $ redact access grant keybase.io/julian7
 KeyID: BDE0F1CE, fingerprint: 1857918cd0b4d303071d6624466cbb98bde0f1ce
   identity: keybase.io/julian7 <js@iksz.hu>, expires: 2027-10-08 18:45:56 +0200 CEST
