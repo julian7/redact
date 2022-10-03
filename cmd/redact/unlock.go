@@ -20,14 +20,15 @@ of the secret key.
 Use a subcommand for different ways of unlocking the repository from key
 exchange.
 
-Alternatively, a secret key can be provided. This allows unlocking the
-repository where other ways are not available.`,
+Alternatively, a secret key file can be provided. This allows unlocking the
+repository where other ways are not available. Providing '-' reads the key
+from standard input.`,
 		RunE: rt.unlockDo,
 	}
 
 	flags := cmd.Flags()
-	flags.StringP("key", "k", "", "Use specific raw secret key")
-	flags.StringP("exported-key", "e", "", "Use specific exported secret key")
+	flags.StringP("key", "k", "", "Use specific raw secret key file")
+	flags.StringP("exported-key", "e", "", "Use specific exported secret key file")
 
 	if err := rt.RegisterFlags("", flags); err != nil {
 		return nil, err
@@ -45,47 +46,26 @@ repository where other ways are not available.`,
 }
 
 func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
-	var err error
-
 	keyFile := rt.Viper.GetString("key")
-	pemFile := rt.Viper.GetString("export")
+	pemFile := rt.Viper.GetString("exported-key")
 
 	if keyFile == "" && pemFile == "" {
 		_ = cmd.Usage()
 
-		return errors.New("--key or --export is required")
+		return errors.New("--key or --exported-key is required")
 	}
 
 	if keyFile != "" && pemFile != "" {
 		_ = cmd.Usage()
 
-		return errors.New("--key and --export are mutully exclusive")
+		return errors.New("--key and --exported-key are mutully exclusive")
 	}
 
 	if err := rt.SetupRepo(); err != nil {
 		return fmt.Errorf("building secret key: %w", err)
 	}
 
-	var fname string
-	if keyFile != "" {
-		fname = keyFile
-	} else {
-		fname = pemFile
-	}
-
-	f, err := openFileToRead(fname)
-	if err != nil {
-		return fmt.Errorf("reading file %q: %w", fname, err)
-	}
-	defer f.Close()
-
-	if keyFile != "" {
-		err = rt.SecretKey.Read(f)
-	} else {
-		err = rt.SecretKey.Import(f)
-	}
-
-	if err != nil {
+	if err := rt.readSecretKey(keyFile, pemFile); err != nil {
 		return err
 	}
 
@@ -106,4 +86,27 @@ func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
 	fmt.Println("Repo is unlocked.")
 
 	return nil
+}
+
+func (rt *Runtime) readSecretKey(keyFile, pemFile string) error {
+	var fname string
+	if keyFile != "" {
+		fname = keyFile
+	} else {
+		fname = pemFile
+	}
+
+	f, err := openFileToRead(fname)
+	if err != nil {
+		return fmt.Errorf("reading file %q: %w", fname, err)
+	}
+	defer f.Close()
+
+	if keyFile != "" {
+		err = rt.SecretKey.Read(f)
+	} else {
+		err = rt.SecretKey.Import(f)
+	}
+
+	return err
 }

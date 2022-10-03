@@ -11,6 +11,10 @@ Added:
 
 * Universal binary builder for MacOS
 
+Fixed:
+
+* Fix `redact unlock` identify `--exported-key` properly. Help strings have also been updated to communicate that these keys are indeed files, and they accept '-' as inputs.
+
 ## [v0.7.0] - October 2, 2022
 
 Added:
