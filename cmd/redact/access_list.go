@@ -7,22 +7,20 @@ import (
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk/git"
 	"github.com/spf13/afero"
-	"github.com/spf13/cobra"
+	"github.com/urfave/cli/v2"
 )
 
-func (rt *Runtime) accessListCmd() (*cobra.Command, error) {
-	cmd := &cobra.Command{
-		Use:   "list",
-		Args:  cobra.NoArgs,
-		Short: "List collaborators to secrets in git repo",
-		RunE:  rt.accessListDo,
+func (rt *Runtime) accessListCmd() *cli.Command {
+	return &cli.Command{
+		Name:      "list",
+		Usage:     "List collaborators to secrets in git repo",
+		ArgsUsage: " ",
+		Action:    rt.accessListDo,
 	}
-
-	return cmd, nil
 }
 
-func (rt *Runtime) accessListDo(cmd *cobra.Command, args []string) error {
-	_ = rt.LoadSecretKey(cmd, args)
+func (rt *Runtime) accessListDo(ctx *cli.Context) error {
+	_ = rt.LoadSecretKey(ctx)
 
 	kxdir := rt.Repo.ExchangeDir()
 	err := afero.Walk(rt.Repo.Fs, kxdir, func(path string, info os.FileInfo, err error) error {

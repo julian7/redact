@@ -5,42 +5,20 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/logger"
 	"github.com/julian7/redact/sdk"
 	"github.com/julian7/redact/sdk/git"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
+	"github.com/urfave/cli/v2"
 )
-
-type cmdFactory func() (*cobra.Command, error)
 
 type Runtime struct {
 	*logger.Logger
 	*files.SecretKey
 	*git.Repo
-	*viper.Viper
 	Config                 string
 	StrictPermissionChecks bool
-}
-
-func (rt *Runtime) AddCmdTo(cmd *cobra.Command, subcmds []cmdFactory) error {
-	for _, cmdFunc := range subcmds {
-		subcmd, err := cmdFunc()
-		if err != nil {
-			return err
-		}
-
-		subcmd.SilenceErrors = true
-		subcmd.SilenceUsage = true
-
-		cmd.AddCommand(subcmd)
-	}
-
-	return nil
 }
 
 func (rt *Runtime) FullPath() (string, error) {
@@ -55,40 +33,6 @@ func (rt *Runtime) FullPath() (string, error) {
 	}
 
 	return argv0, nil
-}
-
-func (rt *Runtime) Init() {
-	if rt.Config != "" {
-		rt.Viper.SetConfigFile(rt.Config)
-	} else {
-		rt.Viper.AddConfigPath("$HOME")
-		rt.Viper.SetConfigName(configName)
-	}
-
-	rt.Viper.AutomaticEnv()
-	rt.Viper.SetEnvPrefix("REDACT")
-	rt.Viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	if err := rt.Viper.ReadInConfig(); err == nil {
-		rt.Logger.Debugf("Using config file: %s", rt.Viper.ConfigFileUsed())
-	}
-}
-
-func (rt *Runtime) RegisterFlags(group string, l *pflag.FlagSet) (err error) {
-	nameconv := func(in string) string { return in }
-	if len(group) > 0 {
-		nameconv = func(in string) string { return fmt.Sprintf("%s.%s", group, in) }
-	}
-
-	l.VisitAll(func(flag *pflag.Flag) {
-		if err != nil {
-			return
-		}
-
-		err = rt.Viper.BindPFlag(nameconv(flag.Name), flag)
-	})
-
-	return err
 }
 
 func (rt *Runtime) SetupRepo() error {
@@ -107,7 +51,7 @@ func (rt *Runtime) SetupRepo() error {
 	return nil
 }
 
-func (rt *Runtime) LoadSecretKey(cmd *cobra.Command, args []string) error {
+func (rt *Runtime) LoadSecretKey(ctx *cli.Context) error {
 	if err := rt.SetupRepo(); err != nil {
 		return fmt.Errorf("detecting repo config: %w", err)
 	}
@@ -137,29 +81,4 @@ func (rt *Runtime) SaveGitSettings() error {
 	}
 
 	return nil
-}
-
-func (rt *Runtime) SetupLogging(cmd *cobra.Command, args []string) {
-	logFile := rt.Viper.GetString("logfile")
-	if logFile != "" {
-		writer, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
-		if err != nil {
-			rt.Logger.Warnf("cannot open log file: %v", err)
-		} else {
-			rt.Logger.SetOutput(writer)
-		}
-	}
-
-	rt.setLogLevel(strings.ToLower(rt.Viper.GetString("verbosity")))
-}
-
-func (rt *Runtime) setLogLevel(level string) {
-	err := rt.Logger.SetLevelFromString(level)
-	if err != nil {
-		rt.Logger.Warnf("cannot set log level: %v", err)
-
-		return
-	}
-
-	rt.Logger.Debugf("Setting log level to %s", level)
 }

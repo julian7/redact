@@ -8,15 +8,15 @@ import (
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk"
 	"github.com/julian7/redact/sdk/git"
-	"github.com/spf13/cobra"
+	"github.com/urfave/cli/v2"
 )
 
-func (rt *Runtime) unlockGpgCmd() (*cobra.Command, error) {
-	cmd := &cobra.Command{
-		Use:   "gpg",
-		Args:  cobra.NoArgs,
-		Short: "Unlocks repository",
-		Long: `Unlock repository
+func (rt *Runtime) unlockGpgCmd() *cli.Command {
+	return &cli.Command{
+		Name:      "gpg",
+		Usage:     "Unlocks repository",
+		ArgsUsage: " ",
+		Description: `Unlock repository
 
 This command unlocks the repository using a GPG key.
 
@@ -24,20 +24,18 @@ By default, it detects your GnuPG keys by running gpg -K, and tries to match
 them to the available encrypted keys in the key exchange directory. This
 process won't make decisions for you, if you have multiple keys available. In
 this case, you have to provide the appropriate key with the --gpgkey option.`,
-		RunE: rt.unlockGpgDo,
+		Action: rt.unlockGpgDo,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "gpgkey",
+				Aliases: []string{"k"},
+				Usage:   "Use specific GPG key",
+			},
+		},
 	}
-
-	flags := cmd.Flags()
-	flags.StringP("gpgkey", "k", "", "Use specific GPG key")
-
-	if err := rt.RegisterFlags("", flags); err != nil {
-		return nil, err
-	}
-
-	return cmd, nil
 }
 
-func (rt *Runtime) unlockGpgDo(cmd *cobra.Command, args []string) error {
+func (rt *Runtime) unlockGpgDo(ctx *cli.Context) error {
 	var err error
 
 	if err := rt.SetupRepo(); err != nil {
@@ -46,7 +44,7 @@ func (rt *Runtime) unlockGpgDo(cmd *cobra.Command, args []string) error {
 
 	var key string
 
-	key, err = rt.loadKeyFromGPG(rt.Viper.GetString("gpgkey"))
+	key, err = rt.loadKeyFromGPG(ctx.String("gpgkey"))
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			return nil

@@ -3,22 +3,20 @@ package main
 import (
 	"os"
 
-	"github.com/spf13/cobra"
+	"github.com/urfave/cli/v2"
 )
 
-func (rt *Runtime) gitSmudgeCmd() (*cobra.Command, error) {
-	cmd := &cobra.Command{
-		Use:     "smudge",
-		Args:    cobra.NoArgs,
-		Short:   "Decoding file from STDIN, to STDOUT",
-		PreRunE: rt.LoadSecretKey,
-		RunE:    rt.gitSmudgeDo,
+func (rt *Runtime) gitSmudgeCmd() *cli.Command {
+	return &cli.Command{
+		Name:      "smudge",
+		Usage:     "Decoding file from STDIN, to STDOUT",
+		ArgsUsage: " ",
+		Before:    rt.LoadSecretKey,
+		Action:    rt.gitSmudgeDo,
 	}
-
-	return cmd, nil
 }
 
-func (rt *Runtime) gitSmudgeDo(cmd *cobra.Command, args []string) error {
+func (rt *Runtime) gitSmudgeDo(ctx *cli.Context) error {
 	err := rt.SecretKey.Decode(os.Stdin, os.Stdout)
 	if err != nil {
 		return err

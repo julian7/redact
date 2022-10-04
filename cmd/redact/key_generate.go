@@ -6,22 +6,21 @@ import (
 	"io"
 
 	"github.com/julian7/redact/sdk"
-	"github.com/spf13/cobra"
+	"github.com/urfave/cli/v2"
 )
 
-func (rt *Runtime) keyGenerateCmd() (*cobra.Command, error) {
-	cmd := &cobra.Command{
-		Use:     "generate",
-		Aliases: []string{"gen", "g"},
-		Short:   "Generates redact key",
-		PreRunE: rt.LoadSecretKey,
-		RunE:    rt.generateDo,
+func (rt *Runtime) keyGenerateCmd() *cli.Command {
+	return &cli.Command{
+		Name:      "generate",
+		Aliases:   []string{"gen", "g"},
+		Usage:     "Generates redact key",
+		ArgsUsage: " ",
+		Before:    rt.LoadSecretKey,
+		Action:    rt.generateDo,
 	}
-
-	return cmd, nil
 }
 
-func (rt *Runtime) generateDo(cmd *cobra.Command, args []string) error {
+func (rt *Runtime) generateDo(ctx *cli.Context) error {
 	if err := rt.SaveGitSettings(); err != nil {
 		return err
 	}

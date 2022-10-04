@@ -3,30 +3,28 @@ package main
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
+	"github.com/urfave/cli/v2"
 )
 
-func (rt *Runtime) keyInitCmd() (*cobra.Command, error) {
-	cmd := &cobra.Command{
-		Use:   "init",
-		Short: "Generates initial redact key",
-		RunE:  rt.initDo,
+func (rt *Runtime) keyInitCmd() *cli.Command {
+	return &cli.Command{
+		Name:      "init",
+		Usage:     "Generates initial redact key",
+		ArgsUsage: " ",
+		Action:    rt.initDo,
 	}
-
-	return cmd, nil
 }
 
-func (rt *Runtime) initCmd() (*cobra.Command, error) {
-	cmd := &cobra.Command{
-		Use:   "init",
-		Short: "Generates initial redact key (alias of redact key init)",
-		RunE:  rt.initDo,
+func (rt *Runtime) initCmd() *cli.Command {
+	return &cli.Command{
+		Name:      "init",
+		Usage:     "Generates initial redact key (alias of redact key init)",
+		ArgsUsage: " ",
+		Action:    rt.initDo,
 	}
-
-	return cmd, nil
 }
 
-func (rt *Runtime) initDo(cmd *cobra.Command, args []string) error {
+func (rt *Runtime) initDo(ctx *cli.Context) error {
 	if err := rt.SaveGitSettings(); err != nil {
 		return err
 	}

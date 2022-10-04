@@ -9,37 +9,41 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk"
-	"github.com/spf13/cobra"
+	"github.com/urfave/cli/v2"
 )
 
-func (rt *Runtime) accessGrantCmd() (*cobra.Command, error) {
-	cmd := &cobra.Command{
-		Use:     "grant [KEY...]",
-		Args:    cobra.ArbitraryArgs,
-		Short:   "Grants access to collaborators with OpenPGP keys",
-		PreRunE: rt.LoadSecretKey,
-		RunE:    rt.accessGrantDo,
+func (rt *Runtime) accessGrantCmd() *cli.Command {
+	return &cli.Command{
+		Name:      "grant",
+		Usage:     "Grants access to collaborators with OpenPGP keys",
+		ArgsUsage: "[KEY...]",
+		Before:    rt.LoadSecretKey,
+		Action:    rt.accessGrantDo,
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name:      "openpgp",
+				Aliases:   []string{"p"},
+				Usage:     "import from OpenPGP file instead of gpg keyring",
+				TakesFile: true,
+			},
+			&cli.StringSliceFlag{
+				Name:    "openpgp-armor",
+				Aliases: []string{"a"},
+				Usage:   "import from OpenPGP ASCII Armored file instead of gpg keyring",
+			},
+		},
 	}
-
-	flags := cmd.Flags()
-	flags.StringSliceP("openpgp", "p", nil, "import from OpenPGP file instead of gpg keyring")
-	flags.StringSliceP("openpgp-armor", "a", nil, "import from OpenPGP ASCII Armored file instead of gpg keyring")
-
-	if err := rt.RegisterFlags("", flags); err != nil {
-		return nil, err
-	}
-
-	return cmd, nil
 }
 
-func (rt *Runtime) accessGrantDo(cmd *cobra.Command, args []string) error {
+func (rt *Runtime) accessGrantDo(ctx *cli.Context) error {
 	var keyEntries openpgp.EntityList
 
-	rt.loadKeys(rt.Viper.GetStringSlice("openpgp"), false, &keyEntries)
-	rt.loadKeys(rt.Viper.GetStringSlice("openpgp-armor"), true, &keyEntries)
+	rt.loadKeys(ctx.StringSlice("openpgp"), false, &keyEntries)
+	rt.loadKeys(ctx.StringSlice("openpgp-armor"), true, &keyEntries)
 
-	if len(args) > 0 {
-		out, err := gpgutil.ExportKey(args)
+	args := ctx.Args()
+	if args.Len() > 0 {
+		out, err := gpgutil.ExportKey(args.Slice())
 		if err != nil {
 			return fmt.Errorf("exporting GPG key: %w", err)
 		}

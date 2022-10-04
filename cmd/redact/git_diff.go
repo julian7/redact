@@ -6,27 +6,26 @@ import (
 	"io"
 	"os"
 
-	"github.com/spf13/cobra"
+	"github.com/urfave/cli/v2"
 )
 
-func (rt *Runtime) gitDiffCmd() (*cobra.Command, error) {
-	cmd := &cobra.Command{
-		Use:     "diff FILENAME",
-		Args:    cobra.ExactArgs(1),
-		Short:   "Decoding file from arg, to STDOUT",
-		PreRunE: rt.LoadSecretKey,
-		RunE:    rt.gitDiffDo,
+func (rt *Runtime) gitDiffCmd() *cli.Command {
+	return &cli.Command{
+		Name:      "diff",
+		Usage:     "Decoding file from FILENAME to standard out",
+		ArgsUsage: "FILENAME",
+		Before:    rt.LoadSecretKey,
+		Action:    rt.gitDiffDo,
 	}
-
-	return cmd, nil
 }
 
-func (rt *Runtime) gitDiffDo(cmd *cobra.Command, args []string) error {
-	if len(args) != 1 {
+func (rt *Runtime) gitDiffDo(ctx *cli.Context) error {
+	args := ctx.Args()
+	if args.Len() != 1 {
 		return errors.New("redact git diff requires a single argument")
 	}
 
-	reader, err := os.Open(args[0])
+	reader, err := os.Open(args.First())
 	if err != nil {
 		return err
 	}
