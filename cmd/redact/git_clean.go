@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -43,11 +42,13 @@ hardware support, ChaCha20-Poly1305 is the better choice.
 				Aliases: []string{"e"},
 				Value:   0,
 				Usage:   "Use specific key epoch (by default it uses the latest key)",
+				EnvVars: []string{"REDACT_GIT_CLEAN_EPOCH"},
 			},
 			&cli.StringFlag{
 				Name:    "type",
 				Aliases: []string{"t"},
-				Usage:   "Use specific encoding type (aes256-gcm96 (default) or chacha20-poly1305)",
+				Usage:   "Use specific `encoding` type (aes256-gcm96 (default) or chacha20-poly1305)",
+				EnvVars: []string{"REDACT_GIT_CLEAN_TYPE"},
 			},
 			&cli.PathFlag{
 				Name:    "file",
@@ -59,27 +60,23 @@ hardware support, ChaCha20-Poly1305 is the better choice.
 }
 
 func (rt *Runtime) gitCleanDo(ctx *cli.Context) error {
-	var keyEpoch uint32
+	keyEpoch := uint32(0)
+	encType := encoder.TypeAES256GCM96
 
-	var encType = encoder.TypeAES256GCM96
-
-	if ctx.IsSet("epoch") {
-		epoch := uint32(ctx.Uint("epoch"))
-
-		if epoch > 0 {
-			keyEpoch = epoch
-		}
-	} else {
+	if ctx.IsSet("file") {
 		fname := ctx.Path("file")
 		hdr, err := rt.hdrByFilename(fname)
+
 		if err != nil {
-			if !errors.Is(err, fs.ErrNotExist) {
-				rt.Warnf("unable to determine epoch from filename: %s", err.Error())
-			}
+			rt.Warnf("unable to determine epoch from filename: %s", err.Error())
 		} else {
 			keyEpoch = hdr.Epoch
 			encType = hdr.Encoding
 		}
+	}
+
+	if ctx.IsSet("epoch") {
+		keyEpoch = uint32(ctx.Uint("epoch"))
 	}
 
 	if keyEpoch == 0 {

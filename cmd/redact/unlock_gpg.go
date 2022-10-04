@@ -30,6 +30,7 @@ this case, you have to provide the appropriate key with the --gpgkey option.`,
 				Name:    "gpgkey",
 				Aliases: []string{"k"},
 				Usage:   "Use specific GPG key",
+				EnvVars: []string{"REDACT_UNLOCK_GPG_KEY"},
 			},
 		},
 	}

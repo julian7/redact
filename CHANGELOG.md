@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+Changed:
+
+* Switch from cobra + viper to urfave/cli. We lose configurability via
+  configuration files, but this is a more slick, precisely configurable
+  option.
 
 ## [v0.7.1] - October 3, 2022
 

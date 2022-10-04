@@ -29,11 +29,13 @@ from standard input.`,
 				Name:    "key",
 				Aliases: []string{"k"},
 				Usage:   "Use specific raw secret key file",
+				EnvVars: []string{"REDACT_UNLOCK_KEY"},
 			},
 			&cli.PathFlag{
 				Name:    "exported-key",
 				Aliases: []string{"e"},
 				Usage:   "Use specific exported secret key file",
+				EnvVars: []string{"REDACT_UNLOCK_EXPORTED_KEY"},
 			},
 		},
 		Subcommands: []*cli.Command{
