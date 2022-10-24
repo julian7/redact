@@ -4,15 +4,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/spf13/cobra"
+	"github.com/urfave/cli/v2"
 )
 
-func (rt *Runtime) unlockCmd() (*cobra.Command, error) {
-	cmd := &cobra.Command{
-		Use:   "unlock",
-		Args:  cobra.NoArgs,
-		Short: "Unlocks repository",
-		Long: `Unlock repository
+func (rt *Runtime) unlockCmd() *cli.Command {
+	return &cli.Command{
+		Name:      "unlock",
+		Usage:     "Unlocks repository",
+		ArgsUsage: " ",
+		Description: `Unlock repository
 
 This group of commands able to unlock a repository, or to obtain a new version
 of the secret key.
@@ -23,41 +23,36 @@ exchange.
 Alternatively, a secret key file can be provided. This allows unlocking the
 repository where other ways are not available. Providing '-' reads the key
 from standard input.`,
-		RunE: rt.unlockDo,
+		Action: rt.unlockDo,
+		Flags: []cli.Flag{
+			&cli.PathFlag{
+				Name:    "key",
+				Aliases: []string{"k"},
+				Usage:   "Use specific raw secret key file",
+				EnvVars: []string{"REDACT_UNLOCK_KEY"},
+			},
+			&cli.PathFlag{
+				Name:    "exported-key",
+				Aliases: []string{"e"},
+				Usage:   "Use specific exported secret key file",
+				EnvVars: []string{"REDACT_UNLOCK_EXPORTED_KEY"},
+			},
+		},
+		Subcommands: []*cli.Command{
+			rt.unlockGpgCmd(),
+		},
 	}
-
-	flags := cmd.Flags()
-	flags.StringP("key", "k", "", "Use specific raw secret key file")
-	flags.StringP("exported-key", "e", "", "Use specific exported secret key file")
-
-	if err := rt.RegisterFlags("", flags); err != nil {
-		return nil, err
-	}
-
-	subcommands := []cmdFactory{
-		rt.unlockGpgCmd,
-	}
-
-	if err := rt.AddCmdTo(cmd, subcommands); err != nil {
-		return nil, err
-	}
-
-	return cmd, nil
 }
 
-func (rt *Runtime) unlockDo(cmd *cobra.Command, args []string) error {
-	keyFile := rt.Viper.GetString("key")
-	pemFile := rt.Viper.GetString("exported-key")
+func (rt *Runtime) unlockDo(ctx *cli.Context) error {
+	keyFile := ctx.Path("key")
+	pemFile := ctx.Path("exported-key")
 
 	if keyFile == "" && pemFile == "" {
-		_ = cmd.Usage()
-
 		return errors.New("--key or --exported-key is required")
 	}
 
 	if keyFile != "" && pemFile != "" {
-		_ = cmd.Usage()
-
 		return errors.New("--key and --exported-key are mutully exclusive")
 	}
 

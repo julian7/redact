@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -10,16 +9,15 @@ import (
 	"github.com/julian7/redact/encoder"
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
-	"github.com/spf13/cast"
-	"github.com/spf13/cobra"
+	"github.com/urfave/cli/v2"
 )
 
-func (rt *Runtime) gitCleanCmd() (*cobra.Command, error) {
-	cmd := &cobra.Command{
-		Use:   "clean",
-		Args:  cobra.NoArgs,
-		Short: "Encoding file from STDIN, to STDOUT",
-		Long: `This plumbing command allows fine-tuning encryption of individual files.
+func (rt *Runtime) gitCleanCmd() *cli.Command {
+	return &cli.Command{
+		Name:      "clean",
+		Usage:     "Encoding file from STDIN, to STDOUT",
+		ArgsUsage: " ",
+		Description: `This plumbing command allows fine-tuning encryption of individual files.
 This command takes a cleartext file from standard input, and emits encoded
 contents to standard out. You can set specific epoch (key number), encoding
 type for this process, or you can also take an already existing, encrypted
@@ -36,54 +34,56 @@ viable encryptions are the aforementioned two. CPUs with AES-NI support
 go just fine with AES256-GCM96, but when used in environments with no
 hardware support, ChaCha20-Poly1305 is the better choice.
 `,
-		PreRunE: rt.LoadSecretKey,
-		RunE:    rt.gitCleanDo,
+		Before: rt.LoadSecretKey,
+		Action: rt.gitCleanDo,
+		Flags: []cli.Flag{
+			&cli.UintFlag{
+				Name:    "epoch",
+				Aliases: []string{"e"},
+				Value:   0,
+				Usage:   "Use specific key epoch (by default it uses the latest key)",
+				EnvVars: []string{"REDACT_GIT_CLEAN_EPOCH"},
+			},
+			&cli.StringFlag{
+				Name:    "type",
+				Aliases: []string{"t"},
+				Usage:   "Use specific `encoding` type (aes256-gcm96 (default) or chacha20-poly1305)",
+				EnvVars: []string{"REDACT_GIT_CLEAN_TYPE"},
+			},
+			&cli.PathFlag{
+				Name:    "file",
+				Aliases: []string{"f"},
+				Usage:   "file path being filtered; --epoch and --type overwrites",
+			},
+		},
 	}
-
-	flags := cmd.Flags()
-	flags.Uint32P("epoch", "e", 0, "Use specific key epoch (by default it uses the latest key)")
-	flags.StringP("type", "t", "", "Use specific encoding type (aes256-gcm96 (default) or chacha20-poly1305)")
-	flags.StringP("file", "f", "", "file path being filtered; --epoch and --type overwrites")
-
-	if err := rt.RegisterFlags("git.clean", flags); err != nil {
-		return nil, err
-	}
-
-	return cmd, nil
 }
 
-func (rt *Runtime) gitCleanDo(cmd *cobra.Command, args []string) error {
-	var keyEpoch uint32
+func (rt *Runtime) gitCleanDo(ctx *cli.Context) error {
+	keyEpoch := uint32(0)
+	encType := encoder.TypeAES256GCM96
 
-	var encType = encoder.TypeAES256GCM96
-
-	if rt.Viper.IsSet("git.clean.epoch") {
-		epoch, err := cast.ToUint32E(rt.Viper.Get("git.clean.epoch"))
-		if err != nil {
-			return err
-		}
-
-		if epoch > 0 {
-			keyEpoch = epoch
-		}
-	} else {
-		fname := rt.Viper.GetString("git.clean.file")
+	if ctx.IsSet("file") {
+		fname := ctx.Path("file")
 		hdr, err := rt.hdrByFilename(fname)
+
 		if err != nil {
-			if !errors.Is(err, fs.ErrNotExist) {
-				rt.Warnf("unable to determine epoch from filename: %s", err.Error())
-			}
+			rt.Warnf("unable to determine epoch from filename: %s", err.Error())
 		} else {
 			keyEpoch = hdr.Epoch
 			encType = hdr.Encoding
 		}
 	}
 
+	if ctx.IsSet("epoch") {
+		keyEpoch = uint32(ctx.Uint("epoch"))
+	}
+
 	if keyEpoch == 0 {
 		keyEpoch = rt.SecretKey.LatestKey
 	}
 
-	encTypeName := rt.Viper.GetString("git.clean.type")
+	encTypeName := ctx.String("type")
 	if encTypeName != "" {
 		var err error
 

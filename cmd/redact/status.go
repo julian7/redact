@@ -10,15 +10,15 @@ import (
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/logger"
 	"github.com/julian7/redact/sdk/git"
-	"github.com/spf13/cobra"
+	"github.com/urfave/cli/v2"
 )
 
-func (rt *Runtime) statusCmd() (*cobra.Command, error) {
-	cmd := &cobra.Command{
-		Use:   "status [files...]",
-		Args:  cobra.ArbitraryArgs,
-		Short: "Shows redact status",
-		Long: `Show encryption status of repo files
+func (rt *Runtime) statusCmd() *cli.Command {
+	return &cli.Command{
+		Name:      "status",
+		Usage:     "Shows redact status",
+		ArgsUsage: "[files...]",
+		Description: `Show encryption status of repo files
 
 This command lists all files in the repository (filtering is possible with
 --encrypted, --repo, --unencrypted, and --quiet options) showing encrypted
@@ -29,23 +29,47 @@ have been.
 It also shows if a file is encrypted with an older key. While re-encryption
 as-is is possible with --rekey option, it's strongly recommended to replace
 these secrets instead.`,
-		PreRunE: rt.LoadSecretKey,
-		RunE:    rt.statusDo,
+		Before: rt.LoadSecretKey,
+		Action: rt.statusDo,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "repo",
+				Aliases: []string{"r"},
+				Value:   false,
+				Usage:   "Show repo status only",
+			},
+			&cli.BoolFlag{
+				Name:    "encrypted",
+				Aliases: []string{"e"},
+				Value:   false,
+				Usage:   "Show encrypted files only",
+			},
+			&cli.BoolFlag{
+				Name:    "unencrypted",
+				Aliases: []string{"u"},
+				Value:   false,
+				Usage:   "Show plaintext files only",
+			},
+			&cli.BoolFlag{
+				Name:    "quiet",
+				Aliases: []string{"q"},
+				Value:   false,
+				Usage:   "Quiet mode (report only issues)",
+			},
+			&cli.BoolFlag{
+				Name:    "fix",
+				Aliases: []string{"f"},
+				Value:   false,
+				Usage:   "Fix problems (doesn't affect files encrypted with older keys)",
+			},
+			&cli.BoolFlag{
+				Name:    "rekey",
+				Aliases: []string{"R"},
+				Value:   false,
+				Usage:   "Rekey files (NOT RECOMMENDED; update for latest encryption key)",
+			},
+		},
 	}
-
-	flags := cmd.Flags()
-	flags.BoolP("repo", "r", false, "Show repo status only")
-	flags.BoolP("encrypted", "e", false, "Show encrypted files only")
-	flags.BoolP("unencrypted", "u", false, "Show plaintext files only")
-	flags.BoolP("quiet", "q", false, "Quiet mode (report only issues)")
-	flags.BoolP("fix", "f", false, "Fix problems (doesn't affect files encrypted with older keys)")
-	flags.BoolP("rekey", "R", false, "Rekey files (NOT RECOMMENDED; update for latest encryption key)")
-
-	if err := rt.RegisterFlags("status", flags); err != nil {
-		return nil, err
-	}
-
-	return cmd, nil
 }
 
 type statusOptions struct {
@@ -62,16 +86,16 @@ type statusOptions struct {
 	toRekey    []string
 }
 
-func (rt *Runtime) statusDo(cmd *cobra.Command, args []string) error {
+func (rt *Runtime) statusDo(ctx *cli.Context) error {
 	opts := statusOptions{
 		Logger:     rt.Logger,
-		repoOnly:   rt.Viper.GetBool("status.repo"),
-		encOnly:    rt.Viper.GetBool("status.encrypted"),
-		plainOnly:  rt.Viper.GetBool("status.unencrypted"),
-		quiet:      rt.Viper.GetBool("status.quiet"),
-		fixRepo:    rt.Viper.GetBool("status.fix"),
-		rekeyFiles: rt.Viper.GetBool("status.rekey"),
-		args:       args,
+		repoOnly:   ctx.Bool("repo"),
+		encOnly:    ctx.Bool("encrypted"),
+		plainOnly:  ctx.Bool("unencrypted"),
+		quiet:      ctx.Bool("quiet"),
+		fixRepo:    ctx.Bool("fix"),
+		rekeyFiles: ctx.Bool("rekey"),
+		args:       ctx.Args().Slice(),
 	}
 	if err := opts.validate(); err != nil {
 		return err

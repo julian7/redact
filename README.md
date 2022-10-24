@@ -150,37 +150,18 @@ historical access to secrets stored in the repository. We can do something about
 
 As always, play safe, and revoke all secrets if there is any chance it can cause damage.
 
-## Configuration
+## Configuration with environment variables
 
-Every configuration option can be replaced in a configuration file (with the exception of setting a configuration file in a non-default location, of course). Precedence: CLI option > environment variable > configuration file.
+A couple of options are configurable with environment variables too, which are taking precedence over command-line options. You can set the following variables:
 
-### Configuration file
-
-By default, the app searches for a `.redact.EXT` configuration in the user's home directory. Multiple formats are accepted, specified by extension names: JSON (.json), TOML (.toml), YAML (.yaml, .yml), HCL (.hcl, .tfvars), INI (.ini), envfile (.dotenv, .env) and Java properties (.properties, .props, .prop).
-
-An example configuration file in YAML:
-
-```yaml
-verbosity: debug
-logfile: /var/log/redact.log
-git:
-  clean:
-    type: chacha20-poly1305
-status:
-  encrypted: true
-```
-
-Currently only `git clean` and `status` settings are nested.
-
-### Configure with environment variables
-
-Anything which can be configured with the configuration file, can be configured with environment variables too. Variable name format has a few rules:
-
-* Environment variables start with "REDACT_"
-* names are in ALL_CAPS
-* nested settings are separated by "_"
-
-Example: `git.clean.type` is configurable by setting `REDACT_GIT_CLEAN_TYPE` environment variable.
+* `REDACT_GIT_CLEAN_EPOCH`: sets `--epoch` option for `redact git clean` subcommand
+* `REDACT_GIT_CLEAN_TYPE`: sets `--type` option for `redact git clean` subcommand
+* `REDACT_LOG_LEVEL`: sets `--verbosity` global option
+* `REDACT_LOG_LEVEL`: sets `--logfile` global option
+* `REDACT_STRICT`: sets `--strict-permissions` global option
+* `REDACT_UNLOCK_EXPORTED_KEY`: sets `--exported-key` option for `redact unlock` subcommand
+* `REDACT_UNLOCK_GPG_KEY`: sets `--gpgkey` option for `redact unlock gpg` subcommand
+* `REDACT_UNLOCK_KEY`: sets `--key` option for `redact unlock` subcommand
 
 ## Any issues?
 
