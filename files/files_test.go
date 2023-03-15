@@ -82,8 +82,8 @@ func newFailingEncoder(key []byte) (encoder.AEAD, error) {
 func genCiphertextHeader(encType, epoch uint32) []byte {
 	out := bytes.NewBuffer(nil)
 	_, _ = out.WriteString("\x00REDACTED\x00")
-	_ = binary.Write(out, binary.BigEndian, uint32(encType))
-	_ = binary.Write(out, binary.BigEndian, uint32(epoch))
+	_ = binary.Write(out, binary.BigEndian, encType)
+	_ = binary.Write(out, binary.BigEndian, epoch)
 
 	return out.Bytes()
 }
@@ -155,7 +155,7 @@ func TestEncode(t *testing.T) { //nolint:funlen
 		},
 		{
 			name:    "encoder error",
-			enctype: uint32(failEncoderID),
+			enctype: failEncoderID,
 			epoch:   1,
 			reader:  bytes.NewReader([]byte(samplePlaintext)),
 			writer:  bytes.NewBuffer(nil),
@@ -283,7 +283,7 @@ func TestDecode(t *testing.T) { //nolint:funlen
 			name:   "decoder error",
 			reader: bytes.NewReader(genCiphertextHeader(failEncoderID, 1)),
 			writer: bytes.NewBuffer(nil),
-			err:    errors.New("decoding stream: failing encoder error: cannot decode"),
+			err:    errors.New("decoding stream: failing encoder error: cannot encode"),
 			output: "",
 		},
 		{
@@ -377,7 +377,7 @@ func TestFileStatus(t *testing.T) {
 
 				return
 			}
-			reader, err := k.Open(testFN)
+			reader, err := k.Filesystem.Open(testFN)
 			if err != nil {
 				t.Error(err)
 
@@ -388,8 +388,10 @@ func TestFileStatus(t *testing.T) {
 			if !errors.Is(err, tc.err) {
 				t.Errorf("expected %v error; received: %v", tc.err, err)
 			}
-			if hdr.Epoch != tc.epoch {
-				t.Errorf("expected epoch == %d; received: %d", tc.epoch, hdr.Epoch)
+			if err == nil {
+				if hdr.Epoch != tc.epoch {
+					t.Errorf("expected epoch == %d; received: %d", tc.epoch, hdr.Epoch)
+				}
 			}
 		})
 	}

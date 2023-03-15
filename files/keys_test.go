@@ -9,7 +9,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/spf13/afero"
+	"github.com/go-git/go-billy/v5"
+	"github.com/go-git/go-billy/v5/util"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/tester"
@@ -154,20 +155,20 @@ func TestGenerate(t *testing.T) {
 }
 
 type noOpenFile struct {
-	afero.Fs
+	billy.Filesystem
 }
 
-func (fs *noOpenFile) OpenFile(string, int, os.FileMode) (afero.File, error) {
+func (fs *noOpenFile) OpenFile(string, int, os.FileMode) (billy.File, error) {
 	return nil, errors.New("open file returns error")
 }
 
-type noMkdir struct {
-	afero.Fs
-}
+// type noMkdir struct {
+// 	billy.Filesystem
+// }
 
-func (fs *noMkdir) Mkdir(string, os.FileMode) error {
-	return errors.New("Mkdir returns error")
-}
+// func (fs *noMkdir) Mkdir(string, os.FileMode) error {
+// 	return errors.New("Mkdir returns error")
+// }
 
 func TestLoad(t *testing.T) { //nolint:funlen
 	tt := []struct {
@@ -180,7 +181,7 @@ func TestLoad(t *testing.T) { //nolint:funlen
 			"uninitialized",
 			false,
 			func(*files.SecretKey) {},
-			errors.New("open .git/redact/key: file does not exist"),
+			errors.New("key file \".git/redact/key\": file does not exist"),
 		},
 		{
 			"initialized",
@@ -191,14 +192,21 @@ func TestLoad(t *testing.T) { //nolint:funlen
 		{
 			"no key dir",
 			true,
-			func(k *files.SecretKey) { _ = k.Repo.RemoveAll(k.Repo.Keydir()) },
-			errors.New("keydir not available: open .git/redact: file does not exist"),
+			func(k *files.SecretKey) {
+				err := util.RemoveAll(k.Repo.Filesystem, k.Repo.Keydir())
+				if err != nil {
+					panic(err)
+				}
+			},
+			errors.New("keydir \".git/redact\" not available: file does not exist"),
 		},
 		{
 			"excessive rights",
 			true,
 			func(k *files.SecretKey) {
-				_ = k.Chmod("/git/repo/.git/test/key", 0777)
+				if fs, ok := k.Filesystem.(billy.Change); ok {
+					_ = fs.Chmod("/git/repo/.git/test/key", 0777)
+				}
 			},
 			nil,
 		},
@@ -206,7 +214,9 @@ func TestLoad(t *testing.T) { //nolint:funlen
 			"restrictive rights",
 			true,
 			func(k *files.SecretKey) {
-				_ = k.Chmod("/git/repo/.git/test/key", 0)
+				if fs, ok := k.Filesystem.(billy.Change); ok {
+					_ = fs.Chmod("/git/repo/.git/test/key", 0)
+				}
 			},
 			nil,
 		},
@@ -214,7 +224,7 @@ func TestLoad(t *testing.T) { //nolint:funlen
 			"read error",
 			true,
 			func(k *files.SecretKey) {
-				k.Fs = &noOpenFile{Fs: k.Fs}
+				k.Filesystem = &noOpenFile{Filesystem: k.Filesystem}
 			},
 			errors.New("opening key file for reading: open file returns error"),
 		},
@@ -349,15 +359,17 @@ func TestSaveTo(t *testing.T) { //nolint:funlen
 
 func TestSave(t *testing.T) { //nolint:funlen
 	tt := []struct {
-		name   string
-		hasKey bool
-		fsMods func(*files.SecretKey)
-		err    error
+		name    string
+		saveKey bool
+		fsMods  func(*files.SecretKey)
+		keyErr  error
+		saveErr error
 	}{
 		{
 			"uninitialized",
 			false,
 			func(*files.SecretKey) {},
+			nil,
 			nil,
 		},
 		{
@@ -365,23 +377,27 @@ func TestSave(t *testing.T) { //nolint:funlen
 			true,
 			func(*files.SecretKey) {},
 			nil,
+			nil,
 		},
-		{
-			"error getting keydir",
-			false,
-			func(k *files.SecretKey) {
-				_ = k.RemoveAll(k.Repo.Keydir())
-				k.Fs = &noMkdir{Fs: k.Fs}
-			},
-			errors.New("creating keydir: Mkdir returns error"),
-		},
+		// billy memfs creates parent dir on demand, and doesn't fail if parent dir doesn't exist
+		// {
+		// 	"error getting keydir",
+		// 	true,
+		// 	func(k *files.SecretKey) {
+		// 		_ = util.RemoveAll(k.Filesystem, k.Repo.Keydir())
+		// 		k.Filesystem = &noMkdir{Filesystem: k.Filesystem}
+		// 	},
+		// 	errors.New("creating keydir: Mkdir returns error"),
+		//  nil,
+		// },
 		{
 			"error writing key",
-			false,
+			true,
 			func(k *files.SecretKey) {
-				k.Fs = &noOpenFile{Fs: k.Fs}
+				k.Filesystem = &noOpenFile{Filesystem: k.Filesystem}
 			},
 			errors.New("saving key file: open file returns error"),
+			nil,
 		},
 	}
 	for _, tc := range tt {
@@ -399,9 +415,11 @@ func TestSave(t *testing.T) { //nolint:funlen
 
 				return
 			}
-			if tc.hasKey {
+			if tc.saveKey {
 				if err := writeKey(k); err != nil {
-					t.Error(err)
+					if err2 := tester.AssertError(tc.keyErr, err); err2 != nil {
+						t.Error(err2)
+					}
 
 					return
 				}
@@ -409,7 +427,7 @@ func TestSave(t *testing.T) { //nolint:funlen
 
 			tc.fsMods(k)
 			err = k.Save()
-			if err2 := tester.AssertError(tc.err, err); err2 != nil {
+			if err2 := tester.AssertError(tc.saveErr, err); err2 != nil {
 				t.Error(err2)
 
 				return
@@ -418,7 +436,7 @@ func TestSave(t *testing.T) { //nolint:funlen
 			if err != nil {
 				return
 			}
-			finfo, err := k.Stat(".git/redact/key")
+			finfo, err := k.Filesystem.Stat(".git/redact/key")
 			if err != nil {
 				t.Errorf("key not created: %v", err)
 

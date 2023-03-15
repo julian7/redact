@@ -2,12 +2,13 @@ package files_test
 
 import (
 	"fmt"
+	"io"
 	"os"
 
+	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/logger"
 	"github.com/julian7/redact/sdk/git"
-	"github.com/spf13/afero"
 )
 
 const (
@@ -17,15 +18,15 @@ const (
 func genGitRepo() (*files.SecretKey, error) {
 	k := &files.SecretKey{
 		Repo: &git.Repo{
-			Fs:       afero.NewMemMapFs(),
-			Logger:   logger.New(),
-			Common:   ".git",
-			Toplevel: "/git/repo",
+			Filesystem: memfs.New(),
+			Logger:     logger.New(),
+			Common:     ".git",
+			Toplevel:   "/git/repo",
 		},
 		Cache: map[string]string{},
 	}
 
-	err := k.Mkdir(k.Repo.Keydir(), 0700)
+	err := k.Filesystem.MkdirAll(k.Repo.Keydir(), 0700)
 	if err != nil {
 		return nil, fmt.Errorf("creating key dir %s: %w", k.Repo.Keydir(), err)
 	}
@@ -48,12 +49,12 @@ func writeKey(k *files.SecretKey) error {
 }
 
 func writeFile(k *files.SecretKey, fname string, perms os.FileMode, contents string) error {
-	of, err := k.OpenFile(fname, os.O_CREATE|os.O_WRONLY, perms)
+	of, err := k.Filesystem.OpenFile(fname, os.O_CREATE|os.O_WRONLY, perms)
 	if err != nil {
 		return fmt.Errorf("creating %s file: %w", fname, err)
 	}
 
-	if _, err := of.WriteString(contents); err != nil {
+	if _, err := io.WriteString(of, contents); err != nil {
 		return fmt.Errorf("writing %s file: %w", fname, err)
 	}
 

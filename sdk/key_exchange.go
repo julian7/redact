@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/go-git/go-billy/v5/util"
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk/git"
-	"github.com/spf13/afero"
 )
 
 type ExchangeDirError struct {
@@ -114,7 +114,7 @@ func SavePubkeyExchange(repo *git.Repo, key *openpgp.Entity) error {
 
 	pubkeyName := git.ExchangePubKeyFile(kxstub)
 
-	pubkeyWriter, err := repo.OpenFile(pubkeyName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	pubkeyWriter, err := repo.Filesystem.OpenFile(pubkeyName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("opening exchange pubkey file: %w", err)
 	}
@@ -133,7 +133,7 @@ func UpdateSecretExchangeKeys(repo *git.Repo, writerCallback func(io.Writer)) (i
 	kxdir := repo.ExchangeDir()
 	updated := 0
 
-	err := afero.Walk(repo.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
+	err := util.Walk(repo.Filesystem, kxdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // nolint:nilerr
 		}

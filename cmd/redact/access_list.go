@@ -4,9 +4,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-git/go-billy/v5/util"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk/git"
-	"github.com/spf13/afero"
 	"github.com/urfave/cli/v2"
 )
 
@@ -23,7 +23,7 @@ func (rt *Runtime) accessListDo(ctx *cli.Context) error {
 	_ = rt.LoadSecretKey(ctx)
 
 	kxdir := rt.Repo.ExchangeDir()
-	err := afero.Walk(rt.Repo.Fs, kxdir, func(path string, info os.FileInfo, err error) error {
+	err := util.Walk(rt.Repo.Filesystem, kxdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // nolint:nilerr
 		}

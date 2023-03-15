@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 
-	"github.com/spf13/afero"
+	"github.com/go-git/go-billy/v5/util"
 )
 
 const (
@@ -42,7 +42,7 @@ func (r *Repo) GetExchangeFilenameStubFor(fingerprint []byte) (string, error) {
 func (r *Repo) CheckExchangeDir() error {
 	kxdir := r.ExchangeDir()
 
-	st, err := r.Stat(kxdir)
+	st, err := r.Filesystem.Stat(kxdir)
 
 	if err != nil {
 		return fmt.Errorf("checking exchange dir: %w", err)
@@ -58,14 +58,14 @@ func (r *Repo) CheckExchangeDir() error {
 func (r *Repo) ensureExchangeDir() error {
 	kxdir := r.ExchangeDir()
 
-	st, err := r.Stat(kxdir)
+	st, err := r.Filesystem.Stat(kxdir)
 	if err != nil {
-		err = r.Mkdir(kxdir, 0755)
+		err = r.Filesystem.MkdirAll(kxdir, 0755)
 		if err != nil {
 			return fmt.Errorf("creating key exchange dir: %w", err)
 		}
 
-		st, err = r.Stat(kxdir)
+		st, err = r.Filesystem.Stat(kxdir)
 	}
 
 	if err != nil {
@@ -90,20 +90,20 @@ func (r *Repo) ensureExchangeGitAttributes() error {
 
 	gaFileName := filepath.Join(kxdir, gitAttributesFile)
 
-	st, err := r.Stat(gaFileName)
+	st, err := r.Filesystem.Stat(gaFileName)
 	if err == nil {
 		if st.IsDir() {
 			return fmt.Errorf("%s is not a normal file: %+v", gaFileName, st)
 		}
 
-		f, err := r.Open(gaFileName)
+		f, err := r.Filesystem.Open(gaFileName)
 		if err != nil {
 			return fmt.Errorf("opening .gitattributes file inside exchange dir: %w", err)
 		}
 
 		defer f.Close()
 
-		data, err = ioutil.ReadAll(f)
+		data, err = io.ReadAll(f)
 		if err != nil {
 			return fmt.Errorf("reading .gitattributes file in key exchange dir: %w", err)
 		}
@@ -115,7 +115,7 @@ func (r *Repo) ensureExchangeGitAttributes() error {
 		r.Logger.Warn("rewriting .gitattributes file in key exchange dir")
 	}
 
-	if err := afero.WriteFile(r.Fs, gaFileName, []byte(kxGitAttributesContents), 0644); err != nil {
+	if err := util.WriteFile(r.Filesystem, gaFileName, []byte(kxGitAttributesContents), 0644); err != nil {
 		return fmt.Errorf("writing .gitattributes file in key exchange dir: %w", err)
 	}
 

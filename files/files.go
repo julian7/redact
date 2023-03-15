@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	"github.com/julian7/redact/encoder"
 )
@@ -36,7 +35,7 @@ func (k *SecretKey) Encode(encodingFormat uint32, epoch uint32, reader io.Reader
 		return fmt.Errorf("setting up encoder: %w", err)
 	}
 
-	in, err := ioutil.ReadAll(reader)
+	in, err := io.ReadAll(reader)
 	if err != nil {
 		return fmt.Errorf("reading input stream: %w", err)
 	}
@@ -81,7 +80,7 @@ func (k *SecretKey) Decode(reader io.Reader, writer io.Writer) error {
 		return fmt.Errorf("setting up encoder: %w", err)
 	}
 
-	in, err := ioutil.ReadAll(reader)
+	in, err := io.ReadAll(reader)
 	if err != nil {
 		return fmt.Errorf("reading stream: %w", err)
 	}

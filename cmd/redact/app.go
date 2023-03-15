@@ -34,7 +34,7 @@ file like this:
 	*.secret.txt filter=redact diff=redact
 
 The subsequent "git add" command will encrypt files matching this pattern.`,
-		Before:  rt.SetupLogging,
+		Before:  rt.GlobalConfig,
 		Version: version,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -68,9 +68,8 @@ The subsequent "git add" command will encrypt files matching this pattern.`,
 	}
 }
 
-func (rt *Runtime) SetupLogging(ctx *cli.Context) error {
-	logFile := ctx.Path("logfile")
-	if logFile != "" {
+func (rt *Runtime) GlobalConfig(ctx *cli.Context) error {
+	if logFile := ctx.Path("logfile"); logFile != "" {
 		writer, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			rt.Logger.Warnf("cannot open log file: %v", err)
@@ -80,6 +79,8 @@ func (rt *Runtime) SetupLogging(ctx *cli.Context) error {
 	}
 
 	rt.setLogLevel(strings.ToLower(ctx.String("verbosity")))
+
+	rt.StrictPermissionChecks = ctx.Bool("strict-permissions")
 
 	return nil
 }

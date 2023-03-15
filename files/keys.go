@@ -9,9 +9,10 @@ import (
 	"io"
 	"os"
 
+	"github.com/go-git/go-billy/v5"
+
 	keyV0 "github.com/julian7/redact/files/key_v0"
 	"github.com/julian7/redact/sdk/git"
-	"github.com/spf13/afero"
 )
 
 const (
@@ -80,7 +81,7 @@ func (k *SecretKey) Read(f io.Reader) error {
 
 		err = binary.Read(f, binary.BigEndian, key)
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				return nil
 			}
 
@@ -111,12 +112,12 @@ func (k *SecretKey) Load(strict bool) error {
 
 	keyfile := k.Repo.Keyfile()
 
-	err = checkFileMode(k.Repo.Fs, "key file", keyfile, 0600, strict)
+	err = checkFileMode(k.Repo.Filesystem, "key file", keyfile, 0600, strict)
 	if err != nil {
 		return err
 	}
 
-	f, err := k.Repo.OpenFile(keyfile, os.O_RDONLY, 0600)
+	f, err := k.Repo.Filesystem.OpenFile(keyfile, os.O_RDONLY, 0600)
 	if err != nil {
 		return fmt.Errorf("opening key file for reading: %w", err)
 	}
@@ -197,7 +198,7 @@ func (k *SecretKey) Save() error {
 		return err
 	}
 
-	f, err := afero.TempFile(k.Repo.Fs, k.Repo.Keydir(), "temp")
+	f, err := k.Repo.Filesystem.TempFile(k.Repo.Keydir(), "temp")
 	if err != nil {
 		return fmt.Errorf("saving key file: %w", err)
 	}
@@ -211,12 +212,14 @@ func (k *SecretKey) Save() error {
 	}
 
 	keyFileName := k.Repo.Keyfile()
-	if err = k.Repo.Rename(f.Name(), keyFileName); err != nil {
+	if err = k.Repo.Filesystem.Rename(f.Name(), keyFileName); err != nil {
 		return fmt.Errorf("placing secret key: %w", err)
 	}
 
-	if err := k.Repo.Fs.Chmod(keyFileName, 0600); err != nil {
-		return fmt.Errorf("setting permissions on secret key: %w", err)
+	if fs, ok := k.Repo.Filesystem.(billy.Change); ok {
+		if err := fs.Chmod(keyFileName, 0600); err != nil {
+			return fmt.Errorf("setting permissions on secret key: %w", err)
+		}
 	}
 
 	return nil
@@ -248,13 +251,13 @@ func (k *SecretKey) ensureKeys() {
 }
 
 func (k *SecretKey) getOrCreateKeyDir() error {
-	fs, err := k.Repo.Stat(k.Repo.Keydir())
+	fs, err := k.Repo.Filesystem.Stat(k.Repo.Keydir())
 	if err != nil {
-		if err := k.Repo.Mkdir(k.Repo.Keydir(), 0700); err != nil {
+		if err := k.Repo.Filesystem.MkdirAll(k.Repo.Keydir(), 0700); err != nil {
 			return fmt.Errorf("creating keydir: %w", err)
 		}
 
-		fs, err = k.Repo.Stat(k.Repo.Keydir())
+		fs, err = k.Repo.Filesystem.Stat(k.Repo.Keydir())
 	}
 
 	if err != nil {
@@ -269,16 +272,18 @@ func (k *SecretKey) getOrCreateKeyDir() error {
 }
 
 func (k *SecretKey) checkKeyDir(strict bool) error {
-	fs, err := k.Repo.Stat(k.Repo.Keydir())
+	keyDir := k.Repo.Keydir()
+
+	fs, err := k.Repo.Filesystem.Stat(keyDir)
 	if err != nil {
-		return fmt.Errorf("keydir not available: %w", err)
+		return fmt.Errorf("keydir %q not available: %w", keyDir, err)
 	}
 
 	if !fs.IsDir() {
 		return errors.New("keydir is not a directory")
 	}
 
-	err = checkFileMode(k.Repo.Fs, "key dir", k.Repo.Keydir(), 0700, strict)
+	err = checkFileMode(k.Repo.Filesystem, "key dir", k.Repo.Keydir(), 0700, strict)
 	if err != nil {
 		return err
 	}

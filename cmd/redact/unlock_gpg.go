@@ -104,7 +104,7 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 
 		secretKeyFilename := git.ExchangeSecretKeyFile(stub)
 
-		st, err := rt.Repo.Stat(secretKeyFilename)
+		st, err := rt.Repo.Filesystem.Stat(secretKeyFilename)
 		if err != nil || st.IsDir() {
 			continue
 		}

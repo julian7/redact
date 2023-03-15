@@ -6,10 +6,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/go-git/go-billy/v5"
+
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/logger"
-	sdkfs "github.com/julian7/redact/sdk/fs"
-	"github.com/spf13/afero"
+	"github.com/julian7/redact/sdk/osfs"
 )
 
 const (
@@ -25,7 +26,7 @@ const (
 )
 
 type Repo struct {
-	afero.Fs
+	billy.Filesystem
 	*logger.Logger
 	Common   string
 	Toplevel string
@@ -38,10 +39,9 @@ func NewRepo(l *logger.Logger) (*Repo, error) {
 	}
 
 	return &Repo{
-		Fs:       sdkfs.NewOsFs(),
-		Logger:   l,
-		Common:   repo.Common,
-		Toplevel: repo.Toplevel,
+		Filesystem: osfs.New(repo.Toplevel),
+		Logger:     l,
+		Common:     repo.Common,
 	}, nil
 }
 
@@ -54,15 +54,16 @@ func (r *Repo) Keyfile() string {
 }
 
 func (r *Repo) ExchangeDir() string {
-	return filepath.Join(r.Toplevel, DefaultKeyExchangeDir)
+	return DefaultKeyExchangeDir
 }
 
 func (r *Repo) TouchFile(filePath string) error {
-	filePath = filepath.Join(r.Toplevel, filePath)
 	touchTime := time.Now()
 
-	if err := r.Fs.Chtimes(filePath, touchTime, touchTime); err != nil {
-		return fmt.Errorf("touch file: %w", err)
+	if chfs, ok := r.Filesystem.(billy.Change); ok {
+		if err := chfs.Chtimes(filePath, touchTime, touchTime); err != nil {
+			return fmt.Errorf("touch file: %w", err)
+		}
 	}
 
 	return nil
@@ -82,7 +83,7 @@ func (r *Repo) TouchUp(files []string, rekey bool, softErrHandler func(error)) e
 			continue
 		}
 
-		touched = append(touched, filepath.Join(r.Toplevel, entry))
+		touched = append(touched, entry)
 	}
 
 	if len(touched) > 0 {

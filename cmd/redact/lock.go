@@ -32,7 +32,7 @@ func (rt *Runtime) lockDo(ctx *cli.Context) error {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 
-	if err := rt.Repo.Remove(rt.Repo.Keyfile()); err != nil {
+	if err := rt.Repo.Filesystem.Remove(rt.Repo.Keyfile()); err != nil {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 

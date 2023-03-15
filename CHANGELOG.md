@@ -14,6 +14,7 @@ Added:
 Changed:
 
 * Switch from cobra + viper to urfave/cli. We lose configurability via configuration files, but this is a more slick, precisely configurable option.
+* Switch from afero to billy. This shaves off about 1MB from binary size, and it paves the way to switch to go-git.
 
 ## [v0.7.1] - October 3, 2022
 

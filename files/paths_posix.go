@@ -1,5 +1,4 @@
 //go:build !windows
-// +build !windows
 
 package files
 
@@ -7,13 +6,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/afero"
+	"github.com/go-git/go-billy/v5"
 )
 
-func checkFileMode(fs afero.Fs, name, filename string, expected os.FileMode, strict bool) error {
+func checkFileMode(fs billy.Filesystem, name, filename string, expected os.FileMode, strict bool) error {
 	st, err := fs.Stat(filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s %q: %w", name, filename, err)
 	}
 
 	if checkFileModeOnce(name, st, expected) != nil {
@@ -21,13 +20,15 @@ func checkFileMode(fs afero.Fs, name, filename string, expected os.FileMode, str
 			return nil
 		}
 
-		if err := fs.Chmod(filename, expected); err != nil {
-			return fmt.Errorf("enforcing file mode on %s: %w", name, err)
+		if chfs, ok := fs.(billy.Change); ok {
+			if err := chfs.Chmod(filename, expected); err != nil {
+				return fmt.Errorf("enforcing file mode on %s: %w", name, err)
+			}
 		}
 
 		st, err := fs.Stat(filename)
 		if err != nil {
-			return err
+			return fmt.Errorf("open %s: %w", name, err)
 		}
 
 		return checkFileModeOnce(name, st, expected)
