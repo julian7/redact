@@ -24,6 +24,8 @@ func checkFileMode(fs billy.Filesystem, name, filename string, expected os.FileM
 			if err := chfs.Chmod(filename, expected); err != nil {
 				return fmt.Errorf("enforcing file mode on %s: %w", name, err)
 			}
+		} else {
+			return fmt.Errorf("cannot enforce file mode on %q: read-only file system", name)
 		}
 
 		st, err := fs.Stat(filename)

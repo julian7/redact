@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -68,7 +69,9 @@ func (rt *Runtime) gitCleanDo(ctx *cli.Context) error {
 		hdr, err := rt.hdrByFilename(fname)
 
 		if err != nil {
-			rt.Warnf("unable to determine epoch from filename: %s", err.Error())
+			if !errors.Is(err, fs.ErrNotExist) {
+				rt.Warnf("unable to determine epoch from filename: %s", err.Error())
+			}
 		} else {
 			keyEpoch = hdr.Epoch
 			encType = hdr.Encoding

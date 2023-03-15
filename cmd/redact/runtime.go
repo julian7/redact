@@ -57,11 +57,15 @@ func (rt *Runtime) LoadSecretKey(ctx *cli.Context) error {
 	}
 
 	if err := rt.SecretKey.Load(rt.StrictPermissionChecks); err != nil {
-		if err2 := rt.Repo.CheckExchangeDir(); err2 != nil {
-			return errors.New("repository is not using redact")
+		if !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("loading secret key: %w", err)
 		}
 
-		return fmt.Errorf("repository is locked: %w", err)
+		if err := rt.Repo.CheckExchangeDir(); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("locating exchange dir: %w", err)
+		}
+
+		return errors.New("repository is not redacted")
 	}
 
 	return nil

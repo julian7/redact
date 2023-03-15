@@ -16,6 +16,12 @@ Changed:
 * Switch from cobra + viper to urfave/cli. We lose configurability via configuration files, but this is a more slick, precisely configurable option.
 * Switch from afero to billy. This shaves off about 1MB from binary size, and it paves the way to switch to go-git.
 
+Fixed:
+
+* Clearer error message when repo is not redacted
+* Omit unnecessary error message when a new encrypted file is introduced
+* Bail out from fixing keydir permissions if filesystem has no Change capability (when FS object doesn't implement billy.Change interface)
+
 ## [v0.7.1] - October 3, 2022
 
 Added:
