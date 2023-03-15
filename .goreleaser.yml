@@ -1,31 +1,28 @@
-project_name: redact
-release:
-  github:
-    owner: julian7
-    name: redact
+archives:
+- files:
+  - none*
+  format: binary
+  name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}-{{.Version}}"
 builds:
 - env:
   - GO111MODULE=on
   - CGO_ENABLED=0
-  main: ./cmd/redact
   ldflags:
   - -s -w -X main.version={{.Version}}
-  goos:
-  - darwin
-  - linux
-  - windows
-  goarch:
-  - amd64
-universal_binaries:
-- replace: true
-archives:
-- name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}-{{.Version}}"
-  replacements:
-    darwin: macos
-  format: binary
-  files:
-  - none*
+  main: ./cmd/redact
+  targets:
+  - darwin_arm64
+  - darwin_amd64
+  - linux_amd64
+  - windows_amd64
 checksum:
   name_template: 'SHA256SUMS.{{.ProjectName}}-{{.Version}}'
+project_name: redact
+release:
+  github:
+    name: redact
+    owner: julian7
 snapshot:
   name_template: "{{ .Tag }}-{{ .ShortCommit }}"
+universal_binaries:
+- replace: true
