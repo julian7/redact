@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
 
@@ -41,11 +40,6 @@ func (rt *Runtime) generateDo(ctx *cli.Context) error {
 		}
 	})
 	if err != nil {
-		var exchangedir *sdk.ExchangeDirError
-		if errors.As(err, &exchangedir) {
-			return nil
-		}
-
 		rt.Logger.Warn(`unable to update secret keys; restore original key with "redact unlock", and try again`)
 
 		return fmt.Errorf("updating key exchange secret keys: %w", err)

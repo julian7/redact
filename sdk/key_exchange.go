@@ -15,23 +15,6 @@ import (
 	"github.com/julian7/redact/sdk/git"
 )
 
-type ExchangeDirError struct {
-	err error
-}
-
-func (e *ExchangeDirError) Error() string {
-	return e.err.Error()
-}
-
-func (e *ExchangeDirError) Unwrap() error {
-	err, ok := e.err.(interface{ Unwrap() error }) // nolint:errorlint
-	if ok {
-		return err.Unwrap()
-	}
-
-	return nil
-}
-
 // SecretKeyFromExchange loads data from an encrypted secret key into provided
 // object, and then saves it.
 func SecretKeyFromExchange(repo *git.Repo, fingerprint []byte) (io.ReadCloser, error) {
