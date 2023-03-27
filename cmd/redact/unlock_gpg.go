@@ -6,8 +6,8 @@ import (
 	"io"
 
 	"github.com/julian7/redact/gpgutil"
+	"github.com/julian7/redact/repo"
 	"github.com/julian7/redact/sdk"
-	"github.com/julian7/redact/sdk/git"
 	"github.com/urfave/cli/v2"
 )
 
@@ -95,16 +95,16 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 	availableKeys := make([]int, 0, len(keys))
 
 	for idx, key := range keys {
-		stub, err := rt.Repo.GetExchangeFilenameStubFor(key)
+		stub, err := rt.Repo.GetExchangeFilenameStubFor(key, rt.Logger)
 		if err != nil {
 			rt.Logger.Warnf("cannot get exchange filename for %x: %v", key, err)
 
 			continue
 		}
 
-		secretKeyFilename := git.ExchangeSecretKeyFile(stub)
+		secretKeyFilename := repo.ExchangeSecretKeyFile(stub)
 
-		st, err := rt.Repo.Filesystem.Stat(secretKeyFilename)
+		st, err := rt.Repo.Workdir.Stat(secretKeyFilename)
 		if err != nil || st.IsDir() {
 			continue
 		}

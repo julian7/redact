@@ -1,4 +1,4 @@
-package git_test
+package repo_test
 
 import (
 	"fmt"
@@ -9,12 +9,12 @@ import (
 
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/julian7/redact/logger"
-	"github.com/julian7/redact/sdk/git"
+	"github.com/julian7/redact/repo"
 	"github.com/julian7/tester"
 )
 
-func genGitRepo() (*git.Repo, error) {
-	r := &git.Repo{
+func genGitRepo() (*repo.Repo, error) {
+	r := &repo.Repo{
 		Filesystem: memfs.New(),
 		Logger:     logger.New(),
 		Common:     ".git",

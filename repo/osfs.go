@@ -1,4 +1,4 @@
-package osfs
+package repo
 
 import (
 	"os"
@@ -6,15 +6,14 @@ import (
 	"time"
 
 	"github.com/go-git/go-billy/v5"
-	billy_osfs "github.com/go-git/go-billy/v5/osfs"
 )
 
 type OS struct {
 	billy.Filesystem
 }
 
-func New(basedir string) *OS {
-	return &OS{Filesystem: billy_osfs.New((basedir))}
+func NewOSFS(fs billy.Filesystem) *OS {
+	return &OS{Filesystem: fs}
 }
 
 func (osfs *OS) Chmod(name string, mode os.FileMode) error {

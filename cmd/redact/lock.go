@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/julian7/redact/sdk"
 	"github.com/urfave/cli/v2"
 )
 
@@ -25,14 +24,14 @@ beforehand.`,
 }
 
 func (rt *Runtime) lockDo(ctx *cli.Context) error {
-	err := sdk.RemoveGitSettings(func(attr string) {
+	err := rt.RemoveGitSettings(func(attr string) {
 		rt.Logger.Debugf("Removing filter/diff git config of %s", attr)
 	})
 	if err != nil {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 
-	if err := rt.Repo.Filesystem.Remove(rt.Repo.Keyfile()); err != nil {
+	if err := rt.Repo.SecretKey.Remove(); err != nil {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 

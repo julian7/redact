@@ -1,4 +1,4 @@
-package git
+package repo
 
 import (
 	"bytes"
@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/go-git/go-billy/v5/util"
+
+	"github.com/julian7/redact/logger"
 )
 
 const (
@@ -31,8 +33,8 @@ const (
 //
 // - .asc: Public key ASCII armor file
 // - .key: Secret key encryped with public key
-func (r *Repo) GetExchangeFilenameStubFor(fingerprint []byte) (string, error) {
-	if err := r.ensureExchangeDir(); err != nil {
+func (r *Repo) GetExchangeFilenameStubFor(fingerprint []byte, log *logger.Logger) (string, error) {
+	if err := r.ensureExchangeDir(log); err != nil {
 		return "", err
 	}
 
@@ -42,7 +44,7 @@ func (r *Repo) GetExchangeFilenameStubFor(fingerprint []byte) (string, error) {
 func (r *Repo) CheckExchangeDir() error {
 	kxdir := r.ExchangeDir()
 
-	st, err := r.Filesystem.Stat(kxdir)
+	st, err := r.Workdir.Stat(kxdir)
 
 	if err != nil {
 		return fmt.Errorf("checking exchange dir: %w", err)
@@ -55,17 +57,17 @@ func (r *Repo) CheckExchangeDir() error {
 	return nil
 }
 
-func (r *Repo) ensureExchangeDir() error {
+func (r *Repo) ensureExchangeDir(log *logger.Logger) error {
 	kxdir := r.ExchangeDir()
 
-	st, err := r.Filesystem.Stat(kxdir)
+	st, err := r.Workdir.Stat(kxdir)
 	if err != nil {
-		err = r.Filesystem.MkdirAll(kxdir, 0755)
+		err = r.Workdir.MkdirAll(kxdir, 0755)
 		if err != nil {
 			return fmt.Errorf("creating key exchange dir: %w", err)
 		}
 
-		st, err = r.Filesystem.Stat(kxdir)
+		st, err = r.Workdir.Stat(kxdir)
 	}
 
 	if err != nil {
@@ -76,27 +78,27 @@ func (r *Repo) ensureExchangeDir() error {
 		return errors.New("key exchange is not a directory")
 	}
 
-	if err := r.ensureExchangeGitAttributes(); err != nil {
+	if err := r.ensureExchangeGitAttributes(log); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *Repo) ensureExchangeGitAttributes() error {
+func (r *Repo) ensureExchangeGitAttributes(log *logger.Logger) error {
 	kxdir := r.ExchangeDir()
 
 	var data []byte
 
 	gaFileName := filepath.Join(kxdir, gitAttributesFile)
 
-	st, err := r.Filesystem.Stat(gaFileName)
+	st, err := r.Workdir.Stat(gaFileName)
 	if err == nil {
 		if st.IsDir() {
 			return fmt.Errorf("%s is not a normal file: %+v", gaFileName, st)
 		}
 
-		f, err := r.Filesystem.Open(gaFileName)
+		f, err := r.Workdir.Open(gaFileName)
 		if err != nil {
 			return fmt.Errorf("opening .gitattributes file inside exchange dir: %w", err)
 		}
@@ -112,10 +114,12 @@ func (r *Repo) ensureExchangeGitAttributes() error {
 			return nil
 		}
 
-		r.Logger.Warn("rewriting .gitattributes file in key exchange dir")
+		if log != nil {
+			log.Warn("rewriting .gitattributes file in key exchange dir")
+		}
 	}
 
-	if err := util.WriteFile(r.Filesystem, gaFileName, []byte(kxGitAttributesContents), 0644); err != nil {
+	if err := util.WriteFile(r.Workdir, gaFileName, []byte(kxGitAttributesContents), 0644); err != nil {
 		return fmt.Errorf("writing .gitattributes file in key exchange dir: %w", err)
 	}
 

@@ -5,8 +5,9 @@ import (
 	"strings"
 
 	"github.com/go-git/go-billy/v5/util"
+
 	"github.com/julian7/redact/gpgutil"
-	"github.com/julian7/redact/sdk/git"
+	"github.com/julian7/redact/repo"
 	"github.com/urfave/cli/v2"
 )
 
@@ -23,11 +24,11 @@ func (rt *Runtime) accessListDo(ctx *cli.Context) error {
 	_ = rt.LoadSecretKey(ctx)
 
 	kxdir := rt.Repo.ExchangeDir()
-	err := util.Walk(rt.Repo.Filesystem, kxdir, func(path string, info os.FileInfo, err error) error {
+	err := util.Walk(rt.Repo.Workdir, kxdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // nolint:nilerr
 		}
-		if !strings.HasSuffix(path, git.ExtKeyArmor) {
+		if !strings.HasSuffix(path, repo.ExtKeyArmor) {
 			return nil
 		}
 		entities, err := gpgutil.LoadPubKeyFromFile(path, true)

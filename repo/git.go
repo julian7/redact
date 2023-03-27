@@ -1,66 +1,81 @@
-package git
+package repo
 
 import (
-	"errors"
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/go-git/go-billy/v5"
 
 	"github.com/julian7/redact/gitutil"
-	"github.com/julian7/redact/logger"
-	"github.com/julian7/redact/sdk/osfs"
 )
+
+type configItem struct {
+	sect string
+	key  string
+	val  string
+}
+
+var configItems = []configItem{
+	{"filter", "clean", "%q git clean --file=%%f"},
+	{"filter", "smudge", "%q git smudge"},
+	{"diff", "textconv", "%q git diff"},
+}
 
 const (
 	// AttrName defines name used in .gitattribute file's attribute
 	// like: `*.key filter=AttrName diff=AttrName`
 	AttrName = "redact"
-	// DefaultKeyDir contains standard key directory name inside .git/ directory
-	DefaultKeyDir = "redact"
-	// DefaultKeyFile contains standard key file name inside key directory
-	DefaultKeyFile = "key"
 	// DefaultKeyExchangeDir is where key exchange files are stored
 	DefaultKeyExchangeDir = ".redact"
 )
-
-type Repo struct {
-	billy.Filesystem
-	*logger.Logger
-	Common   string
-	Toplevel string
-}
-
-func NewRepo(l *logger.Logger) (*Repo, error) {
-	repo, err := gitutil.DetectGitRepo()
-	if err != nil {
-		return nil, errors.New("not a git repository")
-	}
-
-	return &Repo{
-		Filesystem: osfs.New(repo.Toplevel),
-		Logger:     l,
-		Common:     repo.Common,
-	}, nil
-}
-
-func (r *Repo) Keydir() string {
-	return filepath.Join(r.Common, DefaultKeyDir)
-}
-
-func (r *Repo) Keyfile() string {
-	return filepath.Join(r.Common, DefaultKeyDir, DefaultKeyFile)
-}
 
 func (r *Repo) ExchangeDir() string {
 	return DefaultKeyExchangeDir
 }
 
+func (r *Repo) SaveGitSettings(argv0 string, cb func(string)) error {
+	conf, err := r.Repository.Config()
+	if err != nil {
+		return fmt.Errorf("saving git settings: %w", err)
+	}
+
+	rawConfig := conf.Raw
+	for _, opt := range configItems {
+		rawConfig.SetOption(opt.sect, AttrName, opt.key, fmt.Sprintf(opt.val, argv0))
+		cb(fmt.Sprintf("%s.%s.%s", opt.sect, AttrName, opt.key))
+	}
+
+	if err := r.Repository.Storer.SetConfig(conf); err != nil {
+		return fmt.Errorf("saving git settings for redact filter: %w", err)
+	}
+
+	return nil
+}
+
+// RemoveGitSettings removes filter / diff settings from git repository config
+func (r *Repo) RemoveGitSettings(cb func(string)) error {
+	conf, err := r.Repository.Config()
+	if err != nil {
+		return fmt.Errorf("saving git settings: %w", err)
+	}
+
+	rawConfig := conf.Raw
+	for _, item := range []string{"filter", "diff"} {
+		rawConfig.RemoveSubsection("filter", AttrName)
+		cb(fmt.Sprintf("%s.%s", item, AttrName))
+	}
+
+	if err := r.Repository.Storer.SetConfig(conf); err != nil {
+		return fmt.Errorf("saving git settings for redact filter: %w", err)
+	}
+
+	return nil
+}
+
 func (r *Repo) TouchFile(filePath string) error {
 	touchTime := time.Now()
 
-	if chfs, ok := r.Filesystem.(billy.Change); ok {
+	if chfs, ok := r.Workdir.(billy.Change); ok {
 		if err := chfs.Chtimes(filePath, touchTime, touchTime); err != nil {
 			return fmt.Errorf("touch file: %w", err)
 		}

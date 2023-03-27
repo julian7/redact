@@ -4,10 +4,12 @@ import (
 	"os"
 
 	"github.com/julian7/redact/logger"
+	"github.com/julian7/redact/repo"
 )
 
 func main() {
 	rt := &Runtime{
+		Repo:   &repo.Repo{},
 		Logger: logger.New(),
 	}
 

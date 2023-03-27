@@ -9,7 +9,7 @@ import (
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/logger"
-	"github.com/julian7/redact/sdk/git"
+	"github.com/julian7/redact/repo"
 	"github.com/urfave/cli/v2"
 )
 
@@ -117,7 +117,7 @@ func (rt *Runtime) statusDo(ctx *cli.Context) error {
 	}
 
 	for _, entry := range files.Items {
-		if entry.Filter == git.AttrName && entry.Status != gitutil.StatusOther {
+		if entry.Filter == repo.AttrName && entry.Status != gitutil.StatusOther {
 			if opts.encOnly || !opts.plainOnly {
 				opts.handleFileEntry(entry, true)
 			}
@@ -162,7 +162,7 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 
 	msg := []string{}
 
-	if strings.HasPrefix(entry.Name, git.DefaultKeyExchangeDir+"/") {
+	if strings.HasPrefix(entry.Name, repo.DefaultKeyExchangeDir+"/") {
 		if isEncrypted {
 			msg = append(msg, "should NEVER be encrypted")
 			opts.toFix = append(opts.toFix, entry.Name)

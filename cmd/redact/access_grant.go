@@ -105,7 +105,7 @@ func (rt *Runtime) saveKey(key *openpgp.Entity) error {
 	err := sdk.SaveSecretExchange(rt.Repo, key, func(w io.Writer) {
 		err := rt.SecretKey.SaveTo(w)
 		if err != nil {
-			rt.Repo.Warn(err)
+			rt.Warn(err)
 		}
 	})
 
