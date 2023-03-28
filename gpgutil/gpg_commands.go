@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os/exec"
 	"strings"
 )
@@ -113,5 +112,5 @@ func DecryptWithKey(ciphertext string, fingerprint []byte) (io.ReadCloser, error
 		return nil, fmt.Errorf("%w: (no error message)", err)
 	}
 
-	return ioutil.NopCloser(bufio.NewReader(&stdout)), nil
+	return io.NopCloser(bufio.NewReader(&stdout)), nil
 }

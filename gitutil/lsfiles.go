@@ -3,6 +3,7 @@ package gitutil
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -38,7 +39,7 @@ func LsFiles(files []string) (*FileEntries, error) {
 	for {
 		entry, err := reader.ReadString(0)
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 

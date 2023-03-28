@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os/exec"
 	"strings"
 )
@@ -73,7 +72,7 @@ func (e FileEntries) readCheckAttrs(reader io.ReadCloser) error {
 		idx[entry.Name] = entry
 	}
 
-	out, err := ioutil.ReadAll(reader)
+	out, err := io.ReadAll(reader)
 	if err != nil {
 		return err
 	}

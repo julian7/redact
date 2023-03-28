@@ -29,8 +29,7 @@ key's epoch and signature. For more detailed look, please see
 }
 
 func (rt *Runtime) keyDo(ctx *cli.Context) error {
-	err := rt.LoadSecretKey(ctx)
-	if err != nil {
+	if err := rt.LoadSecretKey(ctx); err != nil {
 		return err
 	}
 
