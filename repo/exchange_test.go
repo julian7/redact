@@ -8,39 +8,49 @@ import (
 	"testing"
 
 	"github.com/go-git/go-billy/v5/memfs"
-	"github.com/julian7/redact/logger"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/storage/filesystem"
+
 	"github.com/julian7/redact/repo"
 	"github.com/julian7/tester"
 )
 
 func genGitRepo() (*repo.Repo, error) {
-	r := &repo.Repo{
-		Filesystem: memfs.New(),
-		Logger:     logger.New(),
-		Common:     ".git",
-		Toplevel:   "/git/repo",
+	fs := memfs.New()
+
+	dot, err := fs.Chroot(git.GitDirName)
+	if err != nil {
+		return nil, err
 	}
 
-	err := r.Filesystem.MkdirAll(r.Keydir(), 0700)
+	stor := filesystem.NewStorage(dot, cache.NewObjectLRUDefault())
+
+	gitrepo, err := git.Init(stor, fs)
 	if err != nil {
-		return nil, fmt.Errorf("creating key dir %s: %w", r.Keydir(), err)
+		return nil, err
+	}
+
+	r := &repo.Repo{
+		Repository: gitrepo,
+		Workdir:    fs,
 	}
 
 	return r, nil
 }
 
-func writeKey(r *git.Repo) error {
+func writeKey(r *repo.Repo) error {
 	return writeFile(
 		r,
-		filepath.Join(r.Keydir(), "key"),
+		r.SecretKey.Keyfile(),
 		0600,
 		"key contents",
 	)
 }
 
-func writeKX(r *git.Repo) error {
+func writeKX(r *repo.Repo) error {
 	kxdir := "/.redact"
-	if err := r.Filesystem.MkdirAll(kxdir, 0755); err != nil {
+	if err := r.Workdir.MkdirAll(kxdir, 0755); err != nil {
 		return fmt.Errorf("creating exchange dir: %w", err)
 	}
 
@@ -52,8 +62,8 @@ func writeKX(r *git.Repo) error {
 	)
 }
 
-func writeFile(r *git.Repo, fname string, perms os.FileMode, contents string) error {
-	of, err := r.Filesystem.OpenFile(fname, os.O_CREATE|os.O_WRONLY, perms)
+func writeFile(r *repo.Repo, fname string, perms os.FileMode, contents string) error {
+	of, err := r.Workdir.OpenFile(fname, os.O_CREATE|os.O_WRONLY, perms)
 	if err != nil {
 		return fmt.Errorf("creating %s file: %w", fname, err)
 	}
@@ -93,13 +103,13 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 		{
 			"empty",
 			false,
-			"/git/repo/.redact/6465616462656566646561646265656664656164",
+			".redact/6465616462656566646561646265656664656164",
 			nil,
 		},
 		{
 			"repo",
 			true,
-			"/git/repo/.redact/6465616462656566646561646265656664656164",
+			".redact/6465616462656566646561646265656664656164",
 			nil,
 		},
 	}
@@ -125,7 +135,7 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 					return
 				}
 			}
-			ret, err := mk.GetExchangeFilenameStubFor(fingerprint)
+			ret, err := mk.GetExchangeFilenameStubFor(fingerprint, nil)
 			if err2 := tester.AssertError(tc.expErr, err); err2 != nil {
 				t.Error(err2)
 			}
@@ -139,13 +149,13 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 }
 
 func TestExchangePubKeyFile(t *testing.T) {
-	if err := checkString("stub.asc", git.ExchangePubKeyFile("stub")); err != nil {
+	if err := checkString("stub.asc", repo.ExchangePubKeyFile("stub")); err != nil {
 		t.Error(err)
 	}
 }
 
 func TestExchangeSecretKeyFile(t *testing.T) {
-	if err := checkString("stub.key", git.ExchangeSecretKeyFile("stub")); err != nil {
+	if err := checkString("stub.key", repo.ExchangeSecretKeyFile("stub")); err != nil {
 		t.Error(err)
 	}
 }

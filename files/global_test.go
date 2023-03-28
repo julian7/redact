@@ -1,43 +1,64 @@
 package files_test
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 
+	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/memfs"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/storage/filesystem"
+
 	"github.com/julian7/redact/files"
-	"github.com/julian7/redact/logger"
-	"github.com/julian7/redact/sdk/git"
+	"github.com/julian7/redact/repo"
 )
 
 const (
 	sampleCode = "0123456789abcdefghijklmnopqrstuv"
 )
 
-func genGitRepo() (*files.SecretKey, error) {
-	k := &files.SecretKey{
-		Repo: &git.Repo{
-			Filesystem: memfs.New(),
-			Logger:     logger.New(),
-			Common:     ".git",
-			Toplevel:   "/git/repo",
-		},
-		Cache: map[string]string{},
-	}
+func genGitRepo() (*repo.Repo, error) {
+	fs := memfs.New()
 
-	err := k.Filesystem.MkdirAll(k.Repo.Keydir(), 0700)
+	dot, err := fs.Chroot(git.GitDirName)
 	if err != nil {
-		return nil, fmt.Errorf("creating key dir %s: %w", k.Repo.Keydir(), err)
+		return nil, err
 	}
 
-	return k, nil
+	stor := filesystem.NewStorage(dot, cache.NewObjectLRUDefault())
+
+	gitrepo, err := git.Init(stor, fs)
+	if err != nil {
+		return nil, err
+	}
+
+	secretKey, err := files.NewSecretKey(dot)
+	if err != nil {
+		return nil, err
+	}
+
+	r := &repo.Repo{
+		Repository:             gitrepo,
+		Workdir:                fs,
+		SecretKey:              secretKey,
+		StrictPermissionChecks: false,
+	}
+
+	return r, nil
 }
 
-func writeKey(k *files.SecretKey) error {
-	return writeFile(
-		k,
-		k.Repo.Keyfile(),
+func writeKey(r *repo.Repo) error {
+	dotgit, ok := r.Repository.Storer.(*filesystem.Storage)
+	if !ok {
+		return errors.New("dotgit storage not found")
+	}
+
+	return writeFileTo(
+		dotgit.Filesystem(),
+		r.SecretKey.Keyfile(),
 		0600,
 		"\000REDACT\000"+ // preamble
 			"\000\000\000\000"+ // key type == 0
@@ -48,8 +69,12 @@ func writeKey(k *files.SecretKey) error {
 	)
 }
 
-func writeFile(k *files.SecretKey, fname string, perms os.FileMode, contents string) error {
-	of, err := k.Filesystem.OpenFile(fname, os.O_CREATE|os.O_WRONLY, perms)
+func writeFile(r *repo.Repo, fname string, perms os.FileMode, contents string) error {
+	return writeFileTo(r.Workdir, fname, perms, contents)
+}
+
+func writeFileTo(to billy.Filesystem, fname string, perms os.FileMode, contents string) error {
+	of, err := to.OpenFile(fname, os.O_CREATE|os.O_WRONLY, perms)
 	if err != nil {
 		return fmt.Errorf("creating %s file: %w", fname, err)
 	}
