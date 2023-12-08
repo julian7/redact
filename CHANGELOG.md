@@ -15,6 +15,7 @@ Changed:
 
 * Switch from cobra + viper to urfave/cli. We lose configurability via configuration files, but this is a more slick, precisely configurable option.
 * Switch from afero to billy. This shaves off about 1MB from binary size, and it paves the way to switch to go-git.
+* Rebuilt on go 1.21 and updated dependencies because of several CVEs for go 1.19 stdlib.
 
 Fixed:
 
