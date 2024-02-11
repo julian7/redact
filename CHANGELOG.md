@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+Added:
+
+* Status subcommand detects if `.gitattributes` files are encrypted.
 
 ## [v0.8.0] - December 8, 2023
 

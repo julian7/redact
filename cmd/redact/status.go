@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/julian7/redact/encoder"
@@ -162,7 +163,8 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 
 	msg := []string{}
 
-	if strings.HasPrefix(entry.Name, repo.DefaultKeyExchangeDir+"/") {
+	baseName := filepath.Base(entry.Name)
+	if strings.HasPrefix(entry.Name, repo.DefaultKeyExchangeDir+"/") || baseName == repo.GitAttributesFile {
 		if isEncrypted {
 			msg = append(msg, "should NEVER be encrypted")
 			opts.toFix = append(opts.toFix, entry.Name)
@@ -190,16 +192,25 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 	}
 
 	if !opts.repoOnly && (!opts.quiet || len(msg) > 0) {
-		printFileEntry(entry, shouldBeEncrypted, strings.Join(msg, "; "))
+		printFileEntry(entry, isEncrypted, shouldBeEncrypted, strings.Join(msg, "; "))
 	}
 }
 
-func printFileEntry(entry *gitutil.FileEntry, shouldBeEncrypted bool, msg string) {
+func printFileEntry(entry *gitutil.FileEntry, isEncrypted bool, shouldBeEncrypted bool, msg string) {
 	encryptedString := map[bool]string{
-		false: "           ",
-		true:  "encrypted: ",
+		false: "   ",
+		true:  "enc",
 	}
-	data := fmt.Sprintf("%s %s", encryptedString[shouldBeEncrypted], entry.Name)
+	fixString := map[bool]string{
+		false: "   ",
+		true:  "fix",
+	}
+	data := fmt.Sprintf(
+		"%s %s %s",
+		encryptedString[isEncrypted],
+		fixString[isEncrypted != shouldBeEncrypted],
+		entry.Name,
+	)
 
 	if len(msg) > 0 {
 		data = fmt.Sprintf("%s NOTE: %s", data, msg)

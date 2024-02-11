@@ -18,7 +18,7 @@ const (
 	// ExtSecret is encrypted secret key file extension in Key Exchange folder
 	ExtSecret = ".key"
 	// DefaultKeyExchangeDir is where key exchange files are stored
-	gitAttributesFile       = ".gitattributes"
+	GitAttributesFile       = ".gitattributes"
 	kxGitAttributesContents = `# This file has been created by redact
 # DO NOT EDIT!
 * !filter !diff
@@ -90,7 +90,7 @@ func (r *Repo) ensureExchangeGitAttributes(log *logger.Logger) error {
 
 	var data []byte
 
-	gaFileName := filepath.Join(kxdir, gitAttributesFile)
+	gaFileName := filepath.Join(kxdir, GitAttributesFile)
 
 	st, err := r.Workdir.Stat(gaFileName)
 	if err == nil {
