@@ -19,6 +19,10 @@ Changed:
 
 * Freshened dependencies with vulnerabilities (Critical: CVE-2023-49569, High: GHSA-9763-4f94-gfch, CVE-2023-49568, Moderate: CVE-2023-48795)
 
+Fixed:
+
+* False read-only file system error on loading secret key. The bug has been introduced with go-billy, not re-enabling read/write functionality upon chown.
+
 ## [v0.8.0] - December 8, 2023
 
 Added:

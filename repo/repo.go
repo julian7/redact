@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/go-git/go-billy/v5"
-	"github.com/go-git/go-billy/v5/helper/chroot"
 	"github.com/go-git/go-billy/v5/osfs"
 
 	"github.com/julian7/redact/files"
@@ -26,9 +25,15 @@ func (r *Repo) SetupRepo() error {
 		return fmt.Errorf("not a git repository: %w", err)
 	}
 
-	r.Workdir = NewOSFS(osfs.New(repo.Toplevel))
+	fs := osfs.New(repo.Toplevel, osfs.WithBoundOS())
+	r.Workdir = NewOSFS(fs)
 
-	r.SecretKey, err = files.NewSecretKey(chroot.New(r.Workdir, repo.Common))
+	commonfs, err := fs.Chroot(repo.Common)
+	if err != nil {
+		return err
+	}
+
+	r.SecretKey, err = files.NewSecretKey(NewOSFS(commonfs))
 	if err != nil {
 		return err
 	}
