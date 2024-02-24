@@ -1,16 +1,13 @@
 package files_test
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/memfs"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/cache"
-	"github.com/go-git/go-git/v5/storage/filesystem"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/repo"
@@ -23,14 +20,7 @@ const (
 func genGitRepo() (*repo.Repo, error) {
 	fs := memfs.New()
 
-	dot, err := fs.Chroot(git.GitDirName)
-	if err != nil {
-		return nil, err
-	}
-
-	stor := filesystem.NewStorage(dot, cache.NewObjectLRUDefault())
-
-	gitrepo, err := git.Init(stor, fs)
+	dot, err := fs.Chroot(".git")
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +31,6 @@ func genGitRepo() (*repo.Repo, error) {
 	}
 
 	r := &repo.Repo{
-		Repository:             gitrepo,
 		Workdir:                fs,
 		SecretKey:              secretKey,
 		StrictPermissionChecks: false,
@@ -51,14 +40,9 @@ func genGitRepo() (*repo.Repo, error) {
 }
 
 func writeKey(r *repo.Repo) error {
-	dotgit, ok := r.Repository.Storer.(*filesystem.Storage)
-	if !ok {
-		return errors.New("dotgit storage not found")
-	}
-
 	return writeFileTo(
-		dotgit.Filesystem(),
-		r.SecretKey.Keyfile(),
+		r.Workdir,
+		filepath.Join(".git", r.SecretKey.Keyfile()),
 		0600,
 		"\000REDACT\000"+ // preamble
 			"\000\000\000\000"+ // key type == 0

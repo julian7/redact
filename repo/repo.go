@@ -6,49 +6,29 @@ import (
 	"os"
 
 	"github.com/go-git/go-billy/v5"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/storage/filesystem"
+	"github.com/go-git/go-billy/v5/helper/chroot"
+	"github.com/go-git/go-billy/v5/osfs"
 
 	"github.com/julian7/redact/files"
+	"github.com/julian7/redact/gitutil"
 	"github.com/urfave/cli/v2"
 )
 
 type Repo struct {
 	*files.SecretKey
-	*git.Repository
 	Workdir                billy.Filesystem
 	StrictPermissionChecks bool
 }
 
 func (r *Repo) SetupRepo() error {
-	pwd, err := os.Getwd()
+	repo, err := gitutil.DetectGitRepo()
 	if err != nil {
-		return fmt.Errorf("setup repo: %w", err)
+		return fmt.Errorf("not a git repository: %w", err)
 	}
 
-	repo, err := git.PlainOpenWithOptions(
-		pwd,
-		&git.PlainOpenOptions{DetectDotGit: true},
-	)
-	if err != nil {
-		return fmt.Errorf("setup repo: open git repo: %w", err)
-	}
+	r.Workdir = NewOSFS(osfs.New(repo.Toplevel))
 
-	r.Repository = repo
-
-	workTree, err := repo.Worktree()
-	if err != nil {
-		return fmt.Errorf("setup repo: detect workdir: %w", err)
-	}
-
-	r.Workdir = NewOSFS(workTree.Filesystem)
-
-	c, ok := repo.Storer.(*filesystem.Storage)
-	if !ok {
-		return errors.New("setup repo: storage is not a filesystem")
-	}
-
-	r.SecretKey, err = files.NewSecretKey(c.Filesystem())
+	r.SecretKey, err = files.NewSecretKey(chroot.New(r.Workdir, repo.Common))
 	if err != nil {
 		return err
 	}

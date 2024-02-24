@@ -7,11 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/go-git/go-billy/v5/helper/chroot"
 	"github.com/go-git/go-billy/v5/memfs"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/cache"
-	"github.com/go-git/go-git/v5/storage/filesystem"
 
+	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/repo"
 	"github.com/julian7/tester"
 )
@@ -19,21 +18,14 @@ import (
 func genGitRepo() (*repo.Repo, error) {
 	fs := memfs.New()
 
-	dot, err := fs.Chroot(git.GitDirName)
-	if err != nil {
-		return nil, err
-	}
-
-	stor := filesystem.NewStorage(dot, cache.NewObjectLRUDefault())
-
-	gitrepo, err := git.Init(stor, fs)
+	secretKey, err := files.NewSecretKey(chroot.New(fs, ".git"))
 	if err != nil {
 		return nil, err
 	}
 
 	r := &repo.Repo{
-		Repository: gitrepo,
-		Workdir:    fs,
+		SecretKey: secretKey,
+		Workdir:   fs,
 	}
 
 	return r, nil

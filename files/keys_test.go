@@ -10,8 +10,6 @@ import (
 	"testing"
 
 	"github.com/go-git/go-billy/v5"
-	"github.com/go-git/go-billy/v5/util"
-	"github.com/go-git/go-git/v5/storage/filesystem"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/repo"
@@ -199,16 +197,12 @@ func TestLoad(t *testing.T) { //nolint:funlen,gocognit
 			"no key dir",
 			true,
 			func(k *repo.Repo) {
-				if dot, ok := k.Storer.(*filesystem.Storage); ok {
-					err := util.RemoveAll(dot.Filesystem(), files.DefaultKeyDir)
-					if err != nil {
-						panic(err)
-					}
-				} else {
-					panic("repo is not backed by storage dotfile")
+				err := k.SecretKey.Remove()
+				if err != nil {
+					panic(err)
 				}
 			},
-			errors.New("keydir \"redact\" not available: file does not exist"),
+			errors.New("key file \"redact/key\": file does not exist"),
 		},
 		{
 			"excessive rights",

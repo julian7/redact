@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-git/go-billy/v5"
-
 	"github.com/julian7/redact/gitutil"
+
+	"github.com/go-git/go-billy/v5"
 )
 
 type configItem struct {
@@ -34,19 +34,17 @@ func (r *Repo) ExchangeDir() string {
 }
 
 func (r *Repo) SaveGitSettings(argv0 string, cb func(string)) error {
-	conf, err := r.Repository.Config()
-	if err != nil {
-		return fmt.Errorf("saving git settings: %w", err)
-	}
-
-	rawConfig := conf.Raw
 	for _, opt := range configItems {
-		rawConfig.SetOption(opt.sect, AttrName, opt.key, fmt.Sprintf(opt.val, argv0))
-		cb(fmt.Sprintf("%s.%s.%s", opt.sect, AttrName, opt.key))
-	}
+		attr := fmt.Sprintf("%s.%s.%s", opt.sect, AttrName, opt.key)
+		val := fmt.Sprintf(opt.val, argv0)
 
-	if err := r.Repository.Storer.SetConfig(conf); err != nil {
-		return fmt.Errorf("saving git settings for redact filter: %w", err)
+		if err := gitutil.GitConfig(attr, val); err != nil {
+			return fmt.Errorf("saving git settings: %w", err)
+		}
+
+		if cb != nil {
+			cb(attr)
+		}
 	}
 
 	return nil
@@ -54,19 +52,16 @@ func (r *Repo) SaveGitSettings(argv0 string, cb func(string)) error {
 
 // RemoveGitSettings removes filter / diff settings from git repository config
 func (r *Repo) RemoveGitSettings(cb func(string)) error {
-	conf, err := r.Repository.Config()
-	if err != nil {
-		return fmt.Errorf("saving git settings: %w", err)
-	}
+	for _, opt := range configItems {
+		attr := fmt.Sprintf("%s.%s.%s", opt.sect, AttrName, opt.key)
 
-	rawConfig := conf.Raw
-	for _, item := range []string{"filter", "diff"} {
-		rawConfig.RemoveSubsection("filter", AttrName)
-		cb(fmt.Sprintf("%s.%s", item, AttrName))
-	}
+		if err := gitutil.GitConfig("--unset", attr); err != nil {
+			return fmt.Errorf("unsetting git settings: %w", err)
+		}
 
-	if err := r.Repository.Storer.SetConfig(conf); err != nil {
-		return fmt.Errorf("saving git settings for redact filter: %w", err)
+		if cb != nil {
+			cb(attr)
+		}
 	}
 
 	return nil

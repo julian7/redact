@@ -11,6 +11,10 @@ Added:
 
 * Status subcommand detects if `.gitattributes` files are encrypted.
 
+Removed:
+
+* go-git dependency. It doubled executable size, while it was unable to fulfil all git-cli requirements.
+
 Changed:
 
 * Freshened dependencies with vulnerabilities (Critical: CVE-2023-49569, High: GHSA-9763-4f94-gfch, CVE-2023-49568, Moderate: CVE-2023-48795)
