@@ -39,14 +39,12 @@ type SecretKey struct {
 	dot       billy.Filesystem
 	Keys      map[uint32]KeyHandler
 	LatestKey uint32
-	Cache     map[string]string
 }
 
 // NewSecretKey generates a new repo key in the OS' filesystem
 func NewSecretKey(dot billy.Filesystem) (*SecretKey, error) {
 	return &SecretKey{
-		dot:   dot,
-		Cache: make(map[string]string),
+		dot: dot,
 	}, nil
 }
 
