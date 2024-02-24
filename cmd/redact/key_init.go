@@ -24,7 +24,7 @@ func (rt *Runtime) initCmd() *cli.Command {
 	}
 }
 
-func (rt *Runtime) initDo(ctx *cli.Context) error {
+func (rt *Runtime) initDo(_ *cli.Context) error {
 	if err := rt.SaveGitSettings(); err != nil {
 		return err
 	}

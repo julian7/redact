@@ -15,10 +15,10 @@ func (rt *Runtime) keyListCmd() *cli.Command {
 	}
 }
 
-func (rt *Runtime) listDo(ctx *cli.Context) error {
+func (rt *Runtime) listDo(_ *cli.Context) error {
 	rt.Logger.Infof("repo key: %v", rt.SecretKey)
 
-	return files.EachKey(rt.SecretKey.Keys, func(idx uint32, key files.KeyHandler) error {
+	return files.EachKey(rt.SecretKey.Keys, func(_ uint32, key files.KeyHandler) error {
 		rt.Logger.Infof(" - %s", key)
 
 		return nil

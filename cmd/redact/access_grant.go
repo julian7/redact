@@ -70,6 +70,7 @@ func (rt *Runtime) accessGrantDo(ctx *cli.Context) error {
 
 			continue
 		}
+
 		saved++
 	}
 

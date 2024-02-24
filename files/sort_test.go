@@ -8,8 +8,8 @@ import (
 func TestLen(t *testing.T) {
 	testSlice := keyIdxSlice([]uint32{1, 2, 3, 4, 5})
 
-	if len := testSlice.Len(); len != 5 {
-		t.Errorf("unexpected length: %d", len)
+	if length := testSlice.Len(); length != 5 {
+		t.Errorf("unexpected length: %d", length)
 	}
 }
 
@@ -62,6 +62,7 @@ func TestSwap(t *testing.T) {
 		)
 		t.Run(name, func(t *testing.T) {
 			testSlice.Swap(tc.left, tc.right)
+
 			if testSlice[tc.right] != tc.expected {
 				t.Errorf(
 					"unexpected result\nExpected: %d\nReceived: %d",
@@ -103,14 +104,16 @@ func TestEachKey(t *testing.T) {
 				2: &fakeKey{epoch: 2},
 			}
 			visited := make([]uint32, 0, len(keyring))
-			err := EachKey(keyring, func(id uint32, item KeyHandler) error {
+			err := EachKey(keyring, func(id uint32, _ KeyHandler) error {
 				if tc.errorAt == int(id) {
 					return fmt.Errorf("throwing error at %d", tc.errorAt)
 				}
+
 				visited = append(visited, id)
 
 				return nil
 			})
+
 			if len(tc.err) != 0 {
 				if err == nil {
 					t.Errorf("unexpected success. Expected: %s", tc.err)
@@ -118,12 +121,15 @@ func TestEachKey(t *testing.T) {
 					t.Errorf("unexpected error.\nExpected: %q\nReceived: %q", tc.err, err.Error())
 				}
 			}
+
 			if err != nil {
 				return
 			}
+
 			if len(visited) != tc.len {
 				t.Errorf("not all items were visited: %d", tc.len)
 			}
+
 			for idx := range tc.items {
 				if tc.items[idx] != visited[idx] {
 					t.Errorf("item out of order: %d (nth: %d)", visited[idx], idx)

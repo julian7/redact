@@ -19,7 +19,7 @@ func (rt *Runtime) keyGenerateCmd() *cli.Command {
 	}
 }
 
-func (rt *Runtime) generateDo(ctx *cli.Context) error {
+func (rt *Runtime) generateDo(_ *cli.Context) error {
 	if err := rt.SaveGitSettings(); err != nil {
 		return err
 	}

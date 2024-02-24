@@ -139,16 +139,20 @@ func TestGenerate(t *testing.T) {
 
 				return
 			}
+
 			val := key.Secret()
 			if len(val) == 0 {
 				t.Errorf("empty %s secret key", name)
 			}
+
 			nonzeros := 0
+
 			for _, c := range val {
 				if c > 0 {
 					nonzeros++
 				}
 			}
+
 			if nonzeros == 0 {
 				t.Errorf("%s secret key is just zero bytes", name)
 			}
@@ -245,6 +249,7 @@ func TestLoad(t *testing.T) { //nolint:funlen,gocognit
 
 				return
 			}
+
 			if tc.hasKey {
 				if err := writeKey(k); err != nil {
 					t.Error(err)
@@ -252,23 +257,29 @@ func TestLoad(t *testing.T) { //nolint:funlen,gocognit
 					return
 				}
 			}
+
 			tc.fsMods(k)
 			err = k.Load(false)
+
 			if err2 := tester.AssertError(tc.expectedError, err); err2 != nil {
 				t.Error(err2)
 
 				return
 			}
+
 			if err != nil {
 				return
 			}
+
 			key, err := k.Key(0)
 			if err != nil {
 				t.Errorf("Cannot retrieve latest key: %v", err)
 
 				return
 			}
+
 			received := key.Secret()
+
 			if !bytes.Equal(received, []byte(sampleCode+sampleCode+sampleCode)) {
 				t.Errorf(`Wrong AES key\nExpected: "%s"\nReceived: "%s"`, sampleCode+sampleCode+sampleCode, received)
 			}
@@ -345,18 +356,24 @@ func TestSaveTo(t *testing.T) { //nolint:funlen
 					return
 				}
 			}
+
 			received := k.SaveTo(tc.writer)
+
 			if err := tester.AssertError(tc.err, received); err != nil {
 				t.Error(err)
 			}
+
 			if received != nil || tc.len < 0 {
 				return
 			}
+
 			buf, ok := tc.writer.(*bytes.Buffer)
 			if !ok {
 				t.Errorf("invalid type (%T) for writer success check", tc.writer)
 			}
+
 			recvlen := len(buf.Bytes())
+
 			if recvlen != tc.len {
 				t.Errorf("invalid key length. Received: %d, expected: %d", recvlen, tc.len)
 			}
@@ -416,12 +433,13 @@ func TestSave(t *testing.T) { //nolint:funlen,gocognit
 
 				return
 			}
-			err = k.Generate()
-			if err != nil {
+
+			if err := k.Generate(); err != nil {
 				t.Errorf("Error generating keys: %v", err.Error())
 
 				return
 			}
+
 			if tc.saveKey {
 				if err := writeKey(k); err != nil {
 					if err2 := tester.AssertError(tc.keyErr, err); err2 != nil {
@@ -433,6 +451,7 @@ func TestSave(t *testing.T) { //nolint:funlen,gocognit
 			}
 
 			tc.fsMods(k)
+
 			err = k.Save()
 			if err2 := tester.AssertError(tc.saveErr, err); err2 != nil {
 				t.Error(err2)
@@ -443,12 +462,15 @@ func TestSave(t *testing.T) { //nolint:funlen,gocognit
 			if err != nil {
 				return
 			}
+
 			finfo, err := k.Workdir.Stat(".git/redact/key")
+
 			if err != nil {
 				t.Errorf("key not created: %v", err)
 
 				return
 			}
+
 			if !finfo.Mode().IsRegular() {
 				t.Errorf("key is not regular file")
 			}

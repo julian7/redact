@@ -116,7 +116,7 @@ func UpdateSecretExchangeKeys(redactRepo *repo.Repo, writerCallback func(io.Writ
 	kxdir := redactRepo.ExchangeDir()
 	updated := 0
 
-	err := util.Walk(redactRepo.Workdir, kxdir, func(path string, info os.FileInfo, err error) error {
+	err := util.Walk(redactRepo.Workdir, kxdir, func(path string, _ os.FileInfo, err error) error {
 		if err != nil {
 			return nil // nolint:nilerr
 		}

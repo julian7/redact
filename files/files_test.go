@@ -75,7 +75,7 @@ func (e *failingEncoder) AEAD() (cipher.AEAD, error) {
 }
 func (e *failingEncoder) KeySize() int { return 0 }
 
-func newFailingEncoder(key []byte) (encoder.AEAD, error) {
+func newFailingEncoder(_ []byte) (encoder.AEAD, error) {
 	return &failingEncoder{}, nil
 }
 
@@ -198,6 +198,7 @@ func TestEncode(t *testing.T) { //nolint:funlen
 			if testerr := tester.AssertError(tc.err, err); testerr != nil {
 				t.Error(testerr)
 			}
+
 			if err != nil {
 				return
 			}
@@ -208,6 +209,7 @@ func TestEncode(t *testing.T) { //nolint:funlen
 
 				return
 			}
+
 			if err := checkString(tc.output, outbuf.String()); err != nil {
 				t.Error(err)
 			}
@@ -319,6 +321,7 @@ func TestDecode(t *testing.T) { //nolint:funlen
 
 				return
 			}
+
 			if err := checkString(tc.output, outbuf.String()); err != nil {
 				t.Error(err)
 			}
@@ -341,19 +344,20 @@ func TestDecode(t *testing.T) { //nolint:funlen
 	}
 }
 
+var testFileStatusCases = []struct {
+	name     string
+	contents string
+	err      error
+	epoch    uint32
+}{
+	{"plaintext", samplePlaintext, files.ErrInvalidPreamble, 0},
+	{"encrypted", sampleCiphertext, nil, 1},
+}
+
 func TestFileStatus(t *testing.T) {
 	testFN := "testfile.txt"
-	tt := []struct {
-		name     string
-		contents string
-		err      error
-		epoch    uint32
-	}{
-		{"plaintext", samplePlaintext, files.ErrInvalidPreamble, 0},
-		{"encrypted", sampleCiphertext, nil, 1},
-	}
 
-	for _, tc := range tt {
+	for _, tc := range testFileStatusCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			k, err := genGitRepo()
@@ -362,32 +366,40 @@ func TestFileStatus(t *testing.T) {
 
 				return
 			}
+
 			if err := writeKey(k); err != nil {
 				t.Error(err)
 
 				return
 			}
+
 			if err := k.Load(false); err != nil {
 				t.Error(err)
 
 				return
 			}
+
 			if err := writeFile(k, testFN, 0644, tc.contents); err != nil {
 				t.Error(err)
 
 				return
 			}
+
 			reader, err := k.Workdir.Open(testFN)
+
 			if err != nil {
 				t.Error(err)
 
 				return
 			}
+
 			hdr, err := k.FileStatus(reader)
 			reader.Close()
+
 			if !errors.Is(err, tc.err) {
 				t.Errorf("expected %v error; received: %v", tc.err, err)
 			}
+
 			if err == nil {
 				if hdr.Epoch != tc.epoch {
 					t.Errorf("expected epoch == %d; received: %d", tc.epoch, hdr.Epoch)

@@ -176,6 +176,7 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 		} else {
 			msg = append(msg, "should be encrypted")
 		}
+
 		opts.toFix = append(opts.toFix, entry.Name)
 	}
 

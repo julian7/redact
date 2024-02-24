@@ -24,24 +24,28 @@ func (rt *Runtime) accessListDo(ctx *cli.Context) error {
 	_ = rt.LoadSecretKey(ctx)
 
 	kxdir := rt.Repo.ExchangeDir()
-	err := util.Walk(rt.Repo.Workdir, kxdir, func(path string, info os.FileInfo, err error) error {
+	err := util.Walk(rt.Repo.Workdir, kxdir, func(path string, _ os.FileInfo, err error) error {
 		if err != nil {
 			return nil // nolint:nilerr
 		}
+
 		if !strings.HasSuffix(path, repo.ExtKeyArmor) {
 			return nil
 		}
+
 		entities, err := gpgutil.LoadPubKeyFromFile(path, true)
 		if err != nil {
 			rt.Logger.Warnf("cannot load public key: %v", err)
 
 			return nil
 		}
+
 		if len(entities) != 1 {
 			rt.Logger.Warnf("multiple entities in key file %s", path)
 
 			return nil
 		}
+
 		gpgutil.PrintKey(entities[0])
 
 		return nil

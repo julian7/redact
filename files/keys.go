@@ -59,6 +59,7 @@ func (k *SecretKey) Keyfile() string {
 func (k *SecretKey) Generate() error {
 	epoch := k.LatestKey
 	k.ensureKeys()
+
 	epoch++
 	k.Keys[epoch] = keyV0.NewKey(epoch)
 	k.LatestKey = epoch

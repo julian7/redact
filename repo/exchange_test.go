@@ -117,17 +117,20 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			fingerprint := []byte("deadbeefdeadbeefdead")
+
 			mk, err := genGitRepo()
 			if err != nil {
 				t.Error(err)
 
 				return
 			}
+
 			if err := writeKey(mk); err != nil {
 				t.Error(err)
 
 				return
 			}
+
 			if tc.preload {
 				if err := writeKX(mk); err != nil {
 					t.Error(err)
@@ -135,10 +138,12 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 					return
 				}
 			}
+
 			ret, err := mk.GetExchangeFilenameStubFor(fingerprint, nil)
 			if err2 := tester.AssertError(tc.expErr, err); err2 != nil {
 				t.Error(err2)
 			}
+
 			if err == nil {
 				if err := checkString(tc.expected, ret); err != nil {
 					t.Error(err)

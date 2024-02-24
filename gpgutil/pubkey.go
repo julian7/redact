@@ -96,6 +96,7 @@ func SavePubKey(raw io.Writer, key *openpgp.Entity, isArmor bool) error {
 		if err != nil {
 			return fmt.Errorf("creating armor stream: %w", err)
 		}
+
 		defer arm.Close()
 		writer = arm
 	} else {

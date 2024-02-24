@@ -56,7 +56,7 @@ func (r *Repo) SetupRepo() error {
 	return nil
 }
 
-func (r *Repo) LoadSecretKey(ctx *cli.Context) error {
+func (r *Repo) LoadSecretKey(_ *cli.Context) error {
 	if err := r.SetupRepo(); err != nil {
 		return fmt.Errorf("detecting repo config: %w", err)
 	}

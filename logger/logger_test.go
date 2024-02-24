@@ -61,6 +61,7 @@ func TestLogger_SetLevel(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			tt.logger.SetLevel(tt.args.level)
+
 			got := tt.logger.Level()
 			if got != tt.level {
 				t.Errorf("Logger.SetLevel() -> %d, wants %d", got, tt.level)

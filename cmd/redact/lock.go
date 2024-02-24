@@ -23,7 +23,7 @@ beforehand.`,
 	}
 }
 
-func (rt *Runtime) lockDo(ctx *cli.Context) error {
+func (rt *Runtime) lockDo(_ *cli.Context) error {
 	err := rt.RemoveGitSettings(func(attr string) {
 		rt.Logger.Debugf("Removing filter/diff git config of %s", attr)
 	})
