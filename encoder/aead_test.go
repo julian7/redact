@@ -50,7 +50,6 @@ func TestEncode(t *testing.T) {
 
 			ret := aead.Seal(nil, sampleNonce[:aead.NonceSize()], samplePlaintext, nil)
 			if !bytes.Equal(ret, tc.cipher) {
-				t.Errorf("Encrypted message not matching: %x", ret)
 				// o, err := os.Create("fixtures/" + tc.name + "-sample.bin")
 				// if err != nil {
 				// 	t.Fatal(err)
@@ -60,6 +59,7 @@ func TestEncode(t *testing.T) {
 				// 	t.Fatal(err)
 				// }
 				// o.Close()
+				t.Errorf("Encrypted message not matching: %x", ret)
 			}
 		})
 	}
