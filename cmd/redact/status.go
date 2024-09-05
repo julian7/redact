@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -11,7 +12,7 @@ import (
 	"github.com/julian7/redact/gitutil"
 	"github.com/julian7/redact/logger"
 	"github.com/julian7/redact/repo"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) statusCmd() *cli.Command {
@@ -87,16 +88,16 @@ type statusOptions struct {
 	toRekey    []string
 }
 
-func (rt *Runtime) statusDo(ctx *cli.Context) error {
+func (rt *Runtime) statusDo(ctx context.Context, cmd *cli.Command) error {
 	opts := statusOptions{
 		Logger:     rt.Logger,
-		repoOnly:   ctx.Bool("repo"),
-		encOnly:    ctx.Bool("encrypted"),
-		plainOnly:  ctx.Bool("unencrypted"),
-		quiet:      ctx.Bool("quiet"),
-		fixRepo:    ctx.Bool("fix"),
-		rekeyFiles: ctx.Bool("rekey"),
-		args:       ctx.Args().Slice(),
+		repoOnly:   cmd.Bool("repo"),
+		encOnly:    cmd.Bool("encrypted"),
+		plainOnly:  cmd.Bool("unencrypted"),
+		quiet:      cmd.Bool("quiet"),
+		fixRepo:    cmd.Bool("fix"),
+		rekeyFiles: cmd.Bool("rekey"),
+		args:       cmd.Args().Slice(),
 	}
 	if err := opts.validate(); err != nil {
 		return err

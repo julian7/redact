@@ -1,7 +1,9 @@
 package main
 
 import (
-	"github.com/urfave/cli/v2"
+	"context"
+
+	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) keyCmd() *cli.Command {
@@ -19,7 +21,7 @@ A simple "redact key" will return the secret key location, and its active
 key's epoch and signature. For more detailed look, please see
 "redact key list".`,
 		Action: rt.keyDo,
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			rt.keyGenerateCmd(),
 			rt.keyInitCmd(),
 			rt.keyListCmd(),
@@ -28,8 +30,8 @@ key's epoch and signature. For more detailed look, please see
 	}
 }
 
-func (rt *Runtime) keyDo(ctx *cli.Context) error {
-	if err := rt.LoadSecretKey(ctx); err != nil {
+func (rt *Runtime) keyDo(ctx context.Context, cmd *cli.Command) error {
+	if err := rt.LoadSecretKey(ctx, cmd); err != nil {
 		return err
 	}
 

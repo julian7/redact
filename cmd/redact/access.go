@@ -1,13 +1,13 @@
 package main
 
-import "github.com/urfave/cli/v2"
+import "github.com/urfave/cli/v3"
 
 func (rt *Runtime) accessCmd() *cli.Command {
 	return &cli.Command{
 		Name:      "access",
 		Usage:     "Key Exchange commands",
 		ArgsUsage: " ",
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			rt.accessGrantCmd(),
 			rt.accessListCmd(),
 		},

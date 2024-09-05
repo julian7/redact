@@ -1,9 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) lockCmd() *cli.Command {
@@ -23,7 +24,7 @@ beforehand.`,
 	}
 }
 
-func (rt *Runtime) lockDo(_ *cli.Context) error {
+func (rt *Runtime) lockDo(ctx context.Context, cmd *cli.Command) error {
 	err := rt.RemoveGitSettings(func(attr string) {
 		rt.Logger.Debugf("Removing filter/diff git config of %s", attr)
 	})

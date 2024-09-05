@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -10,7 +11,7 @@ import (
 	"github.com/julian7/redact/encoder"
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) gitCleanCmd() *cli.Command {
@@ -43,15 +44,15 @@ hardware support, ChaCha20-Poly1305 is the better choice.
 				Aliases: []string{"e"},
 				Value:   0,
 				Usage:   "Use specific key epoch (by default it uses the latest key)",
-				EnvVars: []string{"REDACT_GIT_CLEAN_EPOCH"},
+				Sources: cli.EnvVars("REDACT_GIT_CLEAN_EPOCH"),
 			},
 			&cli.StringFlag{
 				Name:    "type",
 				Aliases: []string{"t"},
 				Usage:   "Use specific `encoding` type (aes256-gcm96 (default) or chacha20-poly1305)",
-				EnvVars: []string{"REDACT_GIT_CLEAN_TYPE"},
+				Sources: cli.EnvVars("REDACT_GIT_CLEAN_TYPE"),
 			},
-			&cli.PathFlag{
+			&cli.StringFlag{
 				Name:    "file",
 				Aliases: []string{"f"},
 				Usage:   "file path being filtered; --epoch and --type overwrites",
@@ -60,12 +61,12 @@ hardware support, ChaCha20-Poly1305 is the better choice.
 	}
 }
 
-func (rt *Runtime) gitCleanDo(ctx *cli.Context) error {
+func (rt *Runtime) gitCleanDo(ctx context.Context, cmd *cli.Command) error {
 	keyEpoch := uint32(0)
 	encType := encoder.TypeAES256GCM96
 
-	if ctx.IsSet("file") {
-		fname := ctx.Path("file")
+	if cmd.IsSet("file") {
+		fname := cmd.String("file")
 		hdr, err := rt.hdrByFilename(fname)
 
 		if err != nil {
@@ -78,15 +79,15 @@ func (rt *Runtime) gitCleanDo(ctx *cli.Context) error {
 		}
 	}
 
-	if ctx.IsSet("epoch") {
-		keyEpoch = uint32(ctx.Uint("epoch"))
+	if cmd.IsSet("epoch") {
+		keyEpoch = uint32(cmd.Uint("epoch"))
 	}
 
 	if keyEpoch == 0 {
 		keyEpoch = rt.SecretKey.LatestKey
 	}
 
-	encTypeName := ctx.String("type")
+	encTypeName := cmd.String("type")
 	if encTypeName != "" {
 		var err error
 

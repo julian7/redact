@@ -1,6 +1,6 @@
 package main
 
-import "github.com/urfave/cli/v2"
+import "github.com/urfave/cli/v3"
 
 func (rt *Runtime) gitCmd() *cli.Command {
 	return &cli.Command{
@@ -12,7 +12,7 @@ func (rt *Runtime) gitCmd() *cli.Command {
 Redact interacts with git using gitattributes(5), through filter and diff
 settings. Unlocked repositories are also configured to run these redact
 commands for data conversion.`,
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			rt.gitCleanCmd(),
 			rt.gitDiffCmd(),
 			rt.gitSmudgeCmd(),

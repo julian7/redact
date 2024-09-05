@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -9,7 +10,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/sdk"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) accessGrantCmd() *cli.Command {
@@ -35,13 +36,13 @@ func (rt *Runtime) accessGrantCmd() *cli.Command {
 	}
 }
 
-func (rt *Runtime) accessGrantDo(ctx *cli.Context) error {
+func (rt *Runtime) accessGrantDo(ctx context.Context, cmd *cli.Command) error {
 	var keyEntries openpgp.EntityList
 
-	rt.loadKeys(ctx.StringSlice("openpgp"), false, &keyEntries)
-	rt.loadKeys(ctx.StringSlice("openpgp-armor"), true, &keyEntries)
+	rt.loadKeys(cmd.StringSlice("openpgp"), false, &keyEntries)
+	rt.loadKeys(cmd.StringSlice("openpgp-armor"), true, &keyEntries)
 
-	args := ctx.Args()
+	args := cmd.Args()
 	if args.Len() > 0 {
 		out, err := gpgutil.ExportKey(args.Slice())
 		if err != nil {

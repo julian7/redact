@@ -1,18 +1,19 @@
 package main
 
 import (
+	"context"
 	"os"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var (
 	version = "SNAPSHOT"
 )
 
-func (rt *Runtime) app() *cli.App {
-	return &cli.App{
+func (rt *Runtime) app() *cli.Command {
+	return &cli.Command{
 		Name:      "redact",
 		Usage:     "encrypts files in a git repository",
 		ArgsUsage: " ",
@@ -42,16 +43,16 @@ The subsequent "git add" command will encrypt files matching this pattern.`,
 				Aliases: []string{"V"},
 				Value:   "info",
 				Usage:   "Verbosity (possible values: debug, info, warn, error, fatal)",
-				EnvVars: []string{"REDACT_LOG_LEVEL"},
+				Sources: cli.EnvVars("REDACT_LOG_LEVEL"),
 			},
 			&cli.StringFlag{
 				Name:    "logfile",
-				EnvVars: []string{"REDACT_LOG_FILE"},
+				Sources: cli.EnvVars("REDACT_LOG_FILE"),
 				Usage:   "Write logs to `FILE` (standard output by default)",
 			},
 			&cli.BoolFlag{
 				Name:    "strict-permissions",
-				EnvVars: []string{"REDACT_STRICT"},
+				Sources: cli.EnvVars("REDACT_STRICT"),
 				Value:   true,
 				Usage:   "enforce file permission checks; use with caution!",
 			},
@@ -68,8 +69,8 @@ The subsequent "git add" command will encrypt files matching this pattern.`,
 	}
 }
 
-func (rt *Runtime) GlobalConfig(ctx *cli.Context) error {
-	if logFile := ctx.Path("logfile"); logFile != "" {
+func (rt *Runtime) GlobalConfig(ctx context.Context, cmd *cli.Command) error {
+	if logFile := cmd.String("logfile"); logFile != "" {
 		writer, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			rt.Logger.Warnf("cannot open log file: %v", err)
@@ -78,9 +79,9 @@ func (rt *Runtime) GlobalConfig(ctx *cli.Context) error {
 		}
 	}
 
-	rt.setLogLevel(strings.ToLower(ctx.String("verbosity")))
+	rt.setLogLevel(strings.ToLower(cmd.String("verbosity")))
 
-	rt.StrictPermissionChecks = ctx.Bool("strict-permissions")
+	rt.StrictPermissionChecks = cmd.Bool("strict-permissions")
 
 	return nil
 }

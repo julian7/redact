@@ -1,10 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) keyExportCmd() *cli.Command {
@@ -21,7 +22,7 @@ The exported key can be provided as a parameter to the unlock command.`,
 		Before: rt.LoadSecretKey,
 		Action: rt.exportDo,
 		Flags: []cli.Flag{
-			&cli.PathFlag{
+			&cli.StringFlag{
 				Name:    "outfile",
 				Aliases: []string{"f"},
 				Value:   "-",
@@ -31,12 +32,12 @@ The exported key can be provided as a parameter to the unlock command.`,
 	}
 }
 
-func (rt *Runtime) exportDo(ctx *cli.Context) error {
+func (rt *Runtime) exportDo(ctx context.Context, cmd *cli.Command) error {
 	var err error
 
 	var writer *os.File
 
-	outFile := ctx.Path("outfile")
+	outFile := cmd.String("outfile")
 
 	if outFile == "" || outFile == "-" {
 		writer = os.Stdout

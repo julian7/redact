@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 
 	"github.com/julian7/redact/sdk"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) keyGenerateCmd() *cli.Command {
@@ -19,7 +20,7 @@ func (rt *Runtime) keyGenerateCmd() *cli.Command {
 	}
 }
 
-func (rt *Runtime) generateDo(_ *cli.Context) error {
+func (rt *Runtime) generateDo(ctx context.Context, cmd *cli.Command) error {
 	if err := rt.SaveGitSettings(); err != nil {
 		return err
 	}

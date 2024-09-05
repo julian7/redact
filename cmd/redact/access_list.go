@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"strings"
 
@@ -8,7 +9,7 @@ import (
 
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/repo"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) accessListCmd() *cli.Command {
@@ -20,8 +21,8 @@ func (rt *Runtime) accessListCmd() *cli.Command {
 	}
 }
 
-func (rt *Runtime) accessListDo(ctx *cli.Context) error {
-	_ = rt.LoadSecretKey(ctx)
+func (rt *Runtime) accessListDo(ctx context.Context, cmd *cli.Command) error {
+	_ = rt.LoadSecretKey(ctx, cmd)
 
 	kxdir := rt.Repo.ExchangeDir()
 	err := util.Walk(rt.Repo.Workdir, kxdir, func(path string, _ os.FileInfo, err error) error {

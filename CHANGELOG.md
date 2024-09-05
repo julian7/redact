@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-No changes so far.
+Changed:
+
+* Upgraded urfave/cli to v3 (alpha-9)
 
 ## [v0.9.0] - March 28, 2024
 

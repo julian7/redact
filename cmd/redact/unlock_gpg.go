@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -8,7 +9,7 @@ import (
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/repo"
 	"github.com/julian7/redact/sdk"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) unlockGpgCmd() *cli.Command {
@@ -30,13 +31,13 @@ this case, you have to provide the appropriate key with the --gpgkey option.`,
 				Name:    "gpgkey",
 				Aliases: []string{"k"},
 				Usage:   "Use specific GPG key",
-				EnvVars: []string{"REDACT_UNLOCK_GPG_KEY"},
+				Sources: cli.EnvVars("REDACT_UNLOCK_GPG_KEY"),
 			},
 		},
 	}
 }
 
-func (rt *Runtime) unlockGpgDo(ctx *cli.Context) error {
+func (rt *Runtime) unlockGpgDo(ctx context.Context, cmd *cli.Command) error {
 	var err error
 
 	if err := rt.SetupRepo(); err != nil {
@@ -45,7 +46,7 @@ func (rt *Runtime) unlockGpgDo(ctx *cli.Context) error {
 
 	var key string
 
-	key, err = rt.loadKeyFromGPG(ctx.String("gpgkey"))
+	key, err = rt.loadKeyFromGPG(cmd.String("gpgkey"))
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			return nil

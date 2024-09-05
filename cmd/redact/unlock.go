@@ -1,10 +1,11 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) unlockCmd() *cli.Command {
@@ -25,28 +26,28 @@ repository where other ways are not available. Providing '-' reads the key
 from standard input.`,
 		Action: rt.unlockDo,
 		Flags: []cli.Flag{
-			&cli.PathFlag{
+			&cli.StringFlag{
 				Name:    "key",
 				Aliases: []string{"k"},
 				Usage:   "Use specific raw secret key file",
-				EnvVars: []string{"REDACT_UNLOCK_KEY"},
+				Sources: cli.EnvVars("REDACT_UNLOCK_KEY"),
 			},
-			&cli.PathFlag{
+			&cli.StringFlag{
 				Name:    "exported-key",
 				Aliases: []string{"e"},
 				Usage:   "Use specific exported secret key file",
-				EnvVars: []string{"REDACT_UNLOCK_EXPORTED_KEY"},
+				Sources: cli.EnvVars("REDACT_UNLOCK_EXPORTED_KEY"),
 			},
 		},
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			rt.unlockGpgCmd(),
 		},
 	}
 }
 
-func (rt *Runtime) unlockDo(ctx *cli.Context) error {
-	keyFile := ctx.Path("key")
-	pemFile := ctx.Path("exported-key")
+func (rt *Runtime) unlockDo(ctx context.Context, cmd *cli.Command) error {
+	keyFile := cmd.String("key")
+	pemFile := cmd.String("exported-key")
 
 	if keyFile == "" && pemFile == "" {
 		return errors.New("--key or --exported-key is required")

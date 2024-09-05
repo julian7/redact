@@ -1,9 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) keyInitCmd() *cli.Command {
@@ -24,7 +25,7 @@ func (rt *Runtime) initCmd() *cli.Command {
 	}
 }
 
-func (rt *Runtime) initDo(_ *cli.Context) error {
+func (rt *Runtime) initDo(ctx context.Context, cmd *cli.Command) error {
 	if err := rt.SaveGitSettings(); err != nil {
 		return err
 	}

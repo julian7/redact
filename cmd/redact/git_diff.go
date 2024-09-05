@@ -1,12 +1,13 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) gitDiffCmd() *cli.Command {
@@ -19,8 +20,8 @@ func (rt *Runtime) gitDiffCmd() *cli.Command {
 	}
 }
 
-func (rt *Runtime) gitDiffDo(ctx *cli.Context) error {
-	args := ctx.Args()
+func (rt *Runtime) gitDiffDo(ctx context.Context, cmd *cli.Command) error {
+	args := cmd.Args()
 	if args.Len() != 1 {
 		return errors.New("redact git diff requires a single argument")
 	}

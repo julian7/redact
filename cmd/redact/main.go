@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"github.com/julian7/redact/logger"
@@ -13,7 +14,7 @@ func main() {
 		Logger: logger.New(),
 	}
 
-	if err := rt.app().Run(os.Args); err != nil {
+	if err := rt.app().Run(context.Background(), os.Args); err != nil {
 		rt.Logger.Fatal(err.Error())
 	}
 }

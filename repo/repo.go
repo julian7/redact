@@ -1,16 +1,17 @@
 package repo
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/osfs"
+	"github.com/urfave/cli/v3"
 
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
-	"github.com/urfave/cli/v2"
 )
 
 type Repo struct {
@@ -41,7 +42,7 @@ func (r *Repo) SetupRepo() error {
 	return nil
 }
 
-func (r *Repo) LoadSecretKey(_ *cli.Context) error {
+func (r *Repo) LoadSecretKey(ctx context.Context, cmd *cli.Command) error {
 	if err := r.SetupRepo(); err != nil {
 		return fmt.Errorf("detecting repo config: %w", err)
 	}
