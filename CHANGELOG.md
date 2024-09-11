@@ -14,6 +14,7 @@ Added:
 
 Changed:
 
+* Dependencies updated as of Sep 11, 2024
 * Upgraded urfave/cli to v3 (alpha-9)
 
 ## [v0.9.0] - March 28, 2024
