@@ -7,8 +7,8 @@ import (
 	"io"
 
 	"github.com/julian7/redact/gpgutil"
+	"github.com/julian7/redact/kx"
 	"github.com/julian7/redact/repo"
-	"github.com/julian7/redact/sdk"
 	"github.com/urfave/cli/v3"
 )
 
@@ -117,7 +117,7 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 		fmt.Println("Multiple keys found. Please specify one:")
 
 		for _, idx := range availableKeys {
-			pubKey, err := sdk.LoadPubkeysFromExchange(rt.Repo, keys[idx])
+			pubKey, err := kx.LoadGPGPubkeysFromKX(rt.Repo, keys[idx])
 			if err != nil {
 				rt.Logger.Warnf("%v", err)
 
@@ -145,12 +145,12 @@ func (rt *Runtime) loadKeyFromGPG(gpgkey string) (string, error) {
 		return "", err
 	}
 
-	reader, err := sdk.SecretKeyFromExchange(rt.Repo, *key)
+	reader, err := kx.SecretKeyFromExchange(rt.Repo, *key)
 	if err != nil {
 		return "", err
 	}
 
 	defer reader.Close()
 
-	return fmt.Sprintf("%x", *key), sdk.LoadSecretKeyFromReader(rt.SecretKey, reader)
+	return fmt.Sprintf("%x", *key), kx.LoadSecretKeyFromReader(rt.SecretKey, reader)
 }

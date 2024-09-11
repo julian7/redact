@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"os"
 
-	"github.com/julian7/redact/sdk"
+	"github.com/julian7/redact/ext/azure"
+	"github.com/julian7/redact/kx"
 	"github.com/urfave/cli/v3"
 )
 
@@ -35,7 +38,14 @@ func (rt *Runtime) generateDo(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("saving secret key: %w", err)
 	}
 
-	updatedKeys, err := sdk.UpdateSecretExchangeKeys(rt.Repo, func(w io.Writer) {
+	if err := azure.SaveKey(ctx, rt.Repo); err != nil {
+		var pathErr os.PathError
+		if !errors.As(err, &pathErr) {
+			return fmt.Errorf("updating secret key to Azure: %w", pathErr)
+		}
+	}
+
+	updatedKeys, err := kx.UpdateGPGKeysInKX(rt.Repo, func(w io.Writer) {
 		if err := rt.SecretKey.SaveTo(w); err != nil {
 			rt.Logger.Warn(err)
 		}

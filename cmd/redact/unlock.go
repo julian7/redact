@@ -40,6 +40,7 @@ from standard input.`,
 			},
 		},
 		Commands: []*cli.Command{
+			rt.unlockAzureCmd(),
 			rt.unlockGpgCmd(),
 		},
 	}

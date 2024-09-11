@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+Added:
+
+* Secret key storage in Azure Key Vault. It adds
+* `redact access grant azure` and `redact unlock azure` commands, and modifies `redact access list` and `redact key generate`.
+
 Changed:
 
 * Upgraded urfave/cli to v3 (alpha-9)

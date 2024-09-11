@@ -26,6 +26,15 @@ const (
 `
 )
 
+// GetExchangeFilename returns full path to file name in Key Exchange
+func (r *Repo) GetExchangeFilename(filename string, log *logger.Logger) (string, error) {
+	if err := r.ensureExchangeDir(log); err != nil {
+		return "", err
+	}
+
+	return filepath.Join(r.ExchangeDir(), filename), nil
+}
+
 // GetExchangeFilenameStubFor returns file name stub of the Key Exchange for an
 // OpenPGP key identified by its full public key ID.
 //
@@ -34,11 +43,7 @@ const (
 // - .asc: Public key ASCII armor file
 // - .key: Secret key encryped with public key
 func (r *Repo) GetExchangeFilenameStubFor(fingerprint []byte, log *logger.Logger) (string, error) {
-	if err := r.ensureExchangeDir(log); err != nil {
-		return "", err
-	}
-
-	return filepath.Join(r.ExchangeDir(), fmt.Sprintf("%x", fingerprint)), nil
+	return r.GetExchangeFilename(fmt.Sprintf("%x", fingerprint), log)
 }
 
 func (r *Repo) CheckExchangeDir() error {

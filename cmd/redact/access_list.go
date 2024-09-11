@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-git/go-billy/v5/util"
 
+	"github.com/julian7/redact/ext/azure"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/repo"
 	"github.com/urfave/cli/v3"
@@ -25,6 +26,7 @@ func (rt *Runtime) accessListDo(ctx context.Context, cmd *cli.Command) error {
 	_ = rt.LoadSecretKey(ctx, cmd)
 
 	kxdir := rt.Repo.ExchangeDir()
+	azure.Print(rt.Repo)
 	err := util.Walk(rt.Repo.Workdir, kxdir, func(path string, _ os.FileInfo, err error) error {
 		if err != nil {
 			return nil // nolint:nilerr

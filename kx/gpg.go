@@ -1,4 +1,4 @@
-package sdk
+package kx
 
 import (
 	"encoding/hex"
@@ -10,7 +10,6 @@ import (
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/go-git/go-billy/v5/util"
-	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/repo"
 )
@@ -34,22 +33,8 @@ func SecretKeyFromExchange(redactRepo *repo.Repo, fingerprint []byte) (io.ReadCl
 	return reader, nil
 }
 
-// LoadSecretKeyFromReader reads secret key from an io.Reader, and saves it into its
-// place.
-func LoadSecretKeyFromReader(secretkey *files.SecretKey, reader io.Reader) error {
-	if err := secretkey.Read(reader); err != nil {
-		return fmt.Errorf("reading unencrypted secret key: %w", err)
-	}
-
-	if err := secretkey.Save(); err != nil {
-		return fmt.Errorf("saving secret key: %w", err)
-	}
-
-	return nil
-}
-
-// SaveSecretExchange saves secret key into key exchange, encrypted with OpenPGP key
-func SaveSecretExchange(redactRepo *repo.Repo, key *openpgp.Entity, writerCallback func(io.Writer)) error {
+// SaveGPGKeyToKX saves secret key into key exchange, encrypted with OpenPGP key
+func SaveGPGKeyToKX(redactRepo *repo.Repo, key *openpgp.Entity, writerCallback func(io.Writer)) error {
 	kxstub, err := redactRepo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint, nil)
 	if err != nil {
 		return err
@@ -73,8 +58,8 @@ func SaveSecretExchange(redactRepo *repo.Repo, key *openpgp.Entity, writerCallba
 	return gpgutil.Encrypt(r, secretWriter, key)
 }
 
-// LoadPubkeysFromExchange loads a public key from key exchange
-func LoadPubkeysFromExchange(redactRepo *repo.Repo, fingerprint []byte) (openpgp.EntityList, error) {
+// LoadGPGPubkeysFromKX loads a public key from key exchange
+func LoadGPGPubkeysFromKX(redactRepo *repo.Repo, fingerprint []byte) (openpgp.EntityList, error) {
 	stub, err := redactRepo.GetExchangeFilenameStubFor(fingerprint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("finding exchange public key: %w", err)
@@ -88,8 +73,8 @@ func LoadPubkeysFromExchange(redactRepo *repo.Repo, fingerprint []byte) (openpgp
 	return pubkey, nil
 }
 
-// SavePubkeyExchange saves public OpenPGP key into key exchange
-func SavePubkeyExchange(redactRepo *repo.Repo, key *openpgp.Entity) error {
+// SaveGPGPubkeyToKX saves public OpenPGP key into key exchange
+func SaveGPGPubkeyToKX(redactRepo *repo.Repo, key *openpgp.Entity) error {
 	kxstub, err := redactRepo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint, nil)
 	if err != nil {
 		return err
@@ -111,8 +96,8 @@ func SavePubkeyExchange(redactRepo *repo.Repo, key *openpgp.Entity) error {
 	return nil
 }
 
-// UpdateSecretExchangeKeys updates all key exchange secret keys with new data
-func UpdateSecretExchangeKeys(redactRepo *repo.Repo, writerCallback func(io.Writer)) (int, error) {
+// UpdateGPGKeysInKX updates all key exchange secret keys with new data
+func UpdateGPGKeysInKX(redactRepo *repo.Repo, writerCallback func(io.Writer)) (int, error) {
 	kxdir := redactRepo.ExchangeDir()
 	updated := 0
 
@@ -132,7 +117,7 @@ func UpdateSecretExchangeKeys(redactRepo *repo.Repo, writerCallback func(io.Writ
 			return nil // nolint:nilerr
 		}
 
-		keys, err := LoadPubkeysFromExchange(redactRepo, fingerprint)
+		keys, err := LoadGPGPubkeysFromKX(redactRepo, fingerprint)
 		if err != nil {
 			return fmt.Errorf("loading public key for %s: %w", fingerprintText, err)
 		}
@@ -143,7 +128,7 @@ func UpdateSecretExchangeKeys(redactRepo *repo.Repo, writerCallback func(io.Writ
 
 		updated++
 
-		err = SaveSecretExchange(redactRepo, keys[0], writerCallback)
+		err = SaveGPGKeyToKX(redactRepo, keys[0], writerCallback)
 		if err != nil {
 			return fmt.Errorf(
 				"saving secret key encrypted with key %s: %w",
