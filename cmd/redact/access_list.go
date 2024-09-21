@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-git/go-billy/v5/util"
 
-	"github.com/julian7/redact/ext/azure"
+	"github.com/julian7/redact/ext"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/repo"
 	"github.com/urfave/cli/v3"
@@ -15,10 +15,9 @@ import (
 
 func (rt *Runtime) accessListCmd() *cli.Command {
 	return &cli.Command{
-		Name:      "list",
-		Usage:     "List collaborators to secrets in git repo",
-		ArgsUsage: " ",
-		Action:    rt.accessListDo,
+		Name:   "list",
+		Usage:  "List collaborators to secrets in git repo",
+		Action: rt.accessListDo,
 	}
 }
 
@@ -26,8 +25,12 @@ func (rt *Runtime) accessListDo(ctx context.Context, cmd *cli.Command) error {
 	_ = rt.LoadSecretKey(ctx, cmd)
 
 	kxdir := rt.Repo.ExchangeDir()
-	azure.Print(rt.Repo)
-	err := util.Walk(rt.Repo.Workdir, kxdir, func(path string, _ os.FileInfo, err error) error {
+	extConfig, err := ext.Load(rt.Repo)
+	if extConfig != nil {
+		extConfig.List()
+	}
+
+	err = util.Walk(rt.Repo.Workdir, kxdir, func(path string, _ os.FileInfo, err error) error {
 		if err != nil {
 			return nil // nolint:nilerr
 		}

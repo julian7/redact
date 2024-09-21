@@ -1,15 +1,39 @@
+version: 2
 archives:
 - files:
-  - none*
-  format: binary
+  - README.md
+  - CHANGELOG.md
+  - LICENSE-BlueOak.md
+  - LICENSE-MIT.md
+  builds:
+  - redact
+  - redact-ext-azure
+  format: tgz
+  format_overrides:
+  - goos: windows
+    format: zip
   name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}-{{.Version}}"
 builds:
-- env:
+- id: redact
+  env:
   - GO111MODULE=on
   - CGO_ENABLED=0
   ldflags:
   - -s -w -X main.version={{.Version}}
   main: ./cmd/redact
+  targets:
+  - darwin_arm64
+  - darwin_amd64
+  - linux_amd64
+  - windows_amd64
+- id: redact-ext-azure
+  binary: redact-ext-azure
+  main: ./cmd/redact-ext-azure
+  env:
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+  ldflags:
+  - -s -w -X main.version={{.Version}}
   targets:
   - darwin_arm64
   - darwin_amd64
@@ -23,6 +47,10 @@ release:
     name: redact
     owner: julian7
 snapshot:
-  name_template: "{{ .Tag }}-{{ .ShortCommit }}"
+  version_template: "{{ .Tag }}-{{ .ShortCommit }}"
 universal_binaries:
-- replace: true
+- id: redact
+  replace: true
+- id: redact-ext-azure
+  name_template: "redact-ext-azure"
+  replace: true

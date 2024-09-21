@@ -14,9 +14,8 @@ import (
 
 func (rt *Runtime) unlockGpgCmd() *cli.Command {
 	return &cli.Command{
-		Name:      "gpg",
-		Usage:     "Unlocks repository",
-		ArgsUsage: " ",
+		Name:  "gpg",
+		Usage: "Unlocks repository",
 		Description: `Unlock repository
 
 This command unlocks the repository using a GPG key.

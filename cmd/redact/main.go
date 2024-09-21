@@ -6,6 +6,7 @@ import (
 
 	"github.com/julian7/redact/logger"
 	"github.com/julian7/redact/repo"
+	"github.com/urfave/cli/v3"
 )
 
 func main() {
@@ -25,4 +26,15 @@ func openFileToRead(filename string) (*os.File, error) {
 	}
 
 	return os.Open(filename)
+}
+
+func commands(cmds ...*cli.Command) []*cli.Command {
+	result := make([]*cli.Command, 0, len(cmds))
+	for _, item := range cmds {
+		if item != nil {
+			result = append(result, item)
+		}
+	}
+
+	return result
 }

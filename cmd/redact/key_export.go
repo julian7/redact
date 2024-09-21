@@ -10,9 +10,8 @@ import (
 
 func (rt *Runtime) keyExportCmd() *cli.Command {
 	return &cli.Command{
-		Name:      "export",
-		Usage:     "exports key in PEM format",
-		ArgsUsage: " ",
+		Name:  "export",
+		Usage: "exports key in PEM format",
 		Description: `Exports secret key
 
 This command exports a secret key in PEM format, allowing to store them in

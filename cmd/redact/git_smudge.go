@@ -9,11 +9,10 @@ import (
 
 func (rt *Runtime) gitSmudgeCmd() *cli.Command {
 	return &cli.Command{
-		Name:      "smudge",
-		Usage:     "Decoding file from STDIN, to STDOUT",
-		ArgsUsage: " ",
-		Before:    rt.LoadSecretKey,
-		Action:    rt.gitSmudgeDo,
+		Name:   "smudge",
+		Usage:  "Decoding file from STDIN, to STDOUT",
+		Before: rt.LoadSecretKey,
+		Action: rt.gitSmudgeDo,
 	}
 }
 

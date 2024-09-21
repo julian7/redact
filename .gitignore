@@ -5,3 +5,4 @@ sum.cov
 /dist
 /redact
 /redact.exe
+/redact-ext-*

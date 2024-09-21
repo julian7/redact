@@ -8,9 +8,8 @@ import (
 
 func (rt *Runtime) keyCmd() *cli.Command {
 	return &cli.Command{
-		Name:      "key",
-		Usage:     "Key commands",
-		ArgsUsage: " ",
+		Name:  "key",
+		Usage: "Key commands",
 		Description: `Secret Key management
 
 Key commands let you manage secret key. The secret key consists of multiple
@@ -23,6 +22,7 @@ key's epoch and signature. For more detailed look, please see
 		Action: rt.keyDo,
 		Commands: []*cli.Command{
 			rt.keyGenerateCmd(),
+			rt.keySaveCmd(),
 			rt.keyInitCmd(),
 			rt.keyListCmd(),
 			rt.keyExportCmd(),

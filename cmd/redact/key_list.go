@@ -9,11 +9,10 @@ import (
 
 func (rt *Runtime) keyListCmd() *cli.Command {
 	return &cli.Command{
-		Name:      "list",
-		Usage:     "Lists redact keys",
-		ArgsUsage: " ",
-		Before:    rt.LoadSecretKey,
-		Action:    rt.listDo,
+		Name:   "list",
+		Usage:  "Lists redact keys",
+		Before: rt.LoadSecretKey,
+		Action: rt.listDo,
 	}
 }
 

@@ -11,26 +11,20 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-func (rt *Runtime) keyGenerateCmd() *cli.Command {
+func (rt *Runtime) keySaveCmd() *cli.Command {
 	return &cli.Command{
-		Name:    "generate",
-		Aliases: []string{"gen", "g"},
-		Usage:   "Generates redact key",
+		Name:    "save",
+		Aliases: []string{"s"},
+		Usage:   "Saves redact key in Key Exchange",
 		Before:  rt.LoadSecretKey,
-		Action:  rt.generateDo,
+		Action:  rt.keySaveDo,
 	}
 }
 
-func (rt *Runtime) generateDo(ctx context.Context, cmd *cli.Command) error {
+func (rt *Runtime) keySaveDo(ctx context.Context, cmd *cli.Command) error {
 	if err := rt.SaveGitSettings(); err != nil {
 		return err
 	}
-
-	if err := rt.SecretKey.Generate(); err != nil {
-		return fmt.Errorf("generating secret key: %w", err)
-	}
-
-	rt.Logger.Infof("New repo key created: %v", rt.SecretKey)
 
 	if err := rt.SecretKey.Save(); err != nil {
 		return fmt.Errorf("saving secret key: %w", err)

@@ -4,9 +4,8 @@ import "github.com/urfave/cli/v3"
 
 func (rt *Runtime) accessCmd() *cli.Command {
 	return &cli.Command{
-		Name:      "access",
-		Usage:     "Key Exchange commands",
-		ArgsUsage: " ",
+		Name:  "access",
+		Usage: "Key Exchange commands",
 		Commands: []*cli.Command{
 			rt.accessGrantCmd(),
 			rt.accessListCmd(),

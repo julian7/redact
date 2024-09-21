@@ -9,13 +9,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 Added:
 
-* Secret key storage in Azure Key Vault. It adds
-* `redact access grant azure` and `redact unlock azure` commands, and modifies `redact access list` and `redact key generate`.
+* Extension handling: key exchange manipulation handlers are moving to external binaries.
+* New command: `redact key save`. It saves already existing key to Key Exchange.
+* New commands:
+  * `redact ext add`: adds new extension
+  * `redact ext list`: shows configured extensions
+  * `redact ext remove`: removes extension
+  * `redact ext update`: updates extension settings
+* New key exchange extension: redact-ext-azure. It stores and receives keys from Azure Key Vault.
 
 Changed:
 
 * Dependencies updated as of Sep 11, 2024
 * Upgraded urfave/cli to v3 (alpha-9)
+* `redact access list` lists secrets stored in extensions too
+* `redact key generate` stores new key in extensions too
+* `redact key init` stores new key in extensions
+* `redact unlock` allows unlocking with extensions
 
 ## [v0.9.0] - March 28, 2024
 

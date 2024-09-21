@@ -16,9 +16,8 @@ import (
 
 func (rt *Runtime) gitCleanCmd() *cli.Command {
 	return &cli.Command{
-		Name:      "clean",
-		Usage:     "Encoding file from STDIN, to STDOUT",
-		ArgsUsage: " ",
+		Name:  "clean",
+		Usage: "Encoding file from STDIN, to STDOUT",
 		Description: `This plumbing command allows fine-tuning encryption of individual files.
 This command takes a cleartext file from standard input, and emits encoded
 contents to standard out. You can set specific epoch (key number), encoding

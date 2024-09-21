@@ -1,18 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 
+	"github.com/julian7/redact/ext"
 	"github.com/urfave/cli/v3"
 )
 
 func (rt *Runtime) unlockCmd() *cli.Command {
 	return &cli.Command{
-		Name:      "unlock",
-		Usage:     "Unlocks repository",
-		ArgsUsage: " ",
+		Name:  "unlock",
+		Usage: "Unlocks repository",
 		Description: `Unlock repository
 
 This group of commands able to unlock a repository, or to obtain a new version
@@ -27,6 +28,12 @@ from standard input.`,
 		Action: rt.unlockDo,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
+				Name:    "ext",
+				Aliases: []string{"x"},
+				Usage:   "Use specific extension to read key",
+				Sources: cli.EnvVars("REDACT_UNLOCK_EXT"),
+			},
+			&cli.StringFlag{
 				Name:    "key",
 				Aliases: []string{"k"},
 				Usage:   "Use specific raw secret key file",
@@ -40,7 +47,6 @@ from standard input.`,
 			},
 		},
 		Commands: []*cli.Command{
-			rt.unlockAzureCmd(),
 			rt.unlockGpgCmd(),
 		},
 	}
@@ -49,10 +55,7 @@ from standard input.`,
 func (rt *Runtime) unlockDo(ctx context.Context, cmd *cli.Command) error {
 	keyFile := cmd.String("key")
 	pemFile := cmd.String("exported-key")
-
-	if keyFile == "" && pemFile == "" {
-		return errors.New("--key or --exported-key is required")
-	}
+	extName := cmd.String("ext")
 
 	if keyFile != "" && pemFile != "" {
 		return errors.New("--key and --exported-key are mutully exclusive")
@@ -62,10 +65,36 @@ func (rt *Runtime) unlockDo(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("building secret key: %w", err)
 	}
 
-	if err := rt.readSecretKey(keyFile, pemFile); err != nil {
-		return err
-	}
+	if extName == "" && (keyFile != "" || pemFile != "") {
+		if err := rt.readSecretKey(keyFile, pemFile); err != nil {
+			return err
+		}
+	} else {
+		conf, err := ext.Load(rt.Repo)
+		if err != nil {
+			return err
+		}
+		successful := false
+		for name, ext := range conf.Exts {
+			if extName != "" && extName != name {
+				continue
+			}
+			data, err := ext.LoadKey()
+			if err != nil {
+				continue
+			}
 
+			reader := bytes.NewReader(data)
+			if err = rt.SecretKey.Import(reader); err != nil {
+				return err
+			}
+			successful = true
+			break
+		}
+		if !successful {
+			return errors.New("no suitable key found")
+		}
+	}
 	if err := rt.SecretKey.Save(); err != nil {
 		return err
 	}

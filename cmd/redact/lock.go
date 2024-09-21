@@ -9,9 +9,8 @@ import (
 
 func (rt *Runtime) lockCmd() *cli.Command {
 	return &cli.Command{
-		Name:      "lock",
-		Usage:     "Locks repository",
-		ArgsUsage: " ",
+		Name:  "lock",
+		Usage: "Locks repository",
 		Description: `Lock repository
 
 This command removes your secret key, and the filter configuration. It also

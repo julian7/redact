@@ -8,7 +8,6 @@ func (rt *Runtime) accessGrantCmd() *cli.Command {
 		Usage: "Grants access to collaborators",
 		Commands: []*cli.Command{
 			rt.accessGrantGPGCmd(),
-			rt.accessGrantAzureCmd(),
 		},
 		Description: `Access provision in Key Exchange
 

@@ -14,9 +14,8 @@ var (
 
 func (rt *Runtime) app() *cli.Command {
 	return &cli.Command{
-		Name:      "redact",
-		Usage:     "encrypts files in a git repository",
-		ArgsUsage: " ",
+		Name:  "redact",
+		Usage: "encrypts files in a git repository",
 		Description: `redact - keep secrets in a git repository
 
 This application uses gitattributes(5) to encrypt and decrypt files behind
@@ -59,6 +58,7 @@ The subsequent "git add" command will encrypt files matching this pattern.`,
 		},
 		Commands: []*cli.Command{
 			rt.accessCmd(),
+			rt.extCmd(),
 			rt.gitCmd(),
 			rt.initCmd(),
 			rt.keyCmd(),
