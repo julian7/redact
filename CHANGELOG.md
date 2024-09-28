@@ -16,7 +16,8 @@ Added:
   * `redact ext list`: shows configured extensions
   * `redact ext remove`: removes extension
   * `redact ext update`: updates extension settings
-* New key exchange extension: redact-ext-azure. It stores and receives keys from Azure Key Vault.
+* New key exchange extension: `redact-ext-aws`. It stores and receives keys from SSM Parameter Store, encrypted with a KMS key.
+* New key exchange extension: `redact-ext-azure`. It stores and receives keys from Azure Key Vault.
 
 Changed:
 

@@ -7,6 +7,7 @@ archives:
   - LICENSE-MIT.md
   builds:
   - redact
+  - redact-ext-aws
   - redact-ext-azure
   format: tgz
   format_overrides:
@@ -15,30 +16,28 @@ archives:
   name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}-{{.Version}}"
 builds:
 - id: redact
-  env:
-  - GO111MODULE=on
+  env: &env
   - CGO_ENABLED=0
-  ldflags:
+  ldflags: &ldflags
   - -s -w -X main.version={{.Version}}
   main: ./cmd/redact
-  targets:
+  targets: &targets
   - darwin_arm64
   - darwin_amd64
   - linux_amd64
   - windows_amd64
+- id: redact-ext-aws
+  binary: redact-ext-aws
+  main: ./cmd/redact-ext-aws
+  env: *env
+  ldflags: *ldflags
+  targets: *targets
 - id: redact-ext-azure
   binary: redact-ext-azure
   main: ./cmd/redact-ext-azure
-  env:
-  - GO111MODULE=on
-  - CGO_ENABLED=0
-  ldflags:
-  - -s -w -X main.version={{.Version}}
-  targets:
-  - darwin_arm64
-  - darwin_amd64
-  - linux_amd64
-  - windows_amd64
+  env: *env
+  ldflags: *ldflags
+  targets: *targets
 checksum:
   name_template: 'SHA256SUMS.{{.ProjectName}}-{{.Version}}'
 project_name: redact
@@ -50,6 +49,9 @@ snapshot:
   version_template: "{{ .Tag }}-{{ .ShortCommit }}"
 universal_binaries:
 - id: redact
+  replace: true
+- id: redact-ext-aws
+  name_template: "redact-ext-aws"
   replace: true
 - id: redact-ext-azure
   name_template: "redact-ext-azure"
