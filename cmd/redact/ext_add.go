@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/julian7/redact/ext"
@@ -55,7 +56,11 @@ can be provided).`,
 			if err = conf.AddExt(cmd.String("name"), ext); err != nil {
 				return fmt.Errorf("adding extension: %w", err)
 			}
-			if err = ext.List(); err != nil {
+			newExt, ok := conf.Ext(cmd.String("name"))
+			if !ok {
+				return errors.New("extension not added")
+			}
+			if err = newExt.List(); err != nil {
 				return fmt.Errorf("extension pre-check: %w", err)
 			}
 			if err = conf.Save(); err != nil {
