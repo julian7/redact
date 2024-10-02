@@ -46,9 +46,6 @@ from standard input.`,
 				Sources: cli.EnvVars("REDACT_UNLOCK_EXPORTED_KEY"),
 			},
 		},
-		Commands: []*cli.Command{
-			rt.unlockGpgCmd(),
-		},
 	}
 }
 
