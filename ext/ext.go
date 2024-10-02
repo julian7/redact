@@ -10,9 +10,10 @@ import (
 
 type Ext struct {
 	name    string            `json:"-"`
+	cwd     string            `json:"-"`
+	repo    *repo.Repo        `json:"-"`
 	Command string            `json:"cmd,omitempty"`
 	Config  map[string]string `json:"config,omitempty"`
-	repo    *repo.Repo        `json:"-"`
 }
 
 func (ext *Ext) cmd(cmd string) *exec.Cmd {
@@ -25,7 +26,9 @@ func (ext *Ext) cmd(cmd string) *exec.Cmd {
 	for key, val := range ext.Config {
 		args = append(args, fmt.Sprintf("%s=%s", key, val))
 	}
-	return exec.Command(executable, args...)
+	c := exec.Command(executable, args...)
+	c.Dir = ext.repo.Workdir.Root()
+	return c
 }
 
 func (ext *Ext) Exec(cmd string) error {

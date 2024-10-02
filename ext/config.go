@@ -2,7 +2,9 @@ package ext
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 
 	"github.com/julian7/redact/repo"
@@ -24,7 +26,11 @@ func Load(r *repo.Repo) (*Config, error) {
 
 	data, err := r.Workdir.Open(r.Workdir.Join(kxdir, ConfigFilename))
 	if err != nil {
-		return conf, err
+		if errors.Is(err, fs.ErrNotExist) {
+			return conf, nil
+		} else {
+			return conf, err
+		}
 	}
 
 	decoder := json.NewDecoder(data)
