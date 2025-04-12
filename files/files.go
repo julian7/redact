@@ -16,6 +16,7 @@ const (
 )
 
 var ErrInvalidPreamble = errors.New("invalid file preamble")
+var ErrAlreadyEncoded = errors.New("already encoded")
 
 type FileHeader struct {
 	Preamble [10]byte
@@ -38,6 +39,10 @@ func (k *SecretKey) Encode(encodingFormat uint32, epoch uint32, reader io.Reader
 	in, err := io.ReadAll(reader)
 	if err != nil {
 		return fmt.Errorf("reading input stream: %w", err)
+	}
+
+	if bytes.Equal(in[0:len(FileMagic)], []byte(FileMagic)) {
+		return ErrAlreadyEncoded
 	}
 
 	out, err := enc.Encode(in)

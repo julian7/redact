@@ -28,6 +28,10 @@ Changed:
 * `redact key init` stores new key in extensions
 * `redact unlock` allows unlocking with extensions
 
+Fixed:
+
+* `redact git clean`: encoding via git filter now refuses double encryption
+
 ## [v0.9.0] - March 28, 2024
 
 Added:
