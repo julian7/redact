@@ -69,7 +69,7 @@ The subsequent "git add" command will encrypt files matching this pattern.`,
 	}
 }
 
-func (rt *Runtime) GlobalConfig(ctx context.Context, cmd *cli.Command) error {
+func (rt *Runtime) GlobalConfig(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 	if logFile := cmd.String("logfile"); logFile != "" {
 		writer, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
@@ -83,7 +83,7 @@ func (rt *Runtime) GlobalConfig(ctx context.Context, cmd *cli.Command) error {
 
 	rt.StrictPermissionChecks = cmd.Bool("strict-permissions")
 
-	return nil
+	return ctx, nil
 }
 
 func (rt *Runtime) setLogLevel(level string) {

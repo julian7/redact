@@ -22,7 +22,7 @@ func (rt *Runtime) accessListCmd() *cli.Command {
 }
 
 func (rt *Runtime) accessListDo(ctx context.Context, cmd *cli.Command) error {
-	_ = rt.LoadSecretKey(ctx, cmd)
+	_, _ = rt.LoadSecretKey(ctx, cmd)
 
 	kxdir := rt.Repo.ExchangeDir()
 	extConfig, err := ext.Load(rt.Repo)

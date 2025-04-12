@@ -42,18 +42,18 @@ func (r *Repo) SetupRepo() error {
 	return nil
 }
 
-func (r *Repo) LoadSecretKey(ctx context.Context, cmd *cli.Command) error {
+func (r *Repo) LoadSecretKey(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 	if err := r.SetupRepo(); err != nil {
-		return fmt.Errorf("detecting repo config: %w", err)
+		return ctx, fmt.Errorf("detecting repo config: %w", err)
 	}
 
 	if err := r.SecretKey.Load(r.StrictPermissionChecks); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("loading secret key: %w", err)
+			return ctx, fmt.Errorf("loading secret key: %w", err)
 		}
 
-		return errors.New("repository is not redacted")
+		return ctx, errors.New("repository is not redacted")
 	}
 
-	return nil
+	return ctx, nil
 }
