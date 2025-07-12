@@ -29,6 +29,7 @@ func cmdGet() *cli.Command {
 				return err
 			}
 			fmt.Print(*gotSecret.Value)
+
 			return nil
 		},
 	}

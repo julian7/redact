@@ -42,7 +42,7 @@ func genGitRepo() (*repo.Repo, error) {
 func writeKey(r *repo.Repo) error {
 	return writeFileTo(
 		r.Workdir,
-		filepath.Join(".git", r.SecretKey.Keyfile()),
+		filepath.Join(".git", r.Keyfile()),
 		0600,
 		"\000REDACT\000"+ // preamble
 			"\000\000\000\000"+ // key type == 0

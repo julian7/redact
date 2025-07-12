@@ -16,11 +16,11 @@ func (rt *Runtime) keyListCmd() *cli.Command {
 	}
 }
 
-func (rt *Runtime) listDo(ctx context.Context, cmd *cli.Command) error {
-	rt.Logger.Infof("repo key: %v", rt.SecretKey)
+func (rt *Runtime) listDo(_ context.Context, _ *cli.Command) error {
+	rt.Infof("repo key: %v", rt.SecretKey)
 
-	return files.EachKey(rt.SecretKey.Keys, func(_ uint32, key files.KeyHandler) error {
-		rt.Logger.Infof(" - %s", key)
+	return files.EachKey(rt.Keys, func(_ uint32, key files.KeyHandler) error {
+		rt.Infof(" - %s", key)
 
 		return nil
 	})

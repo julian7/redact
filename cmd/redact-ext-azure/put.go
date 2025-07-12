@@ -46,6 +46,7 @@ func cmdPut() *cli.Command {
 			if err != nil {
 				return fmt.Errorf("cannot write secret %s: %w", config.SecretName, err)
 			}
+
 			return nil
 		},
 	}

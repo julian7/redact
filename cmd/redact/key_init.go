@@ -26,7 +26,7 @@ func (rt *Runtime) initCmd() *cli.Command {
 	}
 }
 
-func (rt *Runtime) initDo(ctx context.Context, cmd *cli.Command) error {
+func (rt *Runtime) initDo(_ context.Context, _ *cli.Command) error {
 	if err := rt.SaveGitSettings(); err != nil {
 		return err
 	}
@@ -36,25 +36,32 @@ func (rt *Runtime) initDo(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	if err := rt.SecretKey.Load(rt.StrictPermissionChecks); err == nil {
+	if err := rt.Load(rt.StrictPermissionChecks); err == nil {
 		return fmt.Errorf("%w: %s", ErrKeyAlreadyExists, rt.SecretKey)
 	}
 
-	if err := rt.SecretKey.Generate(); err != nil {
+	if err := rt.Generate(); err != nil {
 		return fmt.Errorf("generating secret key: %w", err)
 	}
 
-	rt.Logger.Infof("New repo key created: %v", rt.SecretKey)
+	rt.Infof("New repo key created: %v", rt.SecretKey)
 
-	if err := rt.SecretKey.Save(); err != nil {
+	if err := rt.Save(); err != nil {
 		return fmt.Errorf("saving secret key: %w", err)
 	}
 
 	extConfig, err := ext.Load(rt.Repo)
+	if err != nil {
+		return fmt.Errorf("loading extension config: %w", err)
+	}
+
 	if extConfig != nil {
 		buf := &bytes.Buffer{}
-		rt.Repo.SecretKey.Export(buf)
-		if err = extConfig.SaveKey(buf.Bytes()); err != nil {
+		if err := rt.Export(buf); err != nil {
+			return err
+		}
+
+		if err := extConfig.SaveKey(buf.Bytes()); err != nil {
 			return err
 		}
 	}

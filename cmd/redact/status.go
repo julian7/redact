@@ -87,7 +87,7 @@ type statusOptions struct {
 	toRekey    []string
 }
 
-func (rt *Runtime) statusDo(ctx context.Context, cmd *cli.Command) error {
+func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 	opts := statusOptions{
 		Logger:     rt.Logger,
 		repoOnly:   cmd.Bool("repo"),
@@ -114,7 +114,7 @@ func (rt *Runtime) statusDo(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	for _, entry := range files.Errors {
-		rt.Logger.Warn(entry.Error())
+		rt.Warn(entry.Error())
 	}
 
 	for _, entry := range files.Items {
@@ -130,8 +130,8 @@ func (rt *Runtime) statusDo(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if opts.fixRepo || opts.rekeyFiles {
-		if err := rt.Repo.ForceReencrypt(opts.rekeyFiles, func(err error) {
-			rt.Logger.Warn(err.Error())
+		if err := rt.ForceReencrypt(opts.rekeyFiles, func(err error) {
+			rt.Warn(err.Error())
 		}); err != nil {
 			return fmt.Errorf("fixing problems: %w", err)
 		}

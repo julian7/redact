@@ -23,25 +23,25 @@ beforehand.`,
 	}
 }
 
-func (rt *Runtime) lockDo(ctx context.Context, cmd *cli.Command) error {
+func (rt *Runtime) lockDo(_ context.Context, _ *cli.Command) error {
 	err := rt.RemoveGitSettings(func(attr string) {
-		rt.Logger.Debugf("Removing filter/diff git config of %s", attr)
+		rt.Debugf("Removing filter/diff git config of %s", attr)
 	})
 	if err != nil {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 
-	if err := rt.Repo.SecretKey.Remove(); err != nil {
+	if err := rt.Remove(); err != nil {
 		return fmt.Errorf("locking repo: %w", err)
 	}
 
-	if err := rt.Repo.ForceReencrypt(false, func(err error) {
-		rt.Logger.Warn(err.Error())
+	if err := rt.ForceReencrypt(false, func(err error) {
+		rt.Warn(err.Error())
 	}); err != nil {
 		return err
 	}
 
-	rt.Logger.Info("Repository locked.")
+	rt.Info("Repository locked.")
 
 	return nil
 }

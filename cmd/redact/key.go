@@ -35,7 +35,7 @@ func (rt *Runtime) keyDo(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	rt.Logger.Infof("repo key: %v", rt.SecretKey)
+	rt.Infof("repo key: %v", rt.SecretKey)
 
 	return nil
 }

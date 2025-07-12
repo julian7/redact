@@ -73,9 +73,9 @@ func (rt *Runtime) GlobalConfig(ctx context.Context, cmd *cli.Command) (context.
 	if logFile := cmd.String("logfile"); logFile != "" {
 		writer, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
-			rt.Logger.Warnf("cannot open log file: %v", err)
+			rt.Warnf("cannot open log file: %v", err)
 		} else {
-			rt.Logger.SetOutput(writer)
+			rt.SetOutput(writer)
 		}
 	}
 
@@ -87,12 +87,12 @@ func (rt *Runtime) GlobalConfig(ctx context.Context, cmd *cli.Command) (context.
 }
 
 func (rt *Runtime) setLogLevel(level string) {
-	err := rt.Logger.SetLevelFromString(level)
+	err := rt.SetLevelFromString(level)
 	if err != nil {
-		rt.Logger.Warnf("cannot set log level: %v", err)
+		rt.Warnf("cannot set log level: %v", err)
 
 		return
 	}
 
-	rt.Logger.Debugf("Setting log level to %s", level)
+	rt.Debugf("Setting log level to %s", level)
 }

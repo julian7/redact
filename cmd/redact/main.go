@@ -16,7 +16,7 @@ func main() {
 	}
 
 	if err := rt.app().Run(context.Background(), os.Args); err != nil {
-		rt.Logger.Fatal(err.Error())
+		rt.Fatal(err.Error())
 	}
 }
 
@@ -30,6 +30,7 @@ func openFileToRead(filename string) (*os.File, error) {
 
 func commands(cmds ...*cli.Command) []*cli.Command {
 	result := make([]*cli.Command, 0, len(cmds))
+
 	for _, item := range cmds {
 		if item != nil {
 			result = append(result, item)

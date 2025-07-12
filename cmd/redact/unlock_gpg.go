@@ -36,7 +36,7 @@ this case, you have to provide the appropriate key with the --gpgkey option.`,
 	}
 }
 
-func (rt *Runtime) unlockGpgDo(ctx context.Context, cmd *cli.Command) error {
+func (rt *Runtime) unlockGpgDo(_ context.Context, cmd *cli.Command) error {
 	var err error
 
 	if err := rt.SetupRepo(); err != nil {
@@ -69,8 +69,8 @@ func (rt *Runtime) unlockGpgDo(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	if err := rt.Repo.ForceReencrypt(false, func(err error) {
-		rt.Logger.Warn(err.Error())
+	if err := rt.ForceReencrypt(false, func(err error) {
+		rt.Warn(err.Error())
 	}); err != nil {
 		return err
 	}
@@ -88,23 +88,23 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 
 	if len(warns) > 0 {
 		for _, item := range warns {
-			rt.Logger.Warn(item)
+			rt.Warn(item)
 		}
 	}
 
 	availableKeys := make([]int, 0, len(keys))
 
 	for idx, key := range keys {
-		stub, err := rt.Repo.GetExchangeFilenameStubFor(key, rt.Logger)
+		stub, err := rt.GetExchangeFilenameStubFor(key, rt.Logger)
 		if err != nil {
-			rt.Logger.Warnf("cannot get exchange filename for %x: %v", key, err)
+			rt.Warnf("cannot get exchange filename for %x: %v", key, err)
 
 			continue
 		}
 
 		secretKeyFilename := repo.ExchangeSecretKeyFile(stub)
 
-		st, err := rt.Repo.Workdir.Stat(secretKeyFilename)
+		st, err := rt.Workdir.Stat(secretKeyFilename)
 		if err != nil || st.IsDir() {
 			continue
 		}
@@ -118,7 +118,7 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 		for _, idx := range availableKeys {
 			pubKey, err := kx.LoadGPGPubkeysFromKX(rt.Repo, keys[idx])
 			if err != nil {
-				rt.Logger.Warnf("%v", err)
+				rt.Warnf("%v", err)
 
 				continue
 			}

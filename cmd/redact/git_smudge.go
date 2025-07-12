@@ -17,7 +17,7 @@ func (rt *Runtime) gitSmudgeCmd() *cli.Command {
 }
 
 func (rt *Runtime) gitSmudgeDo(_ context.Context, _ *cli.Command) error {
-	err := rt.SecretKey.Decode(os.Stdin, os.Stdout)
+	err := rt.Decode(os.Stdin, os.Stdout)
 	if err != nil {
 		return err
 	}

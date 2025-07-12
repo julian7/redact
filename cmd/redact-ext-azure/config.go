@@ -10,17 +10,19 @@ import (
 )
 
 type Config struct {
-	KeyvaultUrl string
+	KeyvaultURL string
 	SecretName  string
 }
 
 func loadConfig(args []string) (*Config, error) {
 	config := &Config{}
+
 	for idx, item := range args {
 		i := strings.Index(item, "=")
 		if i < 0 {
 			return nil, fmt.Errorf("line %d: %w", idx+1, ErrInvalidArgument)
 		}
+
 		key := item[:i]
 		val := item[i+1:]
 
@@ -32,11 +34,13 @@ func loadConfig(args []string) (*Config, error) {
 			} else {
 				vaulturl = fmt.Sprintf("https://%s.vault.azure.net", val)
 			}
-			parsedUrl, err := url.Parse(vaulturl)
+
+			parsedURL, err := url.Parse(vaulturl)
 			if err != nil {
 				return nil, fmt.Errorf("parsing vault url: %w", err)
 			}
-			config.KeyvaultUrl = parsedUrl.String()
+
+			config.KeyvaultURL = parsedURL.String()
 		case "secret":
 			config.SecretName = val
 		default:
@@ -44,9 +48,10 @@ func loadConfig(args []string) (*Config, error) {
 		}
 	}
 
-	if config.KeyvaultUrl == "" {
+	if config.KeyvaultURL == "" {
 		return nil, ErrMissingKeyvault
 	}
+
 	if config.SecretName == "" {
 		return nil, ErrMissingSecret
 	}
@@ -59,7 +64,8 @@ func (conf *Config) secretsClient() (*azsecrets.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("authenticating to Azure: %w", err)
 	}
-	client, err := azsecrets.NewClient(conf.KeyvaultUrl, cred, nil)
+
+	client, err := azsecrets.NewClient(conf.KeyvaultURL, cred, nil)
 	if err != nil {
 		return nil, fmt.Errorf("authenticating to Key Vault secrets: %w", err)
 	}

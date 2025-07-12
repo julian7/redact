@@ -129,7 +129,7 @@ func (l *Logger) Log(level int, attrs ...interface{}) {
 	if level == FatalLevel {
 		l.Base.Fatal(msg...)
 	} else {
-		l.Base.Print(msg...)
+		l.Print(msg...)
 	}
 }
 
@@ -145,6 +145,6 @@ func (l *Logger) Logf(level int, attrs ...interface{}) {
 	if level == FatalLevel {
 		l.Base.Fatalf(message, attrs[1:]...)
 	} else {
-		l.Base.Printf(message, attrs[1:]...)
+		l.Printf(message, attrs[1:]...)
 	}
 }

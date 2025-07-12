@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 
@@ -23,14 +24,18 @@ func (rt *Runtime) accessListCmd() *cli.Command {
 
 func (rt *Runtime) accessListDo(ctx context.Context, cmd *cli.Command) error {
 	_, _ = rt.LoadSecretKey(ctx, cmd)
+	kxdir := rt.ExchangeDir()
 
-	kxdir := rt.Repo.ExchangeDir()
 	extConfig, err := ext.Load(rt.Repo)
+	if err != nil {
+		return fmt.Errorf("loading extension config: %w", err)
+	}
+
 	if extConfig != nil {
 		extConfig.List()
 	}
 
-	err = util.Walk(rt.Repo.Workdir, kxdir, func(path string, _ os.FileInfo, err error) error {
+	err = util.Walk(rt.Workdir, kxdir, func(path string, _ os.FileInfo, err error) error {
 		if err != nil {
 			return nil // nolint:nilerr
 		}
@@ -41,13 +46,13 @@ func (rt *Runtime) accessListDo(ctx context.Context, cmd *cli.Command) error {
 
 		entities, err := gpgutil.LoadPubKeyFromFile(path, true)
 		if err != nil {
-			rt.Logger.Warnf("cannot load public key: %v", err)
+			rt.Warnf("cannot load public key: %v", err)
 
 			return nil
 		}
 
 		if len(entities) != 1 {
-			rt.Logger.Warnf("multiple entities in key file %s", path)
+			rt.Warnf("multiple entities in key file %s", path)
 
 			return nil
 		}

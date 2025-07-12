@@ -12,7 +12,7 @@ func cmdList() *cli.Command {
 		Name:      "list",
 		Usage:     "Shows AWS param store configuration",
 		ArgsUsage: "keyid=kms_key_id_or_alias param=/path/to/param",
-		Action: func(ctx context.Context, cmd *cli.Command) error {
+		Action: func(_ context.Context, cmd *cli.Command) error {
 			config, err := loadConfig(cmd.Args().Slice())
 			if err != nil {
 				return err

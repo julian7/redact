@@ -12,7 +12,7 @@ func (rt *Runtime) extListCmd() *cli.Command {
 		Name:        "list",
 		Usage:       "List extensions",
 		Description: `List redact extensions`,
-		Action: func(ctx context.Context, cmd *cli.Command) error {
+		Action: func(_ context.Context, _ *cli.Command) error {
 			if err := rt.SetupRepo(); err != nil {
 				return err
 			}
@@ -21,8 +21,9 @@ func (rt *Runtime) extListCmd() *cli.Command {
 				return err
 			}
 			for _, ext := range conf.Exts {
-				ext.List()
+				_ = ext.List()
 			}
+
 			return nil
 		},
 	}

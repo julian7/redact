@@ -131,7 +131,7 @@ func TestGenerate(t *testing.T) {
 	for idx, name := range []string{"latest", "first", "second"} {
 		idx, name := idx, name
 		t.Run(fmt.Sprintf("%s key", name), func(t *testing.T) {
-			key, err := k.Key(uint32(idx))
+			key, err := k.Key(uint32(idx)) //nolint:gosec
 			if err != nil {
 				t.Errorf("cannot retrieve %s key: %v", name, err)
 
@@ -197,7 +197,7 @@ func TestLoad(t *testing.T) { //nolint:funlen,gocognit
 			"no key dir",
 			true,
 			func(k *repo.Repo) {
-				err := k.SecretKey.Remove()
+				err := k.Remove()
 				if err != nil {
 					panic(err)
 				}

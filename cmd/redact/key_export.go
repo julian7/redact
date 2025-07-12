@@ -31,7 +31,7 @@ The exported key can be provided as a parameter to the unlock command.`,
 	}
 }
 
-func (rt *Runtime) exportDo(ctx context.Context, cmd *cli.Command) error {
+func (rt *Runtime) exportDo(_ context.Context, cmd *cli.Command) error {
 	var err error
 
 	var writer *os.File
@@ -47,7 +47,7 @@ func (rt *Runtime) exportDo(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	if err := rt.SecretKey.Export(writer); err != nil {
+	if err := rt.Export(writer); err != nil {
 		return fmt.Errorf("export: %w", err)
 	}
 

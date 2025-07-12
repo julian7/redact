@@ -1,26 +1,19 @@
----
+version: "2"
 linters:
   enable:
     - bodyclose
     - depguard
     - dogsled
     - dupl
-    - errcheck
     - errname
     - errorlint
-    - exportloopref
     - funlen
     - gocognit
     - goconst
     - gocritic
     - gocyclo
     - godox
-    - gofmt
-    - goimports
     - gosec
-    - gosimple
-    - govet
-    - ineffassign
     - lll
     - misspell
     - nakedret
@@ -29,17 +22,35 @@ linters:
     - prealloc
     - revive
     - staticcheck
-    - stylecheck
-    - typecheck
     - unconvert
     - unparam
-    - unused
     - whitespace
     - wsl
-linters-settings:
-  depguard:
-    rules:
-      prevent_unmaintained_packages:
-        list-mode: lax
-        allow:
-        - $gostd
+  settings:
+    depguard:
+      rules:
+        prevent_unmaintained_packages:
+          list-mode: lax
+          allow:
+            - $gostd
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

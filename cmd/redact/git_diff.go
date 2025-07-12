@@ -19,7 +19,7 @@ func (rt *Runtime) gitDiffCmd() *cli.Command {
 	}
 }
 
-func (rt *Runtime) gitDiffDo(ctx context.Context, cmd *cli.Command) error {
+func (rt *Runtime) gitDiffDo(_ context.Context, cmd *cli.Command) error {
 	args := cmd.Args()
 	if args.Len() != 1 {
 		return fmt.Errorf("%w: redact git diff requires a single argument", ErrOptions)
@@ -32,7 +32,7 @@ func (rt *Runtime) gitDiffDo(ctx context.Context, cmd *cli.Command) error {
 
 	defer reader.Close()
 
-	err = rt.SecretKey.Decode(reader, os.Stdout)
+	err = rt.Decode(reader, os.Stdout)
 	if err == nil {
 		return nil
 	}

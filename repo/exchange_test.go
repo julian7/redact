@@ -34,7 +34,7 @@ func genGitRepo() (*repo.Repo, error) {
 func writeKey(r *repo.Repo) error {
 	return writeFile(
 		r,
-		r.SecretKey.Keyfile(),
+		r.Keyfile(),
 		0600,
 		"key contents",
 	)

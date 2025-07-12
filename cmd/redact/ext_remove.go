@@ -22,7 +22,7 @@ func (rt *Runtime) extRemoveCmd() *cli.Command {
 				Required: true,
 			},
 		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
+		Action: func(_ context.Context, cmd *cli.Command) error {
 			if err := rt.SetupRepo(); err != nil {
 				return err
 			}

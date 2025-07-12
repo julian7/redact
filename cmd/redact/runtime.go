@@ -21,7 +21,7 @@ func (rt *Runtime) SaveGitSettings() error {
 	}
 
 	if err := rt.Repo.SaveGitSettings(argv0, func(attr string) {
-		rt.Logger.Debugf("Setting up filter/diff git config of %s to %s", attr, argv0)
+		rt.Debugf("Setting up filter/diff git config of %s to %s", attr, argv0)
 	}); err != nil {
 		return fmt.Errorf("setting git config: %w", err)
 	}

@@ -12,13 +12,13 @@ func cmdList() *cli.Command {
 		Name:      "list",
 		Usage:     "Shows Azure Key Vault configuration",
 		ArgsUsage: "[key=val [key=val ...]]",
-		Action: func(ctx context.Context, cmd *cli.Command) error {
+		Action: func(_ context.Context, cmd *cli.Command) error {
 			config, err := loadConfig(cmd.Args().Slice())
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("Azure key vault %s in secret %q\n", config.KeyvaultUrl, config.SecretName)
+			fmt.Printf("Azure key vault %s in secret %q\n", config.KeyvaultURL, config.SecretName)
 
 			return nil
 		},

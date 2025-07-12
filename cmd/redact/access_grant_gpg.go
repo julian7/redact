@@ -35,7 +35,7 @@ func (rt *Runtime) accessGrantGPGCmd() *cli.Command {
 	}
 }
 
-func (rt *Runtime) accessGrantGPGDo(ctx context.Context, cmd *cli.Command) error {
+func (rt *Runtime) accessGrantGPGDo(_ context.Context, cmd *cli.Command) error {
 	var keyEntries openpgp.EntityList
 
 	rt.loadKeys(cmd.StringSlice("openpgp"), false, &keyEntries)
@@ -66,7 +66,7 @@ func (rt *Runtime) accessGrantGPGDo(ctx context.Context, cmd *cli.Command) error
 
 	for _, key := range keyEntries {
 		if err := rt.saveGPGKey(key); err != nil {
-			rt.Logger.Warnf("cannot save key: %v", err)
+			rt.Warnf("cannot save key: %v", err)
 
 			continue
 		}
@@ -74,7 +74,7 @@ func (rt *Runtime) accessGrantGPGDo(ctx context.Context, cmd *cli.Command) error
 		saved++
 	}
 
-	rt.Logger.Infof(
+	rt.Infof(
 		"Added %d key%s. Don't forget to commit exchange files to the repository.",
 		saved,
 		map[bool]string{true: "", false: "s"}[saved == 1],
@@ -91,7 +91,7 @@ func (rt *Runtime) loadKeys(pgpFiles []string, isArmor bool, keyEntries *openpgp
 	for _, pgpFile := range pgpFiles {
 		entries, err := gpgutil.LoadPubKeyFromFile(pgpFile, isArmor)
 		if err != nil {
-			rt.Logger.Warnf("loading public key: %v", err)
+			rt.Warnf("loading public key: %v", err)
 
 			continue
 		}
@@ -104,7 +104,7 @@ func (rt *Runtime) saveGPGKey(key *openpgp.Entity) error {
 	gpgutil.PrintKey(key)
 
 	err := kx.SaveGPGKeyToKX(rt.Repo, key, func(w io.Writer) {
-		err := rt.SecretKey.SaveTo(w)
+		err := rt.SaveTo(w)
 		if err != nil {
 			rt.Warn(err)
 		}

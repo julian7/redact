@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"strings"
 
@@ -60,7 +61,7 @@ hardware support, ChaCha20-Poly1305 is the better choice.
 	}
 }
 
-func (rt *Runtime) gitCleanDo(ctx context.Context, cmd *cli.Command) error {
+func (rt *Runtime) gitCleanDo(_ context.Context, cmd *cli.Command) error {
 	keyEpoch := uint32(0)
 	encType := encoder.TypeAES256GCM96
 
@@ -79,11 +80,16 @@ func (rt *Runtime) gitCleanDo(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if cmd.IsSet("epoch") {
-		keyEpoch = uint32(cmd.Uint("epoch"))
+		epoch := cmd.Uint("epoch")
+		if epoch > math.MaxUint32 {
+			return fmt.Errorf("%w: epoch value %d is too large", ErrOptions, epoch)
+		}
+
+		keyEpoch = uint32(epoch)
 	}
 
 	if keyEpoch == 0 {
-		keyEpoch = rt.SecretKey.LatestKey
+		keyEpoch = rt.LatestKey
 	}
 
 	encTypeName := cmd.String("type")
@@ -96,7 +102,7 @@ func (rt *Runtime) gitCleanDo(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	if err := rt.SecretKey.Encode(encType, keyEpoch, os.Stdin, os.Stdout); err != nil {
+	if err := rt.Encode(encType, keyEpoch, os.Stdin, os.Stdout); err != nil {
 		return err
 	}
 
@@ -123,7 +129,7 @@ func (rt *Runtime) hdrByFilename(filename string) (*files.FileHeader, error) {
 			return nil, err
 		}
 
-		hdr, err := rt.SecretKey.FileStatus(fReader)
+		hdr, err := rt.FileStatus(fReader)
 		if err == nil {
 			return hdr, nil
 		}

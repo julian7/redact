@@ -54,46 +54,52 @@ can be provided).`,
 				Required: false,
 			},
 		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			if err := rt.SetupRepo(); err != nil {
-				return err
-			}
-			conf, err := ext.Load(rt.Repo)
-			if err != nil {
-				return err
-			}
-			name := cmd.String("name")
-			extension, ok := conf.Ext(name)
-			if !ok {
-				return ext.ErrExtNotFound
-			}
-			if cmd.Bool("nocmd") {
-				extension.Command = ""
-			} else if newCmd := cmd.String("cmd"); newCmd != "" {
-				extension.Command = newCmd
-			}
-
-			for _, item := range cmd.StringSlice("nooption") {
-				delete(extension.Config, item)
-			}
-
-			for key, val := range cmd.StringMap("option") {
-				extension.Config[key] = val
-			}
-
-			if err = conf.UpdateExt(name, extension); err != nil {
-				return fmt.Errorf("updating extension config: %w", err)
-			}
-
-			if err = extension.List(); err != nil {
-				return fmt.Errorf("extension pre-check: %w", err)
-			}
-
-			if err = conf.Save(); err != nil {
-				return fmt.Errorf("saving config: %w", err)
-			}
-
-			return nil
-		},
+		Action: rt.doExtUpdate,
 	}
+}
+
+func (rt *Runtime) doExtUpdate(_ context.Context, cmd *cli.Command) error {
+	if err := rt.SetupRepo(); err != nil {
+		return err
+	}
+
+	conf, err := ext.Load(rt.Repo)
+	if err != nil {
+		return err
+	}
+
+	name := cmd.String("name")
+
+	extension, ok := conf.Ext(name)
+	if !ok {
+		return ext.ErrExtNotFound
+	}
+
+	if cmd.Bool("nocmd") {
+		extension.Command = ""
+	} else if newCmd := cmd.String("cmd"); newCmd != "" {
+		extension.Command = newCmd
+	}
+
+	for _, item := range cmd.StringSlice("nooption") {
+		delete(extension.Config, item)
+	}
+
+	for key, val := range cmd.StringMap("option") {
+		extension.Config[key] = val
+	}
+
+	if err = conf.UpdateExt(name, extension); err != nil {
+		return fmt.Errorf("updating extension config: %w", err)
+	}
+
+	if err = extension.List(); err != nil {
+		return fmt.Errorf("extension pre-check: %w", err)
+	}
+
+	if err = conf.Save(); err != nil {
+		return fmt.Errorf("saving config: %w", err)
+	}
+
+	return nil
 }

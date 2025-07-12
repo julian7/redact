@@ -18,11 +18,13 @@ type Config struct {
 
 func loadConfig(args []string) (*Config, error) {
 	config := &Config{}
+
 	for idx, item := range args {
 		i := strings.Index(item, "=")
 		if i < 0 {
 			return nil, fmt.Errorf("line %d: %w", idx+1, ErrInvalidArgument)
 		}
+
 		key := item[:i]
 		val := item[i+1:]
 
@@ -39,6 +41,7 @@ func loadConfig(args []string) (*Config, error) {
 	if config.KeyID == "" {
 		return nil, ErrMissingKeyID
 	}
+
 	if config.ParamPath == "" {
 		return nil, ErrMissingParamPath
 	}
@@ -48,6 +51,7 @@ func loadConfig(args []string) (*Config, error) {
 
 func ssmClient(ctx context.Context) (*ssm.Client, error) {
 	options := [](func(*config.LoadOptions) error){}
+
 	awscfg, err := config.LoadDefaultConfig(ctx, options...)
 	if err != nil {
 		return nil, fmt.Errorf("loading AWS config: %w", err)
