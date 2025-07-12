@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
@@ -60,7 +59,7 @@ func (rt *Runtime) accessGrantGPGDo(ctx context.Context, cmd *cli.Command) error
 	}
 
 	if len(keyEntries) == 0 {
-		return errors.New("nobody to grant access to")
+		return ErrGPGKeyNotFound
 	}
 
 	saved := 0

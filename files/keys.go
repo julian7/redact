@@ -32,7 +32,15 @@ const (
 	PEMType        = "REDACT SECRET KEY"
 )
 
-var ErrInvalidKeyPreamble = errors.New("invalid key file preamble")
+var (
+	ErrInvalidKeyPreamble = errors.New("invalid key file preamble")
+	ErrInvalidKeyType     = errors.New("invalid key type")
+	ErrInvalidKey         = errors.New("invalid key")
+	ErrNoPEMData          = errors.New("no data found in PEM")
+	ErrPEMTypeMismatch    = errors.New("PEM type mismatch")
+	ErrNoKeysLoaded       = errors.New("no keys loaded")
+	ErrKeydirNotDirectory = errors.New("keydir is not a directory")
+)
 
 // SecretKey contains secret key in a git repository
 type SecretKey struct {
@@ -86,7 +94,7 @@ func (k *SecretKey) Read(f io.Reader) error {
 	}
 
 	if keyType != KeyCurrentType {
-		return errors.New("invalid key type")
+		return ErrInvalidKeyType
 	}
 
 	k.ensureKeys()
@@ -106,7 +114,8 @@ func (k *SecretKey) Read(f io.Reader) error {
 		epoch := key.Version()
 		if _, ok := k.Keys[epoch]; ok {
 			return fmt.Errorf(
-				"invalid key: duplicate epoch number (%d)",
+				"%w: duplicate epoch number (%d)",
+				ErrInvalidKey,
 				epoch,
 			)
 		}
@@ -148,11 +157,11 @@ func (k *SecretKey) Import(reader io.Reader) error {
 
 	blk, _ := pem.Decode(data)
 	if blk == nil {
-		return errors.New("no export found")
+		return ErrNoPEMData
 	}
 
 	if blk.Type != PEMType {
-		return errors.New("PEM type mismatch")
+		return ErrPEMTypeMismatch
 	}
 
 	return k.Read(bytes.NewReader(blk.Bytes))
@@ -246,7 +255,7 @@ func (k *SecretKey) Save() error {
 // it returns the latest key.
 func (k *SecretKey) Key(epoch uint32) (KeyHandler, error) {
 	if k.Keys == nil || k.LatestKey == 0 {
-		return nil, errors.New("no keys loaded")
+		return nil, ErrNoKeysLoaded
 	}
 
 	if epoch == 0 {
@@ -282,7 +291,7 @@ func (k *SecretKey) getOrCreateKeyDir() error {
 	}
 
 	if !fs.IsDir() {
-		return errors.New("keydir is not a directory")
+		return ErrKeydirNotDirectory
 	}
 
 	return nil
@@ -297,7 +306,7 @@ func (k *SecretKey) checkKeyDir(strict bool) error {
 	}
 
 	if !fs.IsDir() {
-		return errors.New("keydir is not a directory")
+		return ErrKeydirNotDirectory
 	}
 
 	err = checkFileMode(k.dot, "key dir", DefaultKeyDir, 0700, strict)

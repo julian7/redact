@@ -52,7 +52,7 @@ func (r *Repo) LoadSecretKey(ctx context.Context, cmd *cli.Command) (context.Con
 			return ctx, fmt.Errorf("loading secret key: %w", err)
 		}
 
-		return ctx, errors.New("repository is not redacted")
+		return ctx, ErrRedactKeyNotFound
 	}
 
 	return ctx, nil

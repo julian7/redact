@@ -2,7 +2,6 @@ package encoder
 
 import (
 	"crypto/cipher"
-	"errors"
 
 	"golang.org/x/crypto/chacha20poly1305"
 )
@@ -18,7 +17,7 @@ type ChaCha20Poly1305 []byte
 // NewChaCha20Poly1305 returns a new Encoder initialized with a key handler
 func NewChaCha20Poly1305(key []byte) (AEAD, error) {
 	if len(key) < ChaCha20Poly1305KeySize {
-		return nil, errors.New("key too small")
+		return nil, ErrKeyTooSmall
 	}
 
 	return ChaCha20Poly1305(key[:ChaCha20Poly1305KeySize]), nil

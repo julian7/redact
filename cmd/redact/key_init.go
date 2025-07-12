@@ -37,7 +37,7 @@ func (rt *Runtime) initDo(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if err := rt.SecretKey.Load(rt.StrictPermissionChecks); err == nil {
-		return fmt.Errorf("repo already has secret key: %s", rt.SecretKey)
+		return fmt.Errorf("%w: %s", ErrKeyAlreadyExists, rt.SecretKey)
 	}
 
 	if err := rt.SecretKey.Generate(); err != nil {

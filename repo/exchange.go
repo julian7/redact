@@ -2,7 +2,6 @@ package repo
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -56,7 +55,7 @@ func (r *Repo) CheckExchangeDir() error {
 	}
 
 	if !st.IsDir() {
-		return errors.New("exchange dir is not a directory")
+		return ErrExchangeIsNotDir
 	}
 
 	return nil
@@ -80,7 +79,7 @@ func (r *Repo) ensureExchangeDir(log *logger.Logger) error {
 	}
 
 	if !st.IsDir() {
-		return errors.New("key exchange is not a directory")
+		return fmt.Errorf("%q: %w", kxdir, ErrExchangeIsNotDir)
 	}
 
 	if err := r.ensureExchangeGitAttributes(log); err != nil {

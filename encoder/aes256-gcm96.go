@@ -3,7 +3,6 @@ package encoder
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"errors"
 )
 
 const (
@@ -17,7 +16,7 @@ type AES256GCM96 []byte
 // NewAES256GCM96 returns a new Encoder initialized with a key handler
 func NewAES256GCM96(key []byte) (AEAD, error) {
 	if len(key) < AES256KeySize {
-		return nil, errors.New("key too small")
+		return nil, ErrKeyTooSmall
 	}
 
 	return AES256GCM96(key[:AES256KeySize]), nil

@@ -34,7 +34,13 @@ type Entry struct {
 type Factory func([]byte) (AEAD, error)
 
 var (
-	ErrKeyTooSmall = errors.New("key too small")
+	ErrCyphertextSmall     = errors.New("ciphertext too small")
+	ErrEncoderNotFound     = errors.New("encoder not found")
+	ErrEncoderTypeExists   = errors.New("encoder type already exists")
+	ErrEncoderTypeInvalid  = errors.New("invalid encoding type")
+	ErrEncoderTypeNotFound = errors.New("encoder type not found")
+	ErrInvalidChecksum     = errors.New("invalid HMAC checksum")
+	ErrKeyTooSmall         = errors.New("key too small")
 
 	encoders = map[uint32]Entry{
 		TypeAES256GCM96:      {factory: NewAES256GCM96, name: "AES256-GCM96"},
@@ -50,7 +56,7 @@ func FindEncoder(name string) (uint32, error) {
 		}
 	}
 
-	return 0, errors.New("no such encoder")
+	return 0, ErrEncoderNotFound
 }
 
 func Name(typ uint32) string {
@@ -66,7 +72,7 @@ func Name(typ uint32) string {
 func NewEncoder(encType uint32, key []byte) (*Encoder, error) {
 	Entry, ok := encoders[encType]
 	if !ok {
-		return nil, fmt.Errorf("invalid encoding type %d", encType)
+		return nil, fmt.Errorf("%w: %d", ErrEncoderTypeInvalid, encType)
 	}
 
 	enc, err := Entry.factory(key)
@@ -116,7 +122,7 @@ func (e *Encoder) Decode(ciphertext []byte) ([]byte, error) {
 
 	nonceLen := aead.NonceSize()
 	if len(ciphertext) < nonceLen {
-		return nil, errors.New("ciphertext too small")
+		return nil, ErrCyphertextSmall
 	}
 
 	nonce := ciphertext[:nonceLen]
@@ -134,7 +140,7 @@ func (e *Encoder) Decode(ciphertext []byte) ([]byte, error) {
 	}
 
 	if !bytes.Equal(hmacSum[:len(nonce)], nonce) {
-		return nil, errors.New("HMAC checksum invalid")
+		return nil, ErrInvalidChecksum
 	}
 
 	return plaintext, nil
@@ -143,7 +149,7 @@ func (e *Encoder) Decode(ciphertext []byte) ([]byte, error) {
 // RegisterEncoder registers a new encoder
 func RegisterEncoder(encType uint32, name string, factory Factory) error {
 	if _, ok := encoders[encType]; ok {
-		return fmt.Errorf("encoder type %d already exists", encType)
+		return fmt.Errorf("%d: %w", encType, ErrEncoderTypeExists)
 	}
 
 	encoders[encType] = Entry{factory: factory, name: name}
@@ -154,7 +160,7 @@ func RegisterEncoder(encType uint32, name string, factory Factory) error {
 // UnregisterEncoder removes an encoder
 func UnregisterEncoder(encType uint32) error {
 	if _, ok := encoders[encType]; !ok {
-		return fmt.Errorf("encoder type %d doesn't exist", encType)
+		return fmt.Errorf("%d: %w", encType, ErrEncoderTypeNotFound)
 	}
 
 	delete(encoders, encType)

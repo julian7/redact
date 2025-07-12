@@ -2,7 +2,6 @@ package gitutil
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -42,7 +41,7 @@ func Checkout(files []string, force bool) ([]*NamedError, error) {
 				return
 			}
 
-			issues = append(issues, NewError(string(line), errors.New("git checkout")))
+			issues = append(issues, NewError(string(line), ErrGitCheckout))
 		}
 	}(errStream)
 

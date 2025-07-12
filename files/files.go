@@ -15,8 +15,12 @@ const (
 	FileMagic = "\000REDACTED\000"
 )
 
-var ErrInvalidPreamble = errors.New("invalid file preamble")
-var ErrAlreadyEncoded = errors.New("already encoded")
+var (
+	ErrAlreadyEncoded     = errors.New("already encoded")
+	ErrExcessiveRights    = errors.New("excessive rights")
+	ErrInsufficientRights = errors.New("insufficient rights")
+	ErrInvalidPreamble    = errors.New("invalid file preamble")
+)
 
 type FileHeader struct {
 	Preamble [10]byte

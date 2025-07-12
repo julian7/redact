@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/julian7/redact/ext"
@@ -58,7 +57,7 @@ func (rt *Runtime) unlockDo(ctx context.Context, cmd *cli.Command) error {
 	extName := cmd.String("ext")
 
 	if keyFile != "" && pemFile != "" {
-		return errors.New("--key and --exported-key are mutully exclusive")
+		return fmt.Errorf("%w: --key and --exported-key are mutually exclusive", ErrOptions)
 	}
 
 	if err := rt.SetupRepo(); err != nil {
@@ -92,7 +91,7 @@ func (rt *Runtime) unlockDo(ctx context.Context, cmd *cli.Command) error {
 			break
 		}
 		if !successful {
-			return errors.New("no suitable key found")
+			return ErrNoSuitableKey
 		}
 	}
 	if err := rt.SecretKey.Save(); err != nil {

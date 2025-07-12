@@ -25,7 +25,7 @@ func checkFileMode(fs billy.Filesystem, name, filename string, expected os.FileM
 				return fmt.Errorf("enforcing file mode on %s: %w", name, err)
 			}
 		} else {
-			return fmt.Errorf("cannot enforce file mode on %q: read-only file system", name)
+			return fmt.Errorf("cannot enforce file mode on %q: %w", name, billy.ErrReadOnly)
 		}
 
 		st, err := fs.Stat(filename)
@@ -43,11 +43,11 @@ func checkFileModeOnce(name string, fileinfo os.FileInfo, expected os.FileMode) 
 	mode := fileinfo.Mode().Perm()
 
 	if mode&^expected != 0 {
-		return fmt.Errorf("excessive rights on %s", name)
+		return fmt.Errorf("%w on %s", ErrExcessiveRights, name)
 	}
 
 	if mode&expected != expected {
-		return fmt.Errorf("insufficient rights on %s", name)
+		return fmt.Errorf("%w on %s", ErrInsufficientRights, name)
 	}
 
 	return nil

@@ -8,6 +8,12 @@ type NamedError struct {
 	Orig error
 }
 
+var (
+	ErrGitCheckout        = fmt.Errorf("git checkout")
+	ErrNotFound           = fmt.Errorf("not found")
+	ErrParsingGitRevParse = fmt.Errorf("error parsing git rev-parse")
+)
+
 // Error describes the NamedError, exposing name and original error.
 func (e *NamedError) Error() string {
 	return fmt.Sprintf("%v: %s", e.Orig, e.Name)

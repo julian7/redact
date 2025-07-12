@@ -132,7 +132,7 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 	}
 
 	if len(availableKeys) < 1 {
-		return nil, errors.New("no appropriate key found for unlock")
+		return nil, ErrNoSuitableKey
 	}
 
 	return &keys[availableKeys[0]], nil

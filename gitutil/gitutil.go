@@ -1,7 +1,6 @@
 package gitutil
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -50,7 +49,7 @@ func DetectGitRepo() (*GitRepoInfo, error) {
 
 	data := strings.Split(string(out), "\n")
 	if len(data) != 4 {
-		return nil, errors.New("error parsing git rev-parse")
+		return nil, ErrParsingGitRevParse
 	}
 
 	info := &GitRepoInfo{

@@ -102,7 +102,7 @@ func (e FileEntries) readCheckAttrs(reader io.ReadCloser) error {
 
 		item, ok := idx[items[0]]
 		if !ok {
-			e.AddError(items[0], errors.New("not found"))
+			e.AddError(items[0], ErrNotFound)
 		}
 
 		item.Filter = items[1]

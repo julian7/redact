@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -224,24 +223,24 @@ func printFileEntry(entry *gitutil.FileEntry, isEncrypted bool, shouldBeEncrypte
 func (opts statusOptions) validate() error {
 	if opts.repoOnly {
 		if opts.encOnly || opts.plainOnly {
-			return errors.New("--encrypted and --unencrypted options cannot be use with --repo")
+			return fmt.Errorf("%w: --encrypted and --unencrypted options cannot be use with --repo", ErrOptions)
 		}
 
 		if opts.fixRepo {
-			return errors.New("--fix option cannot be used with --repo")
+			return fmt.Errorf("%w: --fix option cannot be used with --repo", ErrOptions)
 		}
 
 		if len(opts.args) > 0 {
-			return errors.New("files cannot be specified when --repo is used")
+			return fmt.Errorf("%w: files cannot be specified when --repo is used", ErrOptions)
 		}
 	}
 
 	if opts.encOnly && opts.plainOnly {
-		return errors.New("--encrypted and --unencrypted are mutually exclusive options")
+		return fmt.Errorf("%w: --encrypted and --unencrypted are mutually exclusive options", ErrOptions)
 	}
 
 	if opts.fixRepo && (opts.encOnly || opts.plainOnly) {
-		return errors.New("--encrypted and --unencrypted cannot be used with --fix")
+		return fmt.Errorf("%w: --encrypted and --unencrypted cannot be used with --fix", ErrOptions)
 	}
 
 	return nil

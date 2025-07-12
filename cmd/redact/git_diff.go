@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -23,7 +22,7 @@ func (rt *Runtime) gitDiffCmd() *cli.Command {
 func (rt *Runtime) gitDiffDo(ctx context.Context, cmd *cli.Command) error {
 	args := cmd.Args()
 	if args.Len() != 1 {
-		return errors.New("redact git diff requires a single argument")
+		return fmt.Errorf("%w: redact git diff requires a single argument", ErrOptions)
 	}
 
 	reader, err := os.Open(args.First())
@@ -44,7 +43,7 @@ func (rt *Runtime) gitDiffDo(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if n != 0 {
-		return fmt.Errorf("cannot return to beginning of file: returned to position %d instead", n)
+		return fmt.Errorf("%w: returned to position %d instead", ErrSeek, n)
 	}
 
 	if _, err := io.Copy(os.Stdout, reader); err != nil {
