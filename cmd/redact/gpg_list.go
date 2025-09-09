@@ -14,10 +14,10 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-func (rt *Runtime) accessListCmd() *cli.Command {
+func (rt *Runtime) gpgListCmd() *cli.Command {
 	return &cli.Command{
 		Name:   "list",
-		Usage:  "List collaborators to secrets in git repo",
+		Usage:  "List OpenPGP collaborators to secrets in git repo",
 		Action: rt.accessListDo,
 	}
 }

@@ -80,7 +80,7 @@ Secret Information
 Add contributors:
 
 ```text
-$ redact access grant keybase.io/julian7
+$ redact openpgp grant keybase.io/julian7
 KeyID: BDE0F1CE, fingerprint: 1857918cd0b4d303071d6624466cbb98bde0f1ce
   identity: keybase.io/julian7 <js@iksz.hu>, expires: 2027-10-08 18:45:56 +0200 CEST
   identity: keybase.io/julian7 <julian7@keybase.io>, expires: 2025-01-07 22:35:45 +0100 CET
@@ -127,7 +127,7 @@ To switch, either set `REDACT_GIT_CLEAN_TYPE` environment variable, or set `git.
 * lock: locks repository (deletes local key and removes diff/filter configs)
 * unlock: unlocks repository with local key
   * gpg: unlocks repository with GPG-encrypted key from key exchange
-* access: key exchange commands
+* openpgp: OpenPGP key exchange commands
   * ls/list: list user access
   * grant: add OpenPGP key access
   * update: re-encrypt secret key with OpenPGP keys (not implemented yet)

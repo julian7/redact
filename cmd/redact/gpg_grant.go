@@ -12,30 +12,30 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-func (rt *Runtime) accessGrantGPGCmd() *cli.Command {
+func (rt *Runtime) gpgGrantCmd() *cli.Command {
 	return &cli.Command{
-		Name:      "gpg",
+		Name:      "grant",
 		Usage:     "Grants access to collaborators with OpenPGP keys",
 		ArgsUsage: "[KEY...]",
 		Before:    rt.LoadSecretKey,
-		Action:    rt.accessGrantGPGDo,
+		Action:    rt.gpgGrantGPGDo,
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
-				Name:      "openpgp",
-				Aliases:   []string{"p"},
-				Usage:     "import from OpenPGP file instead of gpg keyring",
+				Name:      "file",
+				Aliases:   []string{"f"},
+				Usage:     "import from OpenPGP file instead of a keyring",
 				TakesFile: true,
 			},
 			&cli.StringSliceFlag{
-				Name:    "openpgp-armor",
+				Name:    "armor",
 				Aliases: []string{"a"},
-				Usage:   "import from OpenPGP ASCII Armored file instead of gpg keyring",
+				Usage:   "import from OpenPGP ASCII Armored file instead of a keyring",
 			},
 		},
 	}
 }
 
-func (rt *Runtime) accessGrantGPGDo(_ context.Context, cmd *cli.Command) error {
+func (rt *Runtime) gpgGrantGPGDo(_ context.Context, cmd *cli.Command) error {
 	var keyEntries openpgp.EntityList
 
 	rt.loadKeys(cmd.StringSlice("openpgp"), false, &keyEntries)

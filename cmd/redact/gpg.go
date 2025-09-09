@@ -2,15 +2,16 @@ package main
 
 import "github.com/urfave/cli/v3"
 
-func (rt *Runtime) accessCmd() *cli.Command {
+func (rt *Runtime) gpgCmd() *cli.Command {
 	return &cli.Command{
-		Name:  "access",
-		Usage: "Key Exchange commands",
+		Name:    "openpgp",
+		Aliases: []string{"gpg"},
+		Usage:   "OpenPGP Key Exchange commands",
 		Commands: []*cli.Command{
-			rt.accessGrantCmd(),
-			rt.accessListCmd(),
+			rt.gpgGrantCmd(),
+			rt.gpgListCmd(),
 		},
-		Description: `Key Exchange commands
+		Description: `OpenPGP Key Exchange commands
 
 Key exchange allows contributors to have access to the secret key inside
 the git repo by storing them in OpenPGP-encrypted format for each individual.

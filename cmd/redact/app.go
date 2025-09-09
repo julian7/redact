@@ -57,7 +57,7 @@ The subsequent "git add" command will encrypt files matching this pattern.`,
 			},
 		},
 		Commands: []*cli.Command{
-			rt.accessCmd(),
+			rt.gpgCmd(),
 			rt.extCmd(),
 			rt.gitCmd(),
 			rt.initCmd(),
