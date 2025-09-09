@@ -124,10 +124,11 @@ To switch, either set `REDACT_GIT_CLEAN_TYPE` environment variable, or set `git.
   * generate: generates new secret key
   * info (default): shows secret key info
   * list: lists all keys
+  * save: saves secret key in Key Exchange (both OpenPGP and extensions)
 * lock: locks repository (deletes local key and removes diff/filter configs)
 * unlock: unlocks repository with local key
   * gpg: unlocks repository with GPG-encrypted key from key exchange
-* openpgp: OpenPGP key exchange commands
+* openpgp/gpg: OpenPGP key exchange commands
   * ls/list: list user access
   * grant: add OpenPGP key access
   * update: re-encrypt secret key with OpenPGP keys (not implemented yet)
@@ -136,6 +137,11 @@ To switch, either set `REDACT_GIT_CLEAN_TYPE` environment variable, or set `git.
   * diff: acts as diff filter for git
   * smudge: acts as smudge filter for git
 * status: list files' encryption status
+* ext: extension management
+  * add: adds extension
+  * rm/del: removes extension
+  * list: lists all extensions
+  * update: updates extension configuration
 
 See [the to do](TODO.md) file for details.
 
@@ -149,6 +155,28 @@ historical access to secrets stored in the repository. We can do something about
 * replacing secrets: when encrypted files are supposed to be exposed, the best thing we can do is not just replacing their encryptions, but replacing secrets too. For example, if encrypted files are secret parts of key pairs (like a TLS certificate), we might want to revoke the full certificate altogether, generating new ones.
 
 As always, play safe, and revoke all secrets if there is any chance it can cause damage.
+
+## Extensions
+
+Redact can store secret keys externally, with a simple extension mechanism. It allows managing multiple redact keys in a controlled manner. This package ships AWS Parameter Store and Azure Key Vault extensions, but implementing such an extension is very straightforward.
+
+In general, all extension configuration goes to `<repo root>/.redact/config.json`, which should be committed to the repository, and should not be encrypted. Every extension configuration can hold the following information:
+
+* name: name of the extension
+* command path: command to execute the extension, defaults to `redact-ext-<name>`
+* options: `key=value` pairs, which are passed to the extension command as command-line arguments
+
+An extension has to implement the following commands:
+
+* `list`: basic information about the extension and its configuration
+* `get`: retrieves an exported secret key to standard output
+* `put`: stores an exported secret key read from standard input
+
+Configured extensions are invoked as the following:
+
+```
+<command path> <command> <option1>=<value1> [<option2>=<value2> ...]
+```
 
 ## Configuration with environment variables
 
