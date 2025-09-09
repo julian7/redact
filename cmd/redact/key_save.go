@@ -44,6 +44,7 @@ func (rt *Runtime) keySaveDo(_ context.Context, _ *cli.Command) error {
 		if err := extConfig.SaveKey(buf.Bytes()); err != nil {
 			return err
 		}
+		rt.Info("saved key to extensions")
 	}
 
 	updatedKeys, err := kx.UpdateGPGKeysInKX(rt.Repo, func(w io.Writer) {
