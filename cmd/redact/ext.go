@@ -12,9 +12,9 @@ Redact can use extensions for key management. Extensions are external
 executables for secret key storage, listing, and retrieval. Each extension
 should support the following commands:
 
-azure-ext-NAME put:  store a secret key.
-azure-ext-NAME get:  retrieve a secret key.
-azure-ext-NAME list: shows information about the secret.
+redact-ext-NAME put:  store a secret key.
+redact-ext-NAME get:  retrieve a secret key.
+redact-ext-NAME list: shows information about the secret.
 `,
 		Commands: commands(
 			rt.extAddCmd(),
