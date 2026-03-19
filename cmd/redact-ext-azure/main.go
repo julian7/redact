@@ -12,7 +12,7 @@ var version = "SNAPSHOT"
 
 func main() {
 	if err := app().Run(context.Background(), os.Args); err != nil {
-		fmt.Println(err.Error())
+		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 }

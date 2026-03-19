@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 Changed:
 * Errors: declare and name all errors
+* `redact-ext-*`: log errors to stderr, as the tools are communicating on stdout.
 
 ## [v0.10.0] - April 14, 2025
 
