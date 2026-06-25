@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+No changes so far.
+
+## [v0.11.0] - June 25, 2026
+
+This release is planned to be the latest in 0.x series, as it is tested over the last year, with great success.
+
 Added:
 
 * `redact status --check`: errors on encryption discrepancies and encryption with outdated keys. Alias: `--ci`.
@@ -252,6 +258,7 @@ Added:
 * secret key distribution using OpenPGP keys
 
 [Unreleased]: https://github.com/julian7/redact
+[v0.11.0]: https://github.com/julian7/redact/releases/tag/v0.11.0
 [v0.10.0]: https://github.com/julian7/redact/releases/tag/v0.10.0
 [v0.9.0]: https://github.com/julian7/redact/releases/tag/v0.9.0
 [v0.8.0]: https://github.com/julian7/redact/releases/tag/v0.8.0
