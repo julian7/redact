@@ -97,6 +97,7 @@ type statusOptions struct {
 	args       []string
 	toFix      []string
 	toRekey    []string
+	issues     []string
 }
 
 func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
@@ -127,7 +128,9 @@ func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 	}
 
 	for _, entry := range files.Errors {
-		rt.Warn(entry.Error())
+		msg := entry.Error()
+		rt.Warn(msg)
+		opts.issues = append(opts.issues, msg)
 	}
 
 	for _, entry := range files.Items {
@@ -161,10 +164,18 @@ func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 				plural[toFixRekey == 1],
 			))
 		}
+		issuesLen := len(opts.issues)
+		if issuesLen > 0 {
+			err = append(err, fmt.Sprintf(
+				"%d status error%s",
+				issuesLen,
+				plural[issuesLen == 1],
+			))
+		}
 
 		if len(err) > 0 {
 			errout := ErrEncDiscrepancies
-			for item := range err {
+			for _, item := range err {
 				errout = fmt.Errorf("%w: %s", errout, item)
 			}
 			return errout
@@ -189,7 +200,9 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 
 	reader, err := gitutil.Cat(entry.SHA1[:])
 	if err != nil {
-		opts.Logger.Warnf("git cat-file %s: %w", entry.Name, err)
+		msg := fmt.Sprintf("git cat-file %s: %v", entry.Name, err)
+		opts.Logger.Warn(msg)
+		opts.issues = append(opts.issues, msg)
 
 		return
 	}
