@@ -15,6 +15,7 @@ Changed:
 
 * Errors: declare and name all errors
 * `redact-ext-*`: log errors to stderr, as the tools are communicating on stdout.
+* Upgraded go to 1.26, and packages to latest known good versions.
 
 Fixed:
 
