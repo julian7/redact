@@ -1,0 +1,20 @@
+[tools]
+grype = "latest"
+"golangci-lint" = "latest"
+
+[tasks.build]
+description = "Build the tools (default task)"
+alias = "default"
+run = [
+    "go build ./cmd/redact",
+    "go build ./cmd/redact-ext-aws",
+    "go build ./cmd/redact-ext-azure",
+]
+
+[tasks.check]
+description = "Run checks"
+run = [
+    "go test ./...",
+    "golangci-lint run ./...",
+    "grype file:go.mod",
+]
