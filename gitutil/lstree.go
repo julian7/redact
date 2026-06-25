@@ -19,11 +19,8 @@ type TreeEntry struct {
 }
 
 func LsTree(treeish string, paths []string) ([]*TreeEntry, error) {
-	args := []string{
-		"ls-tree",
-		"-z",
-		treeish,
-	}
+	args := make([]string, 0, 3+len(paths))
+	args = append(args, "ls-tree", "-z", treeish)
 	args = append(args, paths...)
 
 	out, err := exec.Command("git", args...).Output()

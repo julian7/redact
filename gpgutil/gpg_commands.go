@@ -12,11 +12,12 @@ import (
 
 // ExportKey exports GPG key in ASCII armor
 func ExportKey(keyIDs []string) ([]byte, error) {
-	args := []string{
+	args := make([]string, 0, 3+len(keyIDs))
+	args = append(args,
 		"--armor",
 		"--export",
 		"--",
-	}
+	)
 	args = append(args, keyIDs...)
 
 	return exec.Command("gpg", args...).Output()

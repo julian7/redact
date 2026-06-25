@@ -15,15 +15,21 @@ const (
 	WarnLevel
 	ErrorLevel
 	FatalLevel
+
+	DebugLabel = "DEBUG"
+	InfoLabel  = "INFO"
+	WarnLabel  = "WARN"
+	ErrorLabel = "ERROR"
+	FatalLabel = "FATAL"
 )
 
 var (
 	prefixes = map[int]string{
-		DebugLevel: "DEBUG",
-		InfoLevel:  "INFO",
-		WarnLevel:  "WARN",
-		ErrorLevel: "ERROR",
-		FatalLevel: "FATAL",
+		DebugLevel: DebugLabel,
+		InfoLevel:  InfoLabel,
+		WarnLevel:  WarnLabel,
+		ErrorLevel: ErrorLabel,
+		FatalLevel: FatalLabel,
 	}
 
 	NilLogger = &Discard{}
@@ -38,10 +44,10 @@ type Logger struct {
 // Base is a minimal requirement for internal logger implementation.
 // log.Logger implements that.
 type Base interface {
-	Print(...interface{})
-	Printf(string, ...interface{})
-	Fatal(...interface{})
-	Fatalf(string, ...interface{})
+	Print(...any)
+	Printf(string, ...any)
+	Fatal(...any)
+	Fatalf(string, ...any)
 	SetOutput(w io.Writer)
 }
 
@@ -80,16 +86,16 @@ func (l *Logger) Level() int {
 func (l *Logger) SetLevelFromString(level string) error {
 	var logLevel int
 
-	switch strings.ToLower(level) {
-	case "debug":
+	switch strings.ToUpper(level) {
+	case DebugLabel:
 		logLevel = DebugLevel
-	case "info":
+	case InfoLabel:
 		logLevel = InfoLevel
-	case "warn":
+	case WarnLabel:
 		logLevel = WarnLevel
-	case "error":
+	case ErrorLabel:
 		logLevel = ErrorLevel
-	case "fatal":
+	case FatalLabel:
 		logLevel = FatalLevel
 	case "":
 		return nil
@@ -117,12 +123,12 @@ func (l *Logger) buildPrefix(level int, msg string) string {
 
 // Log implements generic logging on certain level, using
 // log.Print or log.Fatal.
-func (l *Logger) Log(level int, attrs ...interface{}) {
+func (l *Logger) Log(level int, attrs ...any) {
 	if l.silenced(level) {
 		return
 	}
 
-	msg := make([]interface{}, 0, len(attrs))
+	msg := make([]any, 0, len(attrs))
 	msg = append(msg, l.buildPrefix(level, attrs[0].(string)))
 	msg = append(msg, attrs[1:]...)
 
@@ -135,7 +141,7 @@ func (l *Logger) Log(level int, attrs ...interface{}) {
 
 // Logf implements generic logging on certain level, using
 // log.Printf or log.Fatalf.
-func (l *Logger) Logf(level int, attrs ...interface{}) {
+func (l *Logger) Logf(level int, attrs ...any) {
 	if l.silenced(level) || len(attrs) < 1 {
 		return
 	}

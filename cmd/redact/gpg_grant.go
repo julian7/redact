@@ -109,7 +109,6 @@ func (rt *Runtime) saveGPGKey(key *openpgp.Entity) error {
 			rt.Warn(err)
 		}
 	})
-
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,13 @@ package main
 
 import "github.com/urfave/cli/v3"
 
+var extNameFlag = cli.StringFlag{
+	Name:     "name",
+	Aliases:  []string{"n"},
+	Usage:    "extension name",
+	Required: true,
+}
+
 func (rt *Runtime) extCmd() *cli.Command {
 	return &cli.Command{
 		Name:  "ext",

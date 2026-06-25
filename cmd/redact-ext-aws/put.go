@@ -13,7 +13,7 @@ func cmdPut() *cli.Command {
 	return &cli.Command{
 		Name:        "put",
 		Usage:       "Put secret to AWS Param Store",
-		ArgsUsage:   "keyid=kms_key_id_or_alias param=/path/to/param",
+		ArgsUsage:   "keyid=kms_key_id_or_alias param=/path/to/param", //nolint:goconst
 		Description: "Reads secret from STDIN and writes to Param Store",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			cfg, err := loadConfig(cmd.Args().Slice())
@@ -25,12 +25,14 @@ func cmdPut() *cli.Command {
 			if err != nil {
 				return err
 			}
+
 			keyStr := string(key)
 
 			ssmClient, err := ssmClient(ctx)
 			if err != nil {
 				return err
 			}
+
 			getParamRet, err := cfg.get(ctx, ssmClient)
 			if err == nil {
 				gotSecret := getParamRet.Parameter.Value

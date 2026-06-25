@@ -25,7 +25,7 @@ linters:
     - unconvert
     - unparam
     - whitespace
-    - wsl
+    - wsl_v5
   settings:
     depguard:
       rules:
@@ -33,6 +33,13 @@ linters:
           list-mode: lax
           allow:
             - $gostd
+    funlen:
+      lines: 70
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
+
   exclusions:
     generated: lax
     presets:
@@ -44,6 +51,12 @@ linters:
       - third_party$
       - builtin$
       - examples$
+      - security/
+    rules:
+    - path: '.+_test\.go'
+      linters:
+      - funlen
+      - goconst
 formatters:
   enable:
     - gofmt

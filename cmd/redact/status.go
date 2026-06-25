@@ -146,40 +146,7 @@ func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 	}
 
 	if opts.check {
-		var err []string
-
-		toFixLen := len(opts.toFix)
-		if toFixLen > 0 {
-			err = append(err, fmt.Sprintf(
-				"%d file%s to fix encryption",
-				toFixLen,
-				plural[toFixLen == 1],
-			))
-		}
-		toFixRekey := len(opts.toRekey)
-		if toFixRekey > 0 {
-			err = append(err, fmt.Sprintf(
-				"%d file%s to rekey",
-				toFixRekey,
-				plural[toFixRekey == 1],
-			))
-		}
-		issuesLen := len(opts.issues)
-		if issuesLen > 0 {
-			err = append(err, fmt.Sprintf(
-				"%d status error%s",
-				issuesLen,
-				plural[issuesLen == 1],
-			))
-		}
-
-		if len(err) > 0 {
-			errout := ErrEncDiscrepancies
-			for _, item := range err {
-				errout = fmt.Errorf("%w: %s", errout, item)
-			}
-			return errout
-		}
+		return opts.checkIssues()
 	}
 
 	if opts.fixRepo || opts.rekeyFiles {
@@ -188,6 +155,48 @@ func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 		}); err != nil {
 			return fmt.Errorf("fixing problems: %w", err)
 		}
+	}
+
+	return nil
+}
+
+func (opts *statusOptions) checkIssues() error {
+	var err []string
+
+	toFixLen := len(opts.toFix)
+	if toFixLen > 0 {
+		err = append(err, fmt.Sprintf(
+			"%d file%s to fix encryption",
+			toFixLen,
+			plural[toFixLen == 1],
+		))
+	}
+
+	toFixRekey := len(opts.toRekey)
+	if toFixRekey > 0 {
+		err = append(err, fmt.Sprintf(
+			"%d file%s to rekey",
+			toFixRekey,
+			plural[toFixRekey == 1],
+		))
+	}
+
+	issuesLen := len(opts.issues)
+	if issuesLen > 0 {
+		err = append(err, fmt.Sprintf(
+			"%d status error%s",
+			issuesLen,
+			plural[issuesLen == 1],
+		))
+	}
+
+	if len(err) > 0 {
+		errout := ErrEncDiscrepancies
+		for _, item := range err {
+			errout = fmt.Errorf("%w: %s", errout, item)
+		}
+
+		return errout
 	}
 
 	return nil

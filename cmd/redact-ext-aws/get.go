@@ -11,7 +11,7 @@ func cmdGet() *cli.Command {
 	return &cli.Command{
 		Name:        "get",
 		Usage:       "Get secret from AWS Param Store",
-		ArgsUsage:   "keyid=kms_key_id_or_alias param=/path/to/param",
+		ArgsUsage:   "keyid=kms_key_id_or_alias param=/path/to/param", //nolint:goconst
 		Description: "Prints Param Store secret to STDOUT",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			cfg, err := loadConfig(cmd.Args().Slice())
@@ -23,6 +23,7 @@ func cmdGet() *cli.Command {
 			if err != nil {
 				return err
 			}
+
 			getParamRet, err := cfg.get(ctx, ssmClient)
 			if err != nil {
 				return err

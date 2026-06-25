@@ -44,10 +44,12 @@ can be provided).`,
 			if err := rt.SetupRepo(); err != nil {
 				return err
 			}
+
 			conf, err := ext.Load(rt.Repo)
 			if err != nil {
 				return err
 			}
+
 			ext := ext.Ext{
 				Command: cmd.String("cmd"),
 				Config:  cmd.StringMap("option"),
@@ -55,13 +57,16 @@ can be provided).`,
 			if err = conf.AddExt(cmd.String("name"), ext); err != nil {
 				return fmt.Errorf("adding extension: %w", err)
 			}
+
 			newExt, ok := conf.Ext(cmd.String("name"))
 			if !ok {
 				return ErrExtensionNotFound
 			}
+
 			if err = newExt.List(); err != nil {
 				return fmt.Errorf("extension pre-check: %w", err)
 			}
+
 			if err = conf.Save(); err != nil {
 				return fmt.Errorf("saving config: %w", err)
 			}

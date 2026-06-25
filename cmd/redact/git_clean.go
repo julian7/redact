@@ -67,8 +67,8 @@ func (rt *Runtime) gitCleanDo(_ context.Context, cmd *cli.Command) error {
 
 	if cmd.IsSet("file") {
 		fname := cmd.String("file")
-		hdr, err := rt.hdrByFilename(fname)
 
+		hdr, err := rt.hdrByFilename(fname)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
 				rt.Warnf("unable to determine epoch from filename: %s", err.Error())

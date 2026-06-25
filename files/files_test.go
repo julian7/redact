@@ -386,7 +386,6 @@ func TestFileStatus(t *testing.T) {
 			}
 
 			reader, err := k.Workdir.Open(testFN)
-
 			if err != nil {
 				t.Error(err)
 

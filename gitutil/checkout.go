@@ -10,10 +10,11 @@ import (
 
 // Checkout checks out files provided
 func Checkout(files []string, force bool) ([]*NamedError, error) {
-	attrs := []string{
+	attrs := make([]string, 0, 2+len(files))
+	attrs = append(attrs,
 		"checkout",
 		"--",
-	}
+	)
 	attrs = append(attrs, files...)
 	cmd := exec.Command("git", attrs...)
 

@@ -111,19 +111,19 @@ type logRecorder struct {
 	Logs []string
 }
 
-func (r *logRecorder) Print(v ...interface{}) {
+func (r *logRecorder) Print(v ...any) {
 	r.Logs = append(r.Logs, fmt.Sprint(v...))
 }
 
-func (r *logRecorder) Printf(format string, v ...interface{}) {
+func (r *logRecorder) Printf(format string, v ...any) {
 	r.Logs = append(r.Logs, fmt.Sprintf(format, v...))
 }
 
-func (r *logRecorder) Fatal(v ...interface{}) {
+func (r *logRecorder) Fatal(v ...any) {
 	r.Logs = append(r.Logs, fmt.Sprint(v...))
 }
 
-func (r *logRecorder) Fatalf(format string, v ...interface{}) {
+func (r *logRecorder) Fatalf(format string, v ...any) {
 	r.Logs = append(r.Logs, fmt.Sprintf(format, v...))
 }
 
@@ -156,7 +156,7 @@ func (r *logRecorder) Verify(items []string) error {
 func TestLogger_Log(t *testing.T) {
 	type args struct {
 		level int
-		attrs []interface{}
+		attrs []any
 	}
 
 	tests := []struct {
@@ -165,11 +165,11 @@ func TestLogger_Log(t *testing.T) {
 		items []string
 		until int
 	}{
-		{"debug", args{DebugLevel, []interface{}{"one", "two"}}, []string{"DEBUG: onetwo"}, DebugLevel},
-		{"info", args{InfoLevel, []interface{}{"one", "two"}}, []string{"INFO: onetwo"}, InfoLevel},
-		{"warn", args{WarnLevel, []interface{}{"one", "two"}}, []string{"WARN: onetwo"}, WarnLevel},
-		{"error", args{ErrorLevel, []interface{}{"one", "two"}}, []string{"ERROR: onetwo"}, ErrorLevel},
-		{"fatal", args{FatalLevel, []interface{}{"one", "two"}}, []string{"FATAL: onetwo"}, FatalLevel},
+		{"debug", args{DebugLevel, []any{"one", "two"}}, []string{"DEBUG: onetwo"}, DebugLevel},
+		{"info", args{InfoLevel, []any{"one", "two"}}, []string{"INFO: onetwo"}, InfoLevel},
+		{"warn", args{WarnLevel, []any{"one", "two"}}, []string{"WARN: onetwo"}, WarnLevel},
+		{"error", args{ErrorLevel, []any{"one", "two"}}, []string{"ERROR: onetwo"}, ErrorLevel},
+		{"fatal", args{FatalLevel, []any{"one", "two"}}, []string{"FATAL: onetwo"}, FatalLevel},
 	}
 
 	for _, tt := range tests {
@@ -199,7 +199,7 @@ func TestLogger_Log(t *testing.T) {
 func TestLogger_Logf(t *testing.T) {
 	type args struct {
 		level int
-		attrs []interface{}
+		attrs []any
 	}
 
 	tests := []struct {
@@ -208,12 +208,12 @@ func TestLogger_Logf(t *testing.T) {
 		items []string
 		until int
 	}{
-		{"no args", args{FatalLevel, []interface{}{}}, []string{}, FatalLevel},
-		{"debug", args{DebugLevel, []interface{}{"one,%s", "two"}}, []string{"DEBUG: one,two"}, DebugLevel},
-		{"info", args{InfoLevel, []interface{}{"one,%s", "two"}}, []string{"INFO: one,two"}, InfoLevel},
-		{"warn", args{WarnLevel, []interface{}{"one,%s", "two"}}, []string{"WARN: one,two"}, WarnLevel},
-		{"error", args{ErrorLevel, []interface{}{"one,%s", "two"}}, []string{"ERROR: one,two"}, ErrorLevel},
-		{"fatal", args{FatalLevel, []interface{}{"one,%s", "two"}}, []string{"FATAL: one,two"}, FatalLevel},
+		{"no args", args{FatalLevel, []any{}}, []string{}, FatalLevel},
+		{"debug", args{DebugLevel, []any{"one,%s", "two"}}, []string{"DEBUG: one,two"}, DebugLevel},
+		{"info", args{InfoLevel, []any{"one,%s", "two"}}, []string{"INFO: one,two"}, InfoLevel},
+		{"warn", args{WarnLevel, []any{"one,%s", "two"}}, []string{"WARN: one,two"}, WarnLevel},
+		{"error", args{ErrorLevel, []any{"one,%s", "two"}}, []string{"ERROR: one,two"}, ErrorLevel},
+		{"fatal", args{FatalLevel, []any{"one,%s", "two"}}, []string{"FATAL: one,two"}, FatalLevel},
 	}
 
 	for _, tt := range tests {

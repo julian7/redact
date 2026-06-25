@@ -458,7 +458,6 @@ func TestSave(t *testing.T) { //nolint:funlen,gocognit
 			}
 
 			finfo, err := k.Workdir.Stat(".git/redact/key")
-
 			if err != nil {
 				t.Errorf("key not created: %v", err)
 

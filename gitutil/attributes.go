@@ -113,6 +113,7 @@ func (e FileEntries) readCheckAttrs(reader io.ReadCloser) error {
 
 func (e *FileEntries) logErrors(input io.ReadCloser) {
 	defer input.Close()
+
 	inbuf := bufio.NewReader(input)
 
 	for {

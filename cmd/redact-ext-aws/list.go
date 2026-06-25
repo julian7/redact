@@ -11,7 +11,7 @@ func cmdList() *cli.Command {
 	return &cli.Command{
 		Name:      "list",
 		Usage:     "Shows AWS param store configuration",
-		ArgsUsage: "keyid=kms_key_id_or_alias param=/path/to/param",
+		ArgsUsage: "keyid=kms_key_id_or_alias param=/path/to/param", //nolint:goconst
 		Action: func(_ context.Context, cmd *cli.Command) error {
 			config, err := loadConfig(cmd.Args().Slice())
 			if err != nil {

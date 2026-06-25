@@ -139,7 +139,6 @@ func UpdateGPGKeysInKX(redactRepo *repo.Repo, writerCallback func(io.Writer)) (i
 
 		return nil
 	})
-
 	if err != nil {
 		return 0, fmt.Errorf("updating secret key in exchange dir: %w", err)
 	}

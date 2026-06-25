@@ -49,7 +49,6 @@ func (r *Repo) CheckExchangeDir() error {
 	kxdir := r.ExchangeDir()
 
 	st, err := r.Workdir.Stat(kxdir)
-
 	if err != nil {
 		return fmt.Errorf("checking exchange dir: %w", err)
 	}

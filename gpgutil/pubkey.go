@@ -98,6 +98,7 @@ func SavePubKey(raw io.Writer, key *openpgp.Entity, isArmor bool) error {
 		}
 
 		defer arm.Close()
+
 		writer = arm
 	} else {
 		writer = raw

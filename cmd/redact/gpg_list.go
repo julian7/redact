@@ -16,7 +16,7 @@ import (
 
 func (rt *Runtime) gpgListCmd() *cli.Command {
 	return &cli.Command{
-		Name:   "list",
+		Name:   "list", //nolint:goconst
 		Usage:  "List OpenPGP collaborators to secrets in git repo",
 		Action: rt.accessListDo,
 	}
@@ -61,7 +61,6 @@ func (rt *Runtime) accessListDo(ctx context.Context, cmd *cli.Command) error {
 
 		return nil
 	})
-
 	if err != nil {
 		return err
 	}

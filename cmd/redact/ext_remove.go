@@ -15,22 +15,20 @@ func (rt *Runtime) extRemoveCmd() *cli.Command {
 		Usage:       "Delete extension",
 		Description: `Delete redact extension`,
 		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:     "name",
-				Aliases:  []string{"n"},
-				Usage:    "extension name",
-				Required: true,
-			},
+			&extNameFlag,
 		},
 		Action: func(_ context.Context, cmd *cli.Command) error {
 			if err := rt.SetupRepo(); err != nil {
 				return err
 			}
+
 			conf, err := ext.Load(rt.Repo)
 			if err != nil {
 				return err
 			}
-			conf.DelExt(cmd.String("name"))
+
+			conf.DelExt(cmd.String(extNameFlag.Name))
+
 			if err = conf.Save(); err != nil {
 				return fmt.Errorf("saving config: %w", err)
 			}

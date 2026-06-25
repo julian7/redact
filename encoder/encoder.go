@@ -134,7 +134,6 @@ func (e *Encoder) Decode(ciphertext []byte) ([]byte, error) {
 	}
 
 	hmacSum, err := e.hmac.Sum(plaintext)
-
 	if err != nil {
 		return nil, fmt.Errorf("getting HMAC nonce: %w", err)
 	}

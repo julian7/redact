@@ -22,12 +22,7 @@ Provide all configuration parameters required with the --option NAME=VALUE
 flag (multiple parameters can be comma-separated, or multiple --option flags
 can be provided).`,
 		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:     "name",
-				Aliases:  []string{"n"},
-				Usage:    "extension name",
-				Required: true,
-			},
+			&extNameFlag,
 			&cli.BoolFlag{
 				Name:     "nocmd",
 				Aliases:  []string{"C"},
@@ -68,7 +63,7 @@ func (rt *Runtime) doExtUpdate(_ context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	name := cmd.String("name")
+	name := cmd.String(extNameFlag.Name)
 
 	extension, ok := conf.Ext(name)
 	if !ok {

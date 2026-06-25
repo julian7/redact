@@ -21,7 +21,7 @@ func app() *cli.Command {
 	return &cli.Command{
 		Name:      "redact-ext-aws",
 		Usage:     "AWS KMS+param store extension for react key exchange",
-		ArgsUsage: "keyid=kms_key_id_or_alias param=/path/to/param",
+		ArgsUsage: "keyid=kms_key_id_or_alias param=/path/to/param", //nolint:goconst
 		Version:   version,
 		Commands: []*cli.Command{
 			cmdList(),

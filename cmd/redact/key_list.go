@@ -9,7 +9,7 @@ import (
 
 func (rt *Runtime) keyListCmd() *cli.Command {
 	return &cli.Command{
-		Name:   "list",
+		Name:   "list", //nolint:goconst // unrelated
 		Usage:  "Lists redact keys",
 		Before: rt.LoadSecretKey,
 		Action: rt.listDo,

@@ -33,8 +33,8 @@ func fullPath() (string, error) {
 	argv0 := os.Args[0]
 	if argv0[0] == '.' {
 		var err error
-		argv0, err = filepath.Abs(argv0)
 
+		argv0, err = filepath.Abs(argv0)
 		if err != nil {
 			return "", fmt.Errorf("get absolute path of argv0: %w", err)
 		}

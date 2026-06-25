@@ -11,7 +11,7 @@ func cmdGet() *cli.Command {
 	return &cli.Command{
 		Name:        "get",
 		Usage:       "Get secrets from azure Key Vault",
-		ArgsUsage:   "[key=val [key=val ...]]",
+		ArgsUsage:   "[key=val [key=val ...]]", //nolint:goconst
 		Description: "Prints Key Vault secret to STDOUT",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			config, err := loadConfig(cmd.Args().Slice())
@@ -28,6 +28,7 @@ func cmdGet() *cli.Command {
 			if err != nil {
 				return err
 			}
+
 			fmt.Print(*gotSecret.Value)
 
 			return nil

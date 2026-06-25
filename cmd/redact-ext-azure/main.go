@@ -21,7 +21,7 @@ func app() *cli.Command {
 	return &cli.Command{
 		Name:      "redact-ext-azure",
 		Usage:     "Azure Key Vault extension for react key exchange",
-		ArgsUsage: "[key=val [key=val ...]]",
+		ArgsUsage: "[key=val [key=val ...]]", //nolint:goconst
 		Version:   version,
 		Commands: []*cli.Command{
 			cmdList(),
