@@ -35,7 +35,7 @@ func cmdPut() *cli.Command {
 
 			contentType := "text/plain"
 			gotSecret, err := client.GetSecret(ctx, config.SecretName, "", nil)
-			if err != nil && *gotSecret.Value == string(key) {
+			if err == nil && gotSecret.Value != nil && *gotSecret.Value == string(key) {
 				return ErrAlreadyWritten
 			}
 			params := azsecrets.SetSecretParameters{

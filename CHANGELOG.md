@@ -16,6 +16,10 @@ Changed:
 * Errors: declare and name all errors
 * `redact-ext-*`: log errors to stderr, as the tools are communicating on stdout.
 
+Fixed:
+
+* redact-ext-azure: put command's update detection logic fixed to detect already written secrets, and fixed a potential panic.
+
 ## [v0.10.0] - April 14, 2025
 
 Added:
