@@ -14,6 +14,11 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+var plural = map[bool]string{
+	false: "s",
+	true:  "",
+}
+
 func (rt *Runtime) statusCmd() *cli.Command {
 	return &cli.Command{
 		Name:      "status",
@@ -52,6 +57,12 @@ these secrets instead.`,
 				Usage:   "Show plaintext files only",
 			},
 			&cli.BoolFlag{
+				Name:    "check",
+				Aliases: []string{"ci"},
+				Value:   false,
+				Usage:   "Fail on encryption discrepancies",
+			},
+			&cli.BoolFlag{
 				Name:    "quiet",
 				Aliases: []string{"q"},
 				Value:   false,
@@ -80,6 +91,7 @@ type statusOptions struct {
 	plainOnly  bool
 	quiet      bool
 	fixRepo    bool
+	check      bool
 	rekeyFiles bool
 	key        *files.SecretKey
 	args       []string
@@ -95,6 +107,7 @@ func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 		plainOnly:  cmd.Bool("unencrypted"),
 		quiet:      cmd.Bool("quiet"),
 		fixRepo:    cmd.Bool("fix"),
+		check:      cmd.Bool("check"),
 		rekeyFiles: cmd.Bool("rekey"),
 		args:       cmd.Args().Slice(),
 	}
@@ -126,6 +139,35 @@ func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 			if !opts.encOnly {
 				opts.handleFileEntry(entry, false)
 			}
+		}
+	}
+
+	if opts.check {
+		var err []string
+
+		toFixLen := len(opts.toFix)
+		if toFixLen > 0 {
+			err = append(err, fmt.Sprintf(
+				"%d file%s to fix encryption",
+				toFixLen,
+				plural[toFixLen == 1],
+			))
+		}
+		toFixRekey := len(opts.toRekey)
+		if toFixRekey > 0 {
+			err = append(err, fmt.Sprintf(
+				"%d file%s to rekey",
+				toFixRekey,
+				plural[toFixRekey == 1],
+			))
+		}
+
+		if len(err) > 0 {
+			errout := ErrEncDiscrepancies
+			for item := range err {
+				errout = fmt.Errorf("%w: %s", errout, item)
+			}
+			return errout
 		}
 	}
 
@@ -241,6 +283,14 @@ func (opts statusOptions) validate() error {
 
 	if opts.fixRepo && (opts.encOnly || opts.plainOnly) {
 		return fmt.Errorf("%w: --encrypted and --unencrypted cannot be used with --fix", ErrOptions)
+	}
+
+	if opts.check && opts.fixRepo {
+		return fmt.Errorf("%w: --check and --fix are mutually exclusive", ErrOptions)
+	}
+
+	if opts.check && opts.rekeyFiles {
+		return fmt.Errorf("%w: --check and --rekey are mutually exclusive", ErrOptions)
 	}
 
 	return nil

@@ -4,6 +4,7 @@ import "errors"
 
 var (
 	ErrGPGKeyNotFound    = errors.New("nobody to grant access to")
+	ErrEncDiscrepancies  = errors.New("discrepancies in desired and actual encryption status")
 	ErrExtensionNotFound = errors.New("extension not added")
 	ErrOptions           = errors.New("invalid command line options")
 	ErrSeek              = errors.New("cannot return to start of file")

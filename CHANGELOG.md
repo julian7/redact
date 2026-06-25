@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+Added:
+
+* `redact status --check`: errors on encryption discrepancies and encryption with outdated keys. Alias: `--ci`.
+
 Changed:
+
 * Errors: declare and name all errors
 * `redact-ext-*`: log errors to stderr, as the tools are communicating on stdout.
 
