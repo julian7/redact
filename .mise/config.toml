@@ -1,6 +1,7 @@
 [tools]
 grype = "latest"
 "golangci-lint" = "latest"
+goreleaser = "latest"
 
 [tasks.build]
 description = "Build the tools (default task)"
@@ -18,3 +19,7 @@ run = [
     "golangci-lint run ./...",
     "grype file:go.mod",
 ]
+
+[tasks.release]
+description = "Release version"
+run = "goreleaser release --clean"

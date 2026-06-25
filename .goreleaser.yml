@@ -5,14 +5,14 @@ archives:
   - CHANGELOG.md
   - LICENSE-BlueOak.md
   - LICENSE-MIT.md
-  builds:
+  ids:
   - redact
   - redact-ext-aws
   - redact-ext-azure
-  format: tgz
+  formats: tgz
   format_overrides:
   - goos: windows
-    format: zip
+    formats: zip
   name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}-{{.Version}}"
 builds:
 - id: redact

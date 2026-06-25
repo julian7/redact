@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 Added:
 
 * `redact status --check`: errors on encryption discrepancies and encryption with outdated keys. Alias: `--ci`.
+* basic tooling with mise
 
 Changed:
 
