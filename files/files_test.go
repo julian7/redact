@@ -132,7 +132,7 @@ func TestEncode(t *testing.T) { //nolint:funlen
 			epoch:   1,
 			reader:  bytes.NewReader([]byte(samplePlaintext)),
 			writer:  bytes.NewBuffer(nil),
-			err:     errors.New("setting up encoder: invalid encoding type 65535"),
+			err:     errors.New("setting up encoder: invalid encoding type: 65535"),
 			output:  "",
 		},
 		{
@@ -264,7 +264,7 @@ func TestDecode(t *testing.T) { //nolint:funlen
 			name:   "no encoder",
 			reader: bytes.NewReader(genCiphertextHeader(65535, 1)),
 			writer: bytes.NewBuffer(nil),
-			err:    errors.New("setting up encoder: invalid encoding type 65535"),
+			err:    errors.New("setting up encoder: invalid encoding type: 65535"),
 			output: "",
 		},
 		{

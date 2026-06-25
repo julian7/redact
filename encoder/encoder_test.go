@@ -62,7 +62,7 @@ func TestNewEncoderError(t *testing.T) {
 	key := []byte("foo")
 
 	_, err := encoder.NewEncoder(id, key)
-	if err == nil || err.Error() != "invalid encoding type 15" {
+	if err == nil || err.Error() != "invalid encoding type: 15" {
 		t.Errorf("unexpected error: %v", err)
 	}
 }
@@ -78,7 +78,7 @@ func TestRegisterEncoderError(t *testing.T) {
 	}
 
 	err = encoder.RegisterEncoder(id, "fake-encoder", newFakeEncoder)
-	if err == nil || err.Error() != "encoder type 20 already exists" {
+	if err == nil || err.Error() != "20: encoder type already exists" {
 		t.Errorf("unexpected error: %v", err)
 
 		return
@@ -89,7 +89,7 @@ func TestUnegisterEncoderError(t *testing.T) {
 	id := uint32(25)
 
 	err := encoder.UnregisterEncoder(id)
-	if err == nil || err.Error() != "encoder type 25 doesn't exist" {
+	if err == nil || err.Error() != "25: encoder type not found" {
 		t.Errorf("unexpected error: %v", err)
 
 		return
