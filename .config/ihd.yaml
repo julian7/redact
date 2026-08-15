@@ -1,0 +1,2 @@
+kind_heading_template: "{kind}:"
+release_link_template: "https://github.com/julian7/redact/releases/tag/{version}"
