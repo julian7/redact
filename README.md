@@ -1,14 +1,46 @@
-# Redact, data encryptor in git
+# Redact
 
-**PLEASE NOTE**: this project is not released yet, and it's under testing. Use it for your own risk.
+**Encrypted configuration lifecycle tooling for git.**
 
-Redact allows you to store sensitive data in a git repository by encrypting / decrypting it on-the-fly.
+Redact allows you to store sensitive data in a git repository by encrypting / decrypting it on-the-fly. It's designed as an encrypted, reviewable authoring layer for application configuration — with eventual promotion into approved runtime configuration or secret stores.
+
+## Status
+
+**Approaching v1.0.** The core tooling (`redact`, `redact-ext-aws`, `redact-ext-azure`) is stable, with passing tests and a documented threat model. We're encouraging focused, pre-pilot usage while we finish hardening toward a 1.0 release.
 
 The project is very similar to [git-crypt](https://github.com/AGWA/git-crypt), [transcrypt](https://github.com/elasticdog/transcrypt), and [git-secret](https://github.com/sobolevn/git-secret).
 
-## WARNING
+## Scope
 
-In nominal cases, you should never store your secrets in a git repository. Use a different tool for that. However, when the sensitivity levels of secret / plaintext files are not too far away (like general and specific settings for a closed source application), it's a nice touch to have an extra layer of security on top of what a git service can provide.
+Redact is designed as **encrypted configuration lifecycle tooling**: an encrypted, reviewable authoring layer for application configuration in git, with eventual promotion into a runtime configuration or secret store (e.g. AWS SSM Parameter Store, AWS Secrets Manager, Azure Key Vault). It is not intended as unrestricted personal secret storage, and it does not replace runtime identity, IAM/RBAC, cloud secret-store controls, DLP, or audit logging — those remain the responsibility of your own tooling and policies.
+
+### Good fits
+
+- Versioned, reviewable application configuration.
+- Sensitive configuration you're comfortable storing in git once encrypted.
+- Configuration destined for controlled promotion to a runtime secret store.
+- Environment-specific application settings that benefit from audit history and PR review.
+- Repositories with CI enforcement (`redact status --check`) and protected branch workflows.
+
+### Think twice before using it for
+
+- Personal credential vaulting.
+- Break-glass, root, or emergency credentials.
+- Long-lived human cloud administrator credentials.
+- Regulated or customer-sensitive secrets that need stronger controls than encrypted git storage provides.
+- Runtime applications reading sensitive config directly from git as their primary secret source.
+
+## Risks
+
+| Risk | Mitigation |
+|---|---|
+| **Working-tree plaintext** — files exist in plaintext locally so users can edit them. | Disk encryption, endpoint security, branch protection policies. |
+| **Local workstation compromise** — could expose working-tree plaintext or local key material. | Standard workstation hardening, strict `.git/redact` file permissions. |
+| **Misconfigured `.gitattributes`** — files intended for encryption could be missed. | CI with `redact status --check`; PR review of `.gitattributes` changes. |
+| **Extension execution** — extensions are explicit integration points configurable via repository metadata. | Review `.redact/config.json` changes; use trusted binaries in automated workflows. |
+| **Key verification** — OpenPGP trust requires human verification. | Out-of-band fingerprint verification for grants. |
+
+These risks are inherent to the tool's design. Weigh them against your own threat model and organizational controls before adoption.
 
 ## Intro
 
