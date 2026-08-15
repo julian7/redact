@@ -15,8 +15,7 @@ const (
 	// ExtKeyArmor is public key ASCII armor file extension in Key Exchange folder
 	ExtKeyArmor = ".asc"
 	// ExtSecret is encrypted secret key file extension in Key Exchange folder
-	ExtSecret = ".key"
-	// DefaultKeyExchangeDir is where key exchange files are stored
+	ExtSecret               = ".key"
 	GitAttributesFile       = ".gitattributes"
 	kxGitAttributesContents = `# This file has been created by redact
 # DO NOT EDIT!

@@ -16,15 +16,10 @@ import (
 )
 
 const (
-	// AttrName defines name used in .gitattribute file's attribute
-	// like: `*.key filter=AttrName diff=AttrName`
-	AttrName = "redact"
 	// DefaultKeyDir contains standard key directory name inside .git/ directory
 	DefaultKeyDir = "redact"
 	// DefaultKeyFile contains standard key file name inside key directory
 	DefaultKeyFile = "key"
-	// DefaultKeyExchangeDir is where key exchange files are stored
-	DefaultKeyExchangeDir = ".redact"
 	// KeyMagic magic string the key file starts with
 	KeyMagic = "\000REDACT\000"
 	// KeyCurrentType current key file version
