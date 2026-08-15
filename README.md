@@ -37,7 +37,7 @@ Redact is designed as **encrypted configuration lifecycle tooling**: an encrypte
 | **Working-tree plaintext** — files exist in plaintext locally so users can edit them. | Disk encryption, endpoint security, branch protection policies. |
 | **Local workstation compromise** — could expose working-tree plaintext or local key material. | Standard workstation hardening, strict `.git/redact` file permissions. |
 | **Misconfigured `.gitattributes`** — files intended for encryption could be missed. | CI with `redact status --check`; PR review of `.gitattributes` changes. |
-| **Extension execution** — extensions are explicit integration points configurable via repository metadata. | Review `.redact/config.json` changes; use trusted binaries in automated workflows. |
+| **Extension execution** — extensions are explicit integration points configurable via repository metadata. | Review redact configuration file changes; use trusted binaries in automated workflows. |
 | **Key verification** — OpenPGP trust requires human verification. | Out-of-band fingerprint verification for grants. |
 
 These risks are inherent to the tool's design. Weigh them against your own threat model and organizational controls before adoption.
@@ -192,7 +192,12 @@ As always, play safe, and revoke all secrets if there is any chance it can cause
 
 Redact can store secret keys externally, with a simple extension mechanism. It allows managing multiple redact keys in a controlled manner. This package ships AWS Parameter Store and Azure Key Vault extensions, but implementing such an extension is very straightforward.
 
-In general, all extension configuration goes to `<repo root>/.redact/config.json`, which should be committed to the repository, and should not be encrypted. Every extension configuration can hold the following information:
+In general, all extension configuration goes to
+
+- `<repo root>/.redact/config.json` (default), or
+- `<repo root>/.config/redact.json` (as an alternative),
+
+which should be committed to the repository, and should not be encrypted. Every extension configuration can hold the following information:
 
 * name: name of the extension
 * command path: command to execute the extension, defaults to `redact-ext-<name>`

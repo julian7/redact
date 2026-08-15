@@ -98,7 +98,7 @@ func SaveGPGPubkeyToKX(redactRepo *repo.Repo, key *openpgp.Entity) error {
 
 // UpdateGPGKeysInKX updates all key exchange secret keys with new data
 func UpdateGPGKeysInKX(redactRepo *repo.Repo, writerCallback func(io.Writer)) (int, error) {
-	kxdir := redactRepo.ExchangeDir()
+	kxdir := repo.DefaultKeyExchangeDir
 	updated := 0
 
 	err := util.Walk(redactRepo.Workdir, kxdir, func(path string, _ os.FileInfo, err error) error {

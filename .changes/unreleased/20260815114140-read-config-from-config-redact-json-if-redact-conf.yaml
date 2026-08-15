@@ -1,0 +1,4 @@
+message: read config from .config/redact.json if .redact/config.json doesn't exist
+kind: Added
+severity: minor
+author: Balazs Nagy <julsevern@gmail.com>

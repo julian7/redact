@@ -30,7 +30,7 @@ func (r *Repo) GetExchangeFilename(filename string, log *logger.Logger) (string,
 		return "", err
 	}
 
-	return filepath.Join(r.ExchangeDir(), filename), nil
+	return filepath.Join(DefaultKeyExchangeDir, filename), nil
 }
 
 // GetExchangeFilenameStubFor returns file name stub of the Key Exchange for an
@@ -45,7 +45,7 @@ func (r *Repo) GetExchangeFilenameStubFor(fingerprint []byte, log *logger.Logger
 }
 
 func (r *Repo) CheckExchangeDir() error {
-	kxdir := r.ExchangeDir()
+	kxdir := DefaultKeyExchangeDir
 
 	st, err := r.Workdir.Stat(kxdir)
 	if err != nil {
@@ -60,7 +60,7 @@ func (r *Repo) CheckExchangeDir() error {
 }
 
 func (r *Repo) ensureExchangeDir(log *logger.Logger) error {
-	kxdir := r.ExchangeDir()
+	kxdir := DefaultKeyExchangeDir
 
 	st, err := r.Workdir.Stat(kxdir)
 	if err != nil {
@@ -88,7 +88,7 @@ func (r *Repo) ensureExchangeDir(log *logger.Logger) error {
 }
 
 func (r *Repo) ensureExchangeGitAttributes(log *logger.Logger) error {
-	kxdir := r.ExchangeDir()
+	kxdir := DefaultKeyExchangeDir
 
 	var data []byte
 
