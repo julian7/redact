@@ -23,6 +23,22 @@ func newTestRepo() *repo.Repo {
 	return &repo.Repo{Workdir: memfs.New()}
 }
 
+func setupConfigFiles(t *testing.T, r *repo.Repo, writeDotconf, writeRedact bool) {
+	t.Helper()
+
+	if writeDotconf {
+		writeExtsFile(t, r, dotconfPath(r), map[string]ext.Ext{
+			"dotconfig": {Command: "dotconfig-cmd"},
+		})
+	}
+
+	if writeRedact {
+		writeExtsFile(t, r, redactPath(r), map[string]ext.Ext{
+			"redact": {Command: "redact-cmd"},
+		})
+	}
+}
+
 func writeExtsFile(t *testing.T, r *repo.Repo, path string, exts map[string]ext.Ext) {
 	t.Helper()
 
@@ -68,6 +84,44 @@ func fileExists(t *testing.T, r *repo.Repo, path string) bool {
 	return err == nil
 }
 
+func assertExtSaved(t *testing.T, r *repo.Repo, path string) {
+	t.Helper()
+
+	saved := readExtsFile(t, r, path)
+
+	if _, ok := saved["new"]; !ok {
+		t.Errorf("expected new extension to be saved to %s", path)
+	}
+}
+
+func assertNotCreated(t *testing.T, r *repo.Repo, pathFn func(r *repo.Repo) string) {
+	t.Helper()
+
+	if pathFn == nil {
+		return
+	}
+
+	path := pathFn(r)
+
+	if fileExists(t, r, path) {
+		t.Errorf("did not expect %s to be created", path)
+	}
+}
+
+func assertDotconfUntouched(t *testing.T, r *repo.Repo) {
+	t.Helper()
+
+	dotconf := readExtsFile(t, r, dotconfPath(r))
+
+	if _, ok := dotconf["new"]; ok {
+		t.Errorf("%s should not have been modified when %s exists", dotconfPath(r), redactPath(r))
+	}
+
+	if _, ok := dotconf["dotconfig"]; !ok {
+		t.Errorf("expected %s content to remain untouched", dotconfPath(r))
+	}
+}
+
 func TestLoad(t *testing.T) {
 	tt := []struct {
 		name         string
@@ -106,18 +160,7 @@ func TestLoad(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			r := newTestRepo()
-
-			if tc.writeDotconf {
-				writeExtsFile(t, r, dotconfPath(r), map[string]ext.Ext{
-					"dotconfig": {Command: "dotconfig-cmd"},
-				})
-			}
-
-			if tc.writeRedact {
-				writeExtsFile(t, r, redactPath(r), map[string]ext.Ext{
-					"redact": {Command: "redact-cmd"},
-				})
-			}
+			setupConfigFiles(t, r, tc.writeDotconf, tc.writeRedact)
 
 			conf, err := ext.Load(r)
 			if err != nil {
@@ -181,18 +224,7 @@ func TestSave(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			r := newTestRepo()
-
-			if tc.writeDotconf {
-				writeExtsFile(t, r, dotconfPath(r), map[string]ext.Ext{
-					"dotconfig": {Command: "dotconfig-cmd"},
-				})
-			}
-
-			if tc.writeRedact {
-				writeExtsFile(t, r, redactPath(r), map[string]ext.Ext{
-					"redact": {Command: "redact-cmd"},
-				})
-			}
+			setupConfigFiles(t, r, tc.writeDotconf, tc.writeRedact)
 
 			conf, err := ext.Load(r)
 			if err != nil {
@@ -207,28 +239,11 @@ func TestSave(t *testing.T) {
 				t.Fatalf("Save() error = %v", err)
 			}
 
-			savedPath := tc.wantSavedAt(r)
-
-			saved := readExtsFile(t, r, savedPath)
-			if _, ok := saved["new"]; !ok {
-				t.Errorf("expected new extension to be saved to %s", savedPath)
-			}
-
-			if tc.wantNotCreatedAt != nil {
-				otherPath := tc.wantNotCreatedAt(r)
-				if fileExists(t, r, otherPath) {
-					t.Errorf("did not expect %s to be created when saving to %s", otherPath, savedPath)
-				}
-			}
+			assertExtSaved(t, r, tc.wantSavedAt(r))
+			assertNotCreated(t, r, tc.wantNotCreatedAt)
 
 			if tc.writeDotconf && tc.writeRedact {
-				dotconf := readExtsFile(t, r, dotconfPath(r))
-				if _, ok := dotconf["new"]; ok {
-					t.Errorf("%s should not have been modified when %s exists", dotconfPath(r), redactPath(r))
-				}
-				if _, ok := dotconf["dotconfig"]; !ok {
-					t.Errorf("expected %s content to remain untouched", dotconfPath(r))
-				}
+				assertDotconfUntouched(t, r)
 			}
 		})
 	}
