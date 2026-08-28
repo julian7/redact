@@ -1,4 +1,0 @@
-message: 'New build target: linux_arm64'
-type: Added
-severity: patch
-author: Balazs Nagy <julsevern@gmail.com>

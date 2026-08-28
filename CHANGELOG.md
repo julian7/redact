@@ -5,9 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v0.12.0] - August 28, 2026
 
-No changes so far.
+### Added
+
+- read config from .config/redact.json if .redact/config.json doesn't exist
+- New build target: linux_arm64
+
+### Changed
+
+- Updated readme after successful third party security review
 
 ## [v0.11.0] - June 25, 2026
 
@@ -257,7 +264,6 @@ Added:
 * multiple versions of secret key handling
 * secret key distribution using OpenPGP keys
 
-[Unreleased]: https://github.com/julian7/redact
 [v0.11.0]: https://github.com/julian7/redact/releases/tag/v0.11.0
 [v0.10.0]: https://github.com/julian7/redact/releases/tag/v0.10.0
 [v0.9.0]: https://github.com/julian7/redact/releases/tag/v0.9.0
@@ -275,3 +281,4 @@ Added:
 [v0.3.0]: https://github.com/julian7/redact/releases/tag/v0.3.0
 [v0.2.0]: https://github.com/julian7/redact/releases/tag/v0.2.0
 [v0.1.0]: https://github.com/julian7/redact/releases/tag/v0.1.0
+[v0.12.0]: https://github.com/julian7/redact/releases/tag/v0.12.0
