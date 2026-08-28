@@ -2,7 +2,7 @@
 grype = "latest"
 "golangci-lint" = "latest"
 goreleaser = "latest"
-"github:julian7/ihd" = "v0.2.0"
+"github:julian7/ihd" = "v0.2.1"
 
 [tasks.build]
 description = "Build the tools (default task)"
