@@ -26,7 +26,6 @@ func TestLess(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		tc := tc
 		name := fmt.Sprintf(
 			"%d %s %d",
 			tc.left,
@@ -54,7 +53,6 @@ func TestSwap(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		tc := tc
 		name := fmt.Sprintf(
 			"swapping %d and %d",
 			tc.left,
@@ -94,7 +92,6 @@ func TestEachKey(t *testing.T) {
 		{"error at 3", 3, 0, nil, "throwing error at 3"},
 	}
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			keyring := map[uint32]KeyHandler{
 				1: &fakeKey{epoch: 1},

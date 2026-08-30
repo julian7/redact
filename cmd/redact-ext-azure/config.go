@@ -18,13 +18,13 @@ func loadConfig(args []string) (*Config, error) {
 	config := &Config{}
 
 	for idx, item := range args {
-		i := strings.Index(item, "=")
-		if i < 0 {
+		before, after, ok := strings.Cut(item, "=")
+		if !ok {
 			return nil, fmt.Errorf("line %d: %w", idx+1, ErrInvalidArgument)
 		}
 
-		key := item[:i]
-		val := item[i+1:]
+		key := before
+		val := after
 
 		switch key {
 		case "vault", "keyvault":

@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
-	"github.com/aws/smithy-go/ptr"
 )
 
 type Config struct {
@@ -20,13 +19,13 @@ func loadConfig(args []string) (*Config, error) {
 	config := &Config{}
 
 	for idx, item := range args {
-		i := strings.Index(item, "=")
-		if i < 0 {
+		before, after, ok := strings.Cut(item, "=")
+		if !ok {
 			return nil, fmt.Errorf("line %d: %w", idx+1, ErrInvalidArgument)
 		}
 
-		key := item[:i]
-		val := item[i+1:]
+		key := before
+		val := after
 
 		switch key {
 		case "keyid":
@@ -62,18 +61,18 @@ func ssmClient(ctx context.Context) (*ssm.Client, error) {
 
 func (config *Config) get(ctx context.Context, client *ssm.Client) (*ssm.GetParameterOutput, error) {
 	return client.GetParameter(ctx, &ssm.GetParameterInput{
-		Name:           ptr.String(config.ParamPath),
-		WithDecryption: ptr.Bool(true),
+		Name:           new(config.ParamPath),
+		WithDecryption: new(true),
 	})
 }
 
 func (config *Config) put(ctx context.Context, client *ssm.Client, key string) (*ssm.PutParameterOutput, error) {
 	return client.PutParameter(ctx, &ssm.PutParameterInput{
-		Name:      ptr.String(config.ParamPath),
-		Value:     ptr.String(key),
-		DataType:  ptr.String("text"),
-		Overwrite: ptr.Bool(true),
-		KeyId:     ptr.String(config.KeyID),
+		Name:      new(config.ParamPath),
+		Value:     new(key),
+		DataType:  new("text"),
+		Overwrite: new(true),
+		KeyId:     new(config.KeyID),
 		Type:      types.ParameterTypeSecureString,
 	})
 }

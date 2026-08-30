@@ -1,0 +1,4 @@
+message: Updated to go 1.27
+type: Changed
+severity: patch
+author: Balazs Nagy <julsevern@gmail.com>

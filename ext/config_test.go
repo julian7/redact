@@ -157,7 +157,6 @@ func TestLoad(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			r := newTestRepo()
 			setupConfigFiles(t, r, tc.writeDotconf, tc.writeRedact)
@@ -221,7 +220,6 @@ func TestSave(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			r := newTestRepo()
 			setupConfigFiles(t, r, tc.writeDotconf, tc.writeRedact)

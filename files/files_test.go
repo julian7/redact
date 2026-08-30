@@ -192,7 +192,6 @@ func TestEncode(t *testing.T) { //nolint:funlen
 	}
 
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			err := k.Encode(tc.enctype, tc.epoch, tc.reader, tc.writer)
 			if testerr := tester.AssertError(tc.err, err); testerr != nil {
@@ -304,7 +303,6 @@ func TestDecode(t *testing.T) { //nolint:funlen
 		},
 	}
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			err := k.Decode(tc.reader, tc.writer)
 			if testerr := tester.AssertError(tc.err, err); testerr != nil {
@@ -358,7 +356,6 @@ func TestFileStatus(t *testing.T) {
 	testFN := "testfile.txt"
 
 	for _, tc := range testFileStatusCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			k, err := genGitRepo()
 			if err != nil {

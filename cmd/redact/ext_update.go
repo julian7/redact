@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/julian7/redact/ext"
 	"github.com/urfave/cli/v3"
@@ -80,9 +81,7 @@ func (rt *Runtime) doExtUpdate(_ context.Context, cmd *cli.Command) error {
 		delete(extension.Config, item)
 	}
 
-	for key, val := range cmd.StringMap("option") {
-		extension.Config[key] = val
-	}
+	maps.Copy(extension.Config, cmd.StringMap("option"))
 
 	if err = conf.UpdateExt(name, extension); err != nil {
 		return fmt.Errorf("updating extension config: %w", err)

@@ -35,7 +35,6 @@ func TestRegisterEncoder(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
 			err := encoder.RegisterEncoder(id, "fake-encoder", newFakeEncoder)

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"slices"
 	"testing"
 )
 
@@ -33,7 +34,6 @@ func TestWith(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			if got := With(tt.base); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("With() = %v, want %v", got, tt.want)
@@ -58,7 +58,6 @@ func TestLogger_SetLevel(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			tt.logger.SetLevel(tt.args.level)
 
@@ -91,7 +90,6 @@ func TestLogger_SetLevelFromString(t *testing.T) {
 		{"empty", New(), args{""}, InfoLevel, false},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.logger.SetLevelFromString(tt.args.level); (err != nil) != tt.wantErr {
 				t.Errorf("Logger.SetLevelFromString() error = %v, wantErr %v", err, tt.wantErr)
@@ -135,15 +133,7 @@ func (r *logRecorder) Verify(items []string) error {
 	}
 
 	for _, item := range items {
-		found := false
-
-		for _, rec := range r.Logs {
-			if item == rec {
-				found = true
-
-				break
-			}
-		}
+		found := slices.Contains(r.Logs, item)
 
 		if !found {
 			return fmt.Errorf("message %q not found, got %v", item, r.Logs)
@@ -173,7 +163,6 @@ func TestLogger_Log(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			for level := DebugLevel; level <= FatalLevel; level++ {
 				level := level
@@ -217,7 +206,6 @@ func TestLogger_Logf(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			for level := DebugLevel; level <= FatalLevel; level++ {
 				level := level

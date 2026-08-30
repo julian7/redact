@@ -32,7 +32,6 @@ func TestEncode(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			enc, err := tc.factory(sampleKey)
 			if err != nil {
@@ -76,7 +75,6 @@ func TestDecode(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			enc, err := tc.factory(sampleKey)
 			if err != nil {

@@ -95,7 +95,6 @@ func TestRead(t *testing.T) { //nolint:funlen
 		},
 	}
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			k := &files.SecretKey{}
 			if err := tester.AssertError(tc.err, k.Read(tc.reader)); err != nil {
@@ -129,7 +128,6 @@ func TestGenerate(t *testing.T) {
 	}
 
 	for idx, name := range []string{"latest", "first", "second"} {
-		idx, name := idx, name
 		t.Run(fmt.Sprintf("%s key", name), func(t *testing.T) {
 			key, err := k.Key(uint32(idx)) //nolint:gosec
 			if err != nil {
@@ -235,7 +233,6 @@ func TestLoad(t *testing.T) { //nolint:funlen,gocognit
 		// },
 	}
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			k, err := genGitRepo()
 			if err != nil {
@@ -339,7 +336,6 @@ func TestSaveTo(t *testing.T) { //nolint:funlen
 		},
 	}
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			k := files.SecretKey{}
 			for i := 0; i < tc.keys; i++ {
@@ -419,7 +415,6 @@ func TestSave(t *testing.T) { //nolint:funlen,gocognit
 		},
 	}
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			k, err := genGitRepo()
 			if err != nil {

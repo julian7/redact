@@ -6,16 +6,16 @@ import "io"
 type Discard struct{}
 
 // Print is a no-op
-func (Discard) Print(...interface{}) {}
+func (Discard) Print(...any) {}
 
 // Printf is a no-op
-func (Discard) Printf(string, ...interface{}) {}
+func (Discard) Printf(string, ...any) {}
 
 // Fatal is a no-op
-func (Discard) Fatal(...interface{}) {}
+func (Discard) Fatal(...any) {}
 
 // Fatalf is a no-op
-func (Discard) Fatalf(string, ...interface{}) {}
+func (Discard) Fatalf(string, ...any) {}
 
 // SetOutput is a no-op
 func (Discard) SetOutput(io.Writer) {}
