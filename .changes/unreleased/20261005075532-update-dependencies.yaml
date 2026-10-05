@@ -1,0 +1,4 @@
+message: update dependencies
+type: Fixed
+severity: patch
+author: Balazs Nagy <julsevern@gmail.com>
