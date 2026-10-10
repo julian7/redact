@@ -1,0 +1,4 @@
+message: redact key not found when git runs with absolute --git-dir or GIT_DIR or linked worktrees
+type: Fixed
+severity: patch
+author: Balazs Nagy <julsevern@gmail.com>

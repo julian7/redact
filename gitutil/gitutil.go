@@ -27,10 +27,8 @@ const (
 
 // GitRepoInfo provides the most basic information about a git repository
 type GitRepoInfo struct {
-	// Common contains internal git dir inside a workspace
+	// Common contains the absolute path of the common git dir
 	Common string
-	// LegacyCommon contains --git-dir, which is most likely a good common dir name
-	LegacyCommon string
 	// TopLevel contains a full path of the top level directory of the git repo
 	Toplevel string
 }
@@ -39,6 +37,7 @@ func DetectGitRepo() (*GitRepoInfo, error) {
 	out, err := exec.Command(
 		"git",
 		"rev-parse",
+		"--path-format=absolute",
 		"--show-toplevel",
 		"--git-dir",
 		"--git-common-dir",
@@ -47,45 +46,40 @@ func DetectGitRepo() (*GitRepoInfo, error) {
 		return nil, fmt.Errorf("retrieving git rev-parse output: %w", err)
 	}
 
-	data := strings.Split(string(out), "\n")
-	if len(data) != 4 {
+	pwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	return parseRevParse(string(out), pwd)
+}
+
+func parseRevParse(out, pwd string) (*GitRepoInfo, error) {
+	data := strings.Split(strings.TrimSuffix(out, "\n"), "\n")
+	if len(data) > 0 && data[0] == "--path-format=absolute" {
+		data = data[1:]
+	}
+
+	if len(data) != 3 {
 		return nil, ErrParsingGitRevParse
 	}
 
-	info := &GitRepoInfo{
-		Common:       data[2],
-		LegacyCommon: data[1],
-		Toplevel:     data[0],
+	toplevel, gitDir, common := data[0], data[1], data[2]
+	if common == "--git-common-dir" {
+		common = gitDir
 	}
 
-	if info.Common == "--git-common-dir" {
-		if err := info.FixCommon(); err != nil {
-			return nil, err
-		}
-	}
-
-	return info, nil
+	return &GitRepoInfo{
+		Common:   absPath(pwd, common),
+		Toplevel: absPath(pwd, toplevel),
+	}, nil
 }
 
-// FixCommon fixes common dir setting if legacy git CLI is in use
-func (i *GitRepoInfo) FixCommon() error {
-	if !filepath.IsAbs(i.LegacyCommon) {
-		i.Common = i.LegacyCommon
-
-		return nil
+func absPath(pwd, path string) string {
+	path = filepath.FromSlash(path)
+	if filepath.IsAbs(path) {
+		return filepath.Clean(path)
 	}
 
-	pwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	relPath, err := filepath.Rel(pwd, i.LegacyCommon)
-	if err != nil {
-		return fmt.Errorf("cannot find relative path for common dir detection: %w", err)
-	}
-
-	i.Common = relPath
-
-	return nil
+	return filepath.Join(pwd, path)
 }
