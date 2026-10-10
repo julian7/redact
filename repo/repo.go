@@ -58,3 +58,8 @@ func (r *Repo) LoadSecretKey(ctx context.Context, _ *cli.Command) (context.Conte
 
 	return ctx, nil
 }
+
+// CommonDir returns the absolute path of the common git dir
+func (r *Repo) CommonDir() string {
+	return r.commonDir
+}

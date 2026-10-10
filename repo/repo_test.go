@@ -100,3 +100,29 @@ func TestSetupRepoGitContext(t *testing.T) { //nolint:funlen
 		})
 	}
 }
+
+func TestRemoveGitSettingsMissingKeys(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+
+	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
+	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
+
+	tmp := t.TempDir()
+	git(t, tmp, "init", "-q")
+	// emulate a repo unlocked by an earlier version, without merge driver
+	git(t, tmp, "config", "filter.redact.clean", "redact git clean")
+	t.Chdir(tmp)
+
+	r := &repo.Repo{}
+
+	if err := r.RemoveGitSettings(nil); err != nil {
+		t.Fatalf("removing git settings: %v", err)
+	}
+
+	cmd := exec.Command("git", "config", "filter.redact.clean")
+	if err := cmd.Run(); err == nil {
+		t.Error("filter.redact.clean is still set")
+	}
+}

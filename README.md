@@ -56,10 +56,10 @@ This creates a secret key into `.git/redact` directory, and it also sets up diff
 Then, tell the repo which files are going to be encrypted. Create a `.gitattributes` file like this one:
 
 ```text
-*.key filter=redact diff=redact
+*.key filter=redact diff=redact merge=redact
 ```
 
-This file will instruct git to encrypt every file with the `.key` extension. Let's create a secret file called `private.key`:
+This file will instruct git to encrypt every file with the `.key` extension. `diff=redact` shows decrypted diffs, and `merge=redact` lets git merge these files in their decrypted form (see [Merging](#merging)). Let's create a secret file called `private.key`:
 
 ```text
 Secret Information
@@ -124,6 +124,26 @@ A  .redact/.gitattributes
 A  .redact/1857918cd0b4d303071d6624466cbb98bde0f1ce.asc
 A  .redact/1857918cd0b4d303071d6624466cbb98bde0f1ce.key
 ```
+
+## Merging
+
+Git merges the encrypted form of files, which always results in a binary conflict when both sides changed the same file. The `merge=redact` attribute tells git to use `redact git merge` as a merge driver instead: it decrypts the base, ours, and theirs versions, runs a regular three-way merge (`git merge-file`), and encrypts the result back. Merges, rebases, and cherry-picks resolve cleanly where they would for plaintext files, and conflicts show up in the working tree as plaintext with regular conflict markers:
+
+```text
+$ git merge feature
+Auto-merging private.key
+CONFLICT (content): Merge conflict in private.key
+$ cat private.key
+<<<<<<< private.key (ours)
+Secret Information
+=======
+Top Secret Information
+>>>>>>> private.key (theirs)
+```
+
+Resolve the conflict, then `git add` and commit as usual. Decrypted merge inputs are written to a private temporary directory in the git directory, and removed right after the merge.
+
+The merge driver is registered in git config by `redact unlock` (and `redact init`). Repositories unlocked with an earlier version need to be unlocked again to pick it up. Locked repositories fall back to git's binary conflict handling.
 
 ## What Redact provides, what other tools don't?
 

@@ -9,6 +9,7 @@ type NamedError struct {
 }
 
 var (
+	ErrConfigKeyNotFound  = fmt.Errorf("config key not found")
 	ErrGitCheckout        = fmt.Errorf("git checkout")
 	ErrNotFound           = fmt.Errorf("not found")
 	ErrParsingGitRevParse = fmt.Errorf("error parsing git rev-parse")

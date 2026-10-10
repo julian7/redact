@@ -1,0 +1,4 @@
+message: merge driver for encrypted files
+type: Added
+severity: minor
+author: Balazs Nagy <julsevern@gmail.com>

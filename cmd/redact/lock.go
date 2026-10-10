@@ -25,7 +25,7 @@ beforehand.`,
 
 func (rt *Runtime) lockDo(_ context.Context, _ *cli.Command) error {
 	err := rt.RemoveGitSettings(func(attr string) {
-		rt.Debugf("Removing filter/diff git config of %s", attr)
+		rt.Debugf("Removing filter/diff/merge git config of %s", attr)
 	})
 	if err != nil {
 		return fmt.Errorf("locking repo: %w", err)

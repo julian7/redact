@@ -19,7 +19,7 @@ func (rt *Runtime) app() *cli.Command {
 		Description: `redact - keep secrets in a git repository
 
 This application uses gitattributes(5) to encrypt and decrypt files behind
-the scenes (see filter and diff attributes). This process requires a secret
+the scenes (see filter, diff, and merge attributes). This process requires a secret
 key, what you can generate with "redact init" command. The secret key can
 hold multiple key versions, supporting key rotation and retrieval of old
 secrets.
@@ -31,7 +31,7 @@ Contributors can unlock the repo by running "redact unlock".
 To make files to be managed by adding the file pattern into a .gitattributes
 file like this:
 
-	*.secret.txt filter=redact diff=redact
+	*.secret.txt filter=redact diff=redact merge=redact
 
 The subsequent "git add" command will encrypt files matching this pattern.`,
 		Before:  rt.GlobalConfig,

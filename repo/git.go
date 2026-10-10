@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -19,6 +20,7 @@ var configItems = []configItem{
 	{"filter", "clean", "%q git clean --file=%%f"},
 	{"filter", "smudge", "%q git smudge"},
 	{"diff", "textconv", "%q git diff"},
+	{"merge", "driver", "%q git merge %%O %%A %%B %%L %%P"},
 }
 
 const (
@@ -50,12 +52,16 @@ func (r *Repo) SaveGitSettings(argv0 string, cb func(string)) error {
 	return nil
 }
 
-// RemoveGitSettings removes filter / diff settings from git repository config
+// RemoveGitSettings removes filter / diff / merge settings from git repository config
 func (r *Repo) RemoveGitSettings(cb func(string)) error {
 	for _, opt := range configItems {
 		attr := fmt.Sprintf("%s.%s.%s", opt.sect, AttrName, opt.key)
 
 		if err := gitutil.GitConfig("--unset", attr); err != nil {
+			if errors.Is(err, gitutil.ErrConfigKeyNotFound) {
+				continue
+			}
+
 			return fmt.Errorf("unsetting git settings: %w", err)
 		}
 
