@@ -1,0 +1,4 @@
+message: "redact status --fix adds missing diff=redact / merge=redact attributes to .gitattributes lines with filter=redact"
+type: Added
+severity: minor
+author: Balazs Nagy <julsevern@gmail.com>

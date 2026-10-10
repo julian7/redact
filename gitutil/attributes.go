@@ -10,13 +10,15 @@ import (
 	"strings"
 )
 
-// CheckAttrs fills in filter attributes for file entries
+// CheckAttrs fills in filter, diff, and merge attributes for file entries
 func (e *FileEntries) CheckAttrs() error {
 	cmd := exec.Command(
 		"git",
 		"check-attr",
 		"--stdin",
 		"filter",
+		"diff",
+		"merge",
 	)
 
 	feeder, err := cmd.StdinPipe()
@@ -92,25 +94,52 @@ func (e FileEntries) readCheckAttrs(reader io.ReadCloser) error {
 		}
 
 		line = strings.TrimRight(line, "\n")
-		items := strings.Split(line, ": filter: ")
 
-		if len(items) != 2 {
-			err = fmt.Errorf(`finding filter entry in line: "%s": %w`, line, err)
+		name, attr, value, ok := parseCheckAttrLine(line)
+		if !ok {
+			err = fmt.Errorf(`%w: "%s"`, ErrParsingCheckAttr, line)
 
 			break
 		}
 
-		item, ok := idx[items[0]]
+		item, ok := idx[name]
 		if !ok {
-			e.AddError(items[0], ErrNotFound)
+			e.AddError(name, ErrNotFound)
 
 			continue
 		}
 
-		item.Filter = items[1]
+		switch attr {
+		case "filter":
+			item.Filter = value
+		case "diff":
+			item.Diff = value
+		case "merge":
+			item.Merge = value
+		}
 	}
 
 	return err
+}
+
+func parseCheckAttrLine(line string) (name, attr, value string, ok bool) {
+	rest, value, ok := cutLast(line, ": ")
+	if !ok {
+		return "", "", "", false
+	}
+
+	name, attr, ok = cutLast(rest, ": ")
+
+	return name, attr, value, ok
+}
+
+func cutLast(s, sep string) (before, after string, found bool) {
+	idx := strings.LastIndex(s, sep)
+	if idx < 0 {
+		return s, "", false
+	}
+
+	return s[:idx], s[idx+len(sep):], true
 }
 
 func (e *FileEntries) logErrors(input io.ReadCloser) {

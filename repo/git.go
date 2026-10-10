@@ -3,6 +3,7 @@ package repo
 import (
 	"errors"
 	"fmt"
+	"path"
 	"time"
 
 	"github.com/julian7/redact/gitutil"
@@ -73,6 +74,26 @@ func (r *Repo) RemoveGitSettings(cb func(string)) error {
 	return nil
 }
 
+// MissingGitSettings returns filter / diff / merge settings missing from git
+// repository config
+func (r *Repo) MissingGitSettings() ([]string, error) {
+	missing := []string{}
+
+	for _, opt := range configItems {
+		attr := fmt.Sprintf("%s.%s.%s", opt.sect, AttrName, opt.key)
+
+		if _, err := gitutil.GitConfigGet(attr); err != nil {
+			if !errors.Is(err, gitutil.ErrConfigKeyNotFound) {
+				return nil, fmt.Errorf("checking git settings: %w", err)
+			}
+
+			missing = append(missing, attr)
+		}
+	}
+
+	return missing, nil
+}
+
 func (r *Repo) TouchFile(filePath string) error {
 	touchTime := time.Now()
 
@@ -90,10 +111,15 @@ func (r *Repo) TouchUp(files []string, rekey bool, softErrHandler func(error)) e
 		return nil
 	}
 
+	prefix, err := gitutil.CwdPrefix()
+	if err != nil {
+		return err
+	}
+
 	touched := make([]string, 0, len(files))
 
 	for _, entry := range files {
-		if err := r.TouchFile(entry); err != nil && softErrHandler != nil {
+		if err := r.TouchFile(path.Join(prefix, entry)); err != nil && softErrHandler != nil {
 			softErrHandler(err)
 
 			continue

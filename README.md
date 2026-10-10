@@ -143,7 +143,9 @@ Top Secret Information
 
 Resolve the conflict, then `git add` and commit as usual. Decrypted merge inputs are written to a private temporary directory in the git directory, and removed right after the merge.
 
-The merge driver is registered in git config by `redact unlock` (and `redact init`). Repositories unlocked with an earlier version need to be unlocked again to pick it up. Locked repositories fall back to git's binary conflict handling.
+The merge driver is registered in git config by `redact unlock` (and `redact init`). Repositories unlocked with an earlier version need to be unlocked again (or run `redact status --fix`) to pick it up. Locked repositories fall back to git's binary conflict handling.
+
+`redact status` warns about encrypted files missing `diff=redact` or `merge=redact` attributes, and about redact settings missing from git config. `redact status --fix` restores the git config, and adds the missing attributes to every `.gitattributes` line with `filter=redact` (lines explicitly setting another `diff` or `merge` value are left alone). Review and commit the modified `.gitattributes` files afterwards.
 
 ## What Redact provides, what other tools don't?
 

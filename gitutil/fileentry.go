@@ -7,6 +7,8 @@ import (
 // FileEntry contains a single file entry in a git repository
 type FileEntry struct {
 	Filter string
+	Diff   string
+	Merge  string
 	Mode   int64
 	Name   string
 	Status byte

@@ -4,9 +4,31 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"strings"
 )
 
 const gitConfigExitNotFound = 5
+
+// GitConfigGet retrieves configuration data. It returns
+// ErrConfigKeyNotFound if the key is not set.
+func GitConfigGet(key string) (string, error) {
+	out, err := exec.Command(
+		"git",
+		"config",
+		"--get",
+		key,
+	).Output()
+	if err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) && exitErr.ExitCode() == 1 {
+			return "", fmt.Errorf("getting config %s: %w", key, ErrConfigKeyNotFound)
+		}
+
+		return "", fmt.Errorf("getting config %s: %w", key, err)
+	}
+
+	return strings.TrimRight(string(out), "\n"), nil
+}
 
 // GitConfig sets configuration data
 func GitConfig(key, val string) error {

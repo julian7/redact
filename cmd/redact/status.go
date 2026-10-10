@@ -32,6 +32,10 @@ and not encrypted files. It also detects possible problems with file
 statuses, when a file was wrongly encrypted, or not encrypted even it should
 have been.
 
+It also warns about encrypted files missing diff=redact or merge=redact
+attributes in .gitattributes, and about missing redact settings in git
+config (which --fix restores).
+
 It also shows if a file is encrypted with an older key. While re-encryption
 as-is is possible with --rekey option, it's strongly recommended to replace
 these secrets instead.`,
@@ -98,6 +102,7 @@ type statusOptions struct {
 	toFix      []string
 	toRekey    []string
 	issues     []string
+	noAttrs    []string
 }
 
 func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
@@ -117,6 +122,10 @@ func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 	}
 
 	opts.key = rt.SecretKey
+
+	if err := rt.checkRepoSetup(opts.fixRepo); err != nil {
+		return err
+	}
 
 	files, err := gitutil.LsFiles(opts.args)
 	if err != nil {
@@ -145,6 +154,8 @@ func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 		}
 	}
 
+	opts.warnMissingAttrs()
+
 	if opts.check {
 		return opts.checkIssues()
 	}
@@ -158,6 +169,62 @@ func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 	}
 
 	return nil
+}
+
+func (rt *Runtime) checkRepoSetup(fix bool) error {
+	if err := rt.checkGitSettings(fix); err != nil {
+		return err
+	}
+
+	if !fix {
+		return nil
+	}
+
+	if err := rt.FixGitAttributes(func(name string, changed int) {
+		rt.Infof("Added missing attributes to %d line%s in %s; review and commit it", changed, plural[changed == 1], name)
+	}); err != nil {
+		return fmt.Errorf("fixing .gitattributes: %w", err)
+	}
+
+	return nil
+}
+
+func (rt *Runtime) checkGitSettings(fix bool) error {
+	missing, err := rt.MissingGitSettings()
+	if err != nil {
+		return err
+	}
+
+	if len(missing) == 0 {
+		return nil
+	}
+
+	if fix {
+		rt.Infof("Restoring missing git config: %s", strings.Join(missing, ", "))
+
+		return rt.SaveGitSettings()
+	}
+
+	for _, attr := range missing {
+		rt.Warnf("git config %s is not set; run \"redact status --fix\" to set it", attr)
+	}
+
+	return nil
+}
+
+func (opts *statusOptions) warnMissingAttrs() {
+	noAttrsLen := len(opts.noAttrs)
+	if noAttrsLen == 0 {
+		return
+	}
+
+	opts.Logger.Warnf(
+		"%d encrypted file%s without %s=%s and %s=%s attributes; run \"redact status --fix\" to add them",
+		noAttrsLen,
+		plural[noAttrsLen == 1],
+		"diff", repo.AttrName,
+		"merge", repo.AttrName,
+	)
 }
 
 func (opts *statusOptions) checkIssues() error {
@@ -244,6 +311,13 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 		opts.toFix = append(opts.toFix, entry.Name)
 	}
 
+	if shouldBeEncrypted {
+		if missing := missingAttrs(entry); len(missing) > 0 {
+			msg = append(msg, "missing "+strings.Join(missing, ", ")+" attribute")
+			opts.noAttrs = append(opts.noAttrs, entry.Name)
+		}
+	}
+
 	if isEncrypted {
 		msg = append(msg, fmt.Sprintf("encoded with %s", encoder.Name(encType)))
 		if encKeyVersion != opts.key.LatestKey {
@@ -259,6 +333,21 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 	if !opts.repoOnly && (!opts.quiet || len(msg) > 0) {
 		printFileEntry(entry, isEncrypted, shouldBeEncrypted, strings.Join(msg, "; "))
 	}
+}
+
+func missingAttrs(entry *gitutil.FileEntry) []string {
+	missing := []string{}
+
+	for _, attr := range []struct{ name, value string }{
+		{"diff", entry.Diff},
+		{"merge", entry.Merge},
+	} {
+		if attr.value != repo.AttrName {
+			missing = append(missing, attr.name+"="+repo.AttrName)
+		}
+	}
+
+	return missing
 }
 
 func printFileEntry(entry *gitutil.FileEntry, isEncrypted bool, shouldBeEncrypted bool, msg string) {

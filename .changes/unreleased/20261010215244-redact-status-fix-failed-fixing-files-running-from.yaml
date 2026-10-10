@@ -1,0 +1,4 @@
+message: redact status --fix failed fixing files running from subdirectory
+type: Fixed
+severity: patch
+author: Balazs Nagy <julsevern@gmail.com>

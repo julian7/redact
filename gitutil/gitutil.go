@@ -54,6 +54,18 @@ func DetectGitRepo() (*GitRepoInfo, error) {
 	return parseRevParse(string(out), pwd)
 }
 
+// CwdPrefix returns the path of the current directory relative to the top
+// level directory of the git repository, with a trailing slash ("" at top
+// level).
+func CwdPrefix() (string, error) {
+	out, err := exec.Command("git", "rev-parse", "--show-prefix").Output()
+	if err != nil {
+		return "", fmt.Errorf("retrieving git rev-parse output: %w", err)
+	}
+
+	return strings.TrimRight(string(out), "\n"), nil
+}
+
 func parseRevParse(out, pwd string) (*GitRepoInfo, error) {
 	data := strings.Split(strings.TrimSuffix(out, "\n"), "\n")
 	if len(data) > 0 && data[0] == "--path-format=absolute" {

@@ -12,6 +12,7 @@ var (
 	ErrConfigKeyNotFound  = fmt.Errorf("config key not found")
 	ErrGitCheckout        = fmt.Errorf("git checkout")
 	ErrNotFound           = fmt.Errorf("not found")
+	ErrParsingCheckAttr   = fmt.Errorf("error parsing git check-attr")
 	ErrParsingGitRevParse = fmt.Errorf("error parsing git rev-parse")
 )
 

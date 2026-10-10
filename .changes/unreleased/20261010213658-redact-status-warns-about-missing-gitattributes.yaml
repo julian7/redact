@@ -1,0 +1,4 @@
+message: redact status warns about / fixes missing gitattributes
+type: Added
+severity: patch
+author: Balazs Nagy <julsevern@gmail.com>

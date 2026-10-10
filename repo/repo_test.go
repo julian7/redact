@@ -117,6 +117,15 @@ func TestRemoveGitSettingsMissingKeys(t *testing.T) {
 
 	r := &repo.Repo{}
 
+	missing, err := r.MissingGitSettings()
+	if err != nil {
+		t.Fatalf("checking git settings: %v", err)
+	}
+
+	if len(missing) != 3 || missing[len(missing)-1] != "merge.redact.driver" {
+		t.Errorf("unexpected missing settings: %v", missing)
+	}
+
 	if err := r.RemoveGitSettings(nil); err != nil {
 		t.Fatalf("removing git settings: %v", err)
 	}
