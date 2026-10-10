@@ -7,11 +7,13 @@ goreleaser = "latest"
 [tasks.build]
 description = "Build the tools (default task)"
 alias = "default"
-run = [
-    "go build ./cmd/redact",
-    "go build ./cmd/redact-ext-aws",
-    "go build ./cmd/redact-ext-azure",
-]
+quiet = true
+run = """
+    ver=$(ihd next)
+    go build -ldflags="-X main.version=$ver" ./cmd/redact
+    go build -ldflags="-X main.version=$ver" ./cmd/redact-ext-aws
+    go build -ldflags="-X main.version=$ver" ./cmd/redact-ext-azure
+"""
 
 [tasks.check]
 description = "Run checks"
