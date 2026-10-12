@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [v0.13.0] - October 12, 2026
+
+### Added
+
+- merge driver for encrypted files
+- redact status warns about / fixes missing gitattributes
+- redact status --fix adds missing diff=redact / merge=redact attributes to .gitattributes lines with filter=redact
+
+### Fixed
+
+- redact key not found when git runs with absolute --git-dir or GIT_DIR or linked worktrees
+- redact status --fix failed fixing files running from subdirectory
+
 ## [v0.12.1] - October 5, 2026
 
 ### Changed
@@ -294,3 +307,4 @@ Added:
 [v0.1.0]: https://github.com/julian7/redact/releases/tag/v0.1.0
 [v0.12.0]: https://github.com/julian7/redact/releases/tag/v0.12.0
 [v0.12.1]: https://github.com/julian7/redact/releases/tag/v0.12.1
+[v0.13.0]: https://github.com/julian7/redact/releases/tag/v0.13.0
