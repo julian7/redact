@@ -72,7 +72,7 @@ func (k *SecretKey) Generate() error {
 func (k *SecretKey) Read(f io.Reader) error {
 	readbuf := make([]byte, len(KeyMagic))
 
-	_, err := f.Read(readbuf)
+	_, err := io.ReadFull(f, readbuf)
 	if err != nil {
 		return fmt.Errorf("reading preamble from key file: %w", err)
 	}
