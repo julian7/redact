@@ -73,9 +73,8 @@ func GetSecretKeys(filter string) ([][]byte, []string, error) {
 	return keys, warnings, nil
 }
 
-// DecryptWithKey decrypts a ciphertext, and stores into target path, using
-// the provided fingerprint.
-func DecryptWithKey(ciphertext string, fingerprint []byte) (io.ReadCloser, error) {
+// DecryptWithKey decrypts ciphertext from a stream using the provided fingerprint.
+func DecryptWithKey(ciphertext io.Reader, fingerprint []byte) (io.ReadCloser, error) {
 	var stdout, stderr bytes.Buffer
 
 	args := []string{
@@ -85,9 +84,9 @@ func DecryptWithKey(ciphertext string, fingerprint []byte) (io.ReadCloser, error
 		"-u",
 		fmt.Sprintf("%x", fingerprint),
 		"--decrypt",
-		ciphertext,
 	}
 	cmd := exec.Command("gpg", args...)
+	cmd.Stdin = ciphertext
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 

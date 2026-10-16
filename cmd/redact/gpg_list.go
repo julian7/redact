@@ -44,7 +44,15 @@ func (rt *Runtime) accessListDo(ctx context.Context, cmd *cli.Command) error {
 			return nil
 		}
 
-		entities, err := gpgutil.LoadPubKeyFromFile(path, true)
+		file, err := rt.Workdir.Open(path)
+		if err != nil {
+			rt.Warnf("cannot open public key: %v", err)
+
+			return nil
+		}
+		defer file.Close()
+
+		entities, err := gpgutil.LoadPubKey(file, true)
 		if err != nil {
 			rt.Warnf("cannot load public key: %v", err)
 

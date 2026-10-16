@@ -23,10 +23,13 @@ func SecretKeyFromExchange(redactRepo *repo.Repo, fingerprint []byte) (io.ReadCl
 		return nil, fmt.Errorf("finding key in exchange dir: %w", err)
 	}
 
-	reader, err := gpgutil.DecryptWithKey(
-		repo.ExchangeSecretKeyFile(stub),
-		fingerprint,
-	)
+	ciphertext, err := redactRepo.Workdir.Open(repo.ExchangeSecretKeyFile(stub))
+	if err != nil {
+		return nil, fmt.Errorf("opening exchange secret key: %w", err)
+	}
+	defer ciphertext.Close()
+
+	reader, err := gpgutil.DecryptWithKey(ciphertext, fingerprint)
 	if err != nil {
 		return nil, fmt.Errorf("decrypt secret key from exchange dir: %w", err)
 	}
@@ -82,7 +85,13 @@ func LoadGPGPubkeysFromKX(redactRepo *repo.Repo, fingerprint []byte) (openpgp.En
 		return nil, fmt.Errorf("finding exchange public key: %w", err)
 	}
 
-	pubkey, err := gpgutil.LoadPubKeyFromFile(repo.ExchangePubKeyFile(stub), true)
+	file, err := redactRepo.Workdir.Open(repo.ExchangePubKeyFile(stub))
+	if err != nil {
+		return nil, fmt.Errorf("opening public key for %x: %w", fingerprint, err)
+	}
+	defer file.Close()
+
+	pubkey, err := gpgutil.LoadPubKey(file, true)
 	if err != nil {
 		return nil, fmt.Errorf("loading public key for %x: %w", fingerprint, err)
 	}
