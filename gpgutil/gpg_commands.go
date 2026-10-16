@@ -40,37 +40,50 @@ func GetSecretKeys(filter string) ([][]byte, []string, error) {
 		return nil, nil, fmt.Errorf("fetching gpg secret keys: %w", err)
 	}
 
-	buf := bytes.NewBuffer(out)
-	warnings := []string{}
+	keys, warnings := parseSecretKeyListing(out)
+
+	return keys, warnings, nil
+}
+
+func parseSecretKeyListing(out []byte) ([][]byte, []string) {
+	var warnings []string
 
 	var keys [][]byte
 
-	for {
-		line, err := buf.ReadString('\n')
-		if err == io.EOF {
-			break
-		}
+	primary := false
 
-		if err != nil {
-			return nil, nil, fmt.Errorf("reading gpg secret key listing output: %w", err)
-		}
-
-		if strings.HasPrefix(line, "fpr:") {
-			items := strings.Split(line, ":")
-			if len(items) < 9 {
-				warnings = append(warnings, fmt.Sprintf("invalid private key entry: %q", line))
-			} else {
-				fingerprint, err := hex.DecodeString(items[9])
-				if err != nil {
-					warnings = append(warnings, fmt.Sprintf("invalid fingerprint: %s", items[9]))
-				}
-
-				keys = append(keys, fingerprint)
+	for _, line := range strings.Split(string(out), "\n") {
+		items := strings.Split(line, ":")
+		switch items[0] {
+		case "sec":
+			primary = true
+		case "ssb", "sub", "pub":
+			primary = false
+		case "fpr":
+			// Exchange files are named for the primary key, even when an
+			// encryption subkey supplies the private material for decryption.
+			if !primary {
+				continue
 			}
+
+			if len(items) < 10 {
+				warnings = append(warnings, fmt.Sprintf("invalid private key entry: %q", line))
+
+				continue
+			}
+
+			fingerprint, err := hex.DecodeString(items[9])
+			if err != nil || len(fingerprint) == 0 {
+				warnings = append(warnings, fmt.Sprintf("invalid fingerprint: %s", items[9]))
+
+				continue
+			}
+
+			keys = append(keys, fingerprint)
 		}
 	}
 
-	return keys, warnings, nil
+	return keys, warnings
 }
 
 // DecryptWithKey decrypts ciphertext from a stream using the provided fingerprint.
