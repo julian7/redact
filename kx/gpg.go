@@ -3,6 +3,7 @@ package kx
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -135,9 +136,17 @@ func UpdateGPGKeysInKX(redactRepo *repo.Repo, writerCallback func(io.Writer) err
 	kxdir := repo.DefaultKeyExchangeDir
 	updated := 0
 
-	err := util.Walk(redactRepo.Workdir, kxdir, func(path string, _ os.FileInfo, err error) error {
+	err := util.Walk(redactRepo.Workdir, kxdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return nil // nolint:nilerr
+			if path == kxdir && info == nil && errors.Is(err, os.ErrNotExist) {
+				return nil
+			}
+
+			return fmt.Errorf("walking exchange path %s: %w", path, err)
+		}
+
+		if path == kxdir && !info.IsDir() {
+			return repo.ErrExchangeIsNotDir
 		}
 
 		if !strings.HasSuffix(path, repo.ExtKeyArmor) {

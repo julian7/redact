@@ -1,0 +1,4 @@
+message: 'update GPG keys: better error detection on dir walk'
+type: Fixed
+severity: patch
+author: Balazs Nagy <julsevern@gmail.com>
