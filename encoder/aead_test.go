@@ -47,7 +47,7 @@ func TestEncode(t *testing.T) {
 				return
 			}
 
-			ret := aead.Seal(nil, sampleNonce[:aead.NonceSize()], samplePlaintext, nil)
+			ret := aead.Seal(nil, sampleNonce[:aead.NonceSize()], samplePlaintext, nil) // #nosec G407 we check encryption's this particular feature
 			if !bytes.Equal(ret, tc.cipher) {
 				// o, err := os.Create("fixtures/" + tc.name + "-sample.bin")
 				// if err != nil {
