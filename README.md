@@ -201,10 +201,9 @@ See [the to do](TODO.md) file for details.
 
 ## Revoke access
 
-When you lose trust of someone, there is one thing we can't do: we can't revoke
-historical access to secrets stored in the repository. We can do something about the future though:
+When you lose trust of someone, there is one thing we can't do: we can't revoke historical access to secrets stored in the repository. We can do something about the future though:
 
-* remove encrypted key from the key exchange folder. This will stop the user from recreating the secret key in the future.
+* remove encrypted redact key (`.key`) and stored public GPG key (`.asc`) from the key exchange folder. This will removes them from future key updates, and they won't receive new versions.
 * generate a new key: rotate secret key. You can re-encrypt secret files as they are, but since usually the untrusted party already knows about the secrets, they can easily figure out the newly encrypted files are indeed having the same content. This can possibly help them learning about the new secret key.
 * replacing secrets: when encrypted files are supposed to be exposed, the best thing we can do is not just replacing their encryptions, but replacing secrets too. For example, if encrypted files are secret parts of key pairs (like a TLS certificate), we might want to revoke the full certificate altogether, generating new ones.
 
