@@ -63,15 +63,31 @@ func (rt *Runtime) gpgGrantGPGDo(_ context.Context, cmd *cli.Command) error {
 	}
 
 	saved := 0
+	failed := 0
 
 	for _, key := range keyEntries {
 		if err := rt.saveGPGKey(key); err != nil {
 			rt.Warnf("cannot save key: %v", err)
 
+			failed++
+
 			continue
 		}
 
 		saved++
+	}
+
+	if failed > 0 {
+		if saved > 0 {
+			rt.Warnf(
+				"Added %d key%s, while %d failed. Don't forget to commit exchange files to the repository.",
+				saved,
+				plural[saved == 1],
+				failed,
+			)
+		}
+
+		return fmt.Errorf("adding %d key%s failed: %w", failed, plural[failed == 1], ErrFailedGrant)
 	}
 
 	rt.Infof(

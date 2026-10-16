@@ -10,4 +10,5 @@ var (
 	ErrSeek              = errors.New("cannot return to start of file")
 	ErrNoSuitableKey     = errors.New("no suitable key found")
 	ErrKeyAlreadyExists  = errors.New("secret key already exists")
+	ErrFailedGrant       = errors.New("failed to save GPG key")
 )
