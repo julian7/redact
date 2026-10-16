@@ -110,7 +110,7 @@ func UpdateGPGKeysInKX(redactRepo *repo.Repo, writerCallback func(io.Writer)) (i
 			return nil
 		}
 
-		fingerprintText := strings.TrimRight(filepath.Base(path), repo.ExtKeyArmor)
+		fingerprintText := strings.TrimSuffix(filepath.Base(path), repo.ExtKeyArmor)
 
 		fingerprint, err := hex.DecodeString(fingerprintText)
 		if err != nil {
