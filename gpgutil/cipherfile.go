@@ -27,10 +27,14 @@ func Encrypt(reader io.Reader, writer io.Writer, receiver *openpgp.Entity) error
 		return fmt.Errorf("creating encryption stream: %w", err)
 	}
 
-	defer plain.Close()
-
 	if _, err = io.Copy(plain, reader); err != nil {
+		_ = plain.Close()
+
 		return fmt.Errorf("writing secret key to encryption stream: %w", err)
+	}
+
+	if err := plain.Close(); err != nil {
+		return fmt.Errorf("closing encryption stream: %w", err)
 	}
 
 	return nil

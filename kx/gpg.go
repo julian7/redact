@@ -1,6 +1,7 @@
 package kx
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -34,28 +35,44 @@ func SecretKeyFromExchange(redactRepo *repo.Repo, fingerprint []byte) (io.ReadCl
 }
 
 // SaveGPGKeyToKX saves secret key into key exchange, encrypted with OpenPGP key
-func SaveGPGKeyToKX(redactRepo *repo.Repo, key *openpgp.Entity, writerCallback func(io.Writer)) error {
+func SaveGPGKeyToKX(redactRepo *repo.Repo, key *openpgp.Entity, writerCallback func(io.Writer) error) error {
 	kxstub, err := redactRepo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint, nil)
 	if err != nil {
 		return err
 	}
 
-	secretName := repo.ExchangeSecretKeyFile(kxstub)
-
-	secretWriter, err := os.OpenFile(secretName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("opening exchange secret key: %w", err)
+	plaintext := bytes.Buffer{}
+	if err = writerCallback(&plaintext); err != nil {
+		return fmt.Errorf("reading key: %w", err)
 	}
-	defer secretWriter.Close()
 
-	r, w := io.Pipe()
+	cyphertext := bytes.Buffer{}
+	if err = gpgutil.Encrypt(&plaintext, &cyphertext, key); err != nil {
+		return fmt.Errorf("encrypting key: %w", err)
+	}
 
-	go func(writer io.WriteCloser) {
-		writerCallback(writer)
-		writer.Close()
-	}(w)
+	tmpfile, err := redactRepo.Workdir.TempFile(repo.DefaultKeyExchangeDir, "kx-")
+	if err != nil {
+		return fmt.Errorf("creating temp file for encrypted key: %w", err)
+	}
 
-	return gpgutil.Encrypt(r, secretWriter, key)
+	defer redactRepo.Workdir.Remove(tmpfile.Name()) // nolint:errcheck
+
+	if _, err = io.Copy(tmpfile, &cyphertext); err != nil {
+		_ = tmpfile.Close()
+
+		return fmt.Errorf("writing encrypted key: %w", err)
+	}
+
+	if err = tmpfile.Close(); err != nil {
+		return fmt.Errorf("closing encrypted key: %w", err)
+	}
+
+	if err = redactRepo.Workdir.Rename(tmpfile.Name(), repo.ExchangeSecretKeyFile(kxstub)); err != nil {
+		return fmt.Errorf("updating encrypted key: %w", err)
+	}
+
+	return nil
 }
 
 // LoadGPGPubkeysFromKX loads a public key from key exchange
@@ -80,24 +97,32 @@ func SaveGPGPubkeyToKX(redactRepo *repo.Repo, key *openpgp.Entity) error {
 		return err
 	}
 
-	pubkeyName := repo.ExchangePubKeyFile(kxstub)
-
-	pubkeyWriter, err := redactRepo.Workdir.OpenFile(pubkeyName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	pubkeyWriter, err := redactRepo.Workdir.TempFile(repo.DefaultKeyExchangeDir, "kx-")
 	if err != nil {
-		return fmt.Errorf("opening exchange pubkey file: %w", err)
+		return fmt.Errorf("creating temp file for public key: %w", err)
 	}
 
-	defer pubkeyWriter.Close()
+	defer redactRepo.Workdir.Remove(pubkeyWriter.Name()) // nolint:errcheck
 
 	if err := gpgutil.SavePubKey(pubkeyWriter, key, true); err != nil {
+		_ = pubkeyWriter.Close()
+
 		return fmt.Errorf("serializing public key to exchange store: %w", err)
+	}
+
+	if err := pubkeyWriter.Close(); err != nil {
+		return fmt.Errorf("closing public key: %w", err)
+	}
+
+	if err := redactRepo.Workdir.Rename(pubkeyWriter.Name(), repo.ExchangePubKeyFile(kxstub)); err != nil {
+		return fmt.Errorf("updating public key: %w", err)
 	}
 
 	return nil
 }
 
 // UpdateGPGKeysInKX updates all key exchange secret keys with new data
-func UpdateGPGKeysInKX(redactRepo *repo.Repo, writerCallback func(io.Writer)) (int, error) {
+func UpdateGPGKeysInKX(redactRepo *repo.Repo, writerCallback func(io.Writer) error) (int, error) {
 	kxdir := repo.DefaultKeyExchangeDir
 	updated := 0
 

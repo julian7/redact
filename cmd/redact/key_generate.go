@@ -52,10 +52,8 @@ func (rt *Runtime) generateDo(_ context.Context, _ *cli.Command) error {
 		}
 	}
 
-	updatedKeys, err := kx.UpdateGPGKeysInKX(rt.Repo, func(w io.Writer) {
-		if err := rt.SaveTo(w); err != nil {
-			rt.Warn(err)
-		}
+	updatedKeys, err := kx.UpdateGPGKeysInKX(rt.Repo, func(w io.Writer) error {
+		return rt.SaveTo(w)
 	})
 	if err != nil {
 		rt.Warn(`unable to update secret keys; restore original key with "redact unlock", and try again`)

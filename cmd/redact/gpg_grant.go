@@ -103,11 +103,8 @@ func (rt *Runtime) loadKeys(pgpFiles []string, isArmor bool, keyEntries *openpgp
 func (rt *Runtime) saveGPGKey(key *openpgp.Entity) error {
 	gpgutil.PrintKey(key)
 
-	err := kx.SaveGPGKeyToKX(rt.Repo, key, func(w io.Writer) {
-		err := rt.SaveTo(w)
-		if err != nil {
-			rt.Warn(err)
-		}
+	err := kx.SaveGPGKeyToKX(rt.Repo, key, func(w io.Writer) error {
+		return rt.SaveTo(w)
 	})
 	if err != nil {
 		return err
