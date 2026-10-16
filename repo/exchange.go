@@ -19,8 +19,8 @@ const (
 	GitAttributesFile       = ".gitattributes"
 	kxGitAttributesContents = `# This file has been created by redact
 # DO NOT EDIT!
-* !filter !diff
-*.gpg binary
+* !filter !diff !merge
+*.key binary
 `
 )
 

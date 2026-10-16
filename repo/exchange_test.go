@@ -50,7 +50,7 @@ func writeKX(r *repo.Repo) error {
 		r,
 		filepath.Join(kxdir, ".gitattributes"),
 		0644,
-		"* !filter !diff\n*.gpg binary\n",
+		"* !filter !diff !merge\n*.key binary\n",
 	)
 }
 
