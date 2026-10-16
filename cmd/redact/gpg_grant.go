@@ -38,8 +38,8 @@ func (rt *Runtime) gpgGrantCmd() *cli.Command {
 func (rt *Runtime) gpgGrantGPGDo(_ context.Context, cmd *cli.Command) error {
 	var keyEntries openpgp.EntityList
 
-	rt.loadKeys(cmd.StringSlice("openpgp"), false, &keyEntries)
-	rt.loadKeys(cmd.StringSlice("openpgp-armor"), true, &keyEntries)
+	rt.loadKeys(cmd.StringSlice("file"), false, &keyEntries)
+	rt.loadKeys(cmd.StringSlice("armor"), true, &keyEntries)
 
 	args := cmd.Args()
 	if args.Len() > 0 {
