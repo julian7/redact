@@ -54,14 +54,7 @@ func (rt *Runtime) distributeKey(cmd *cli.Command, operation string) error {
 	}
 
 	if cmd.String("ext") == "" && !gpgExtensionMode() {
-		filtered := items[:0]
-		for _, item := range items {
-			if item.Name() != gpgExtensionName {
-				filtered = append(filtered, item)
-			}
-		}
-
-		items = filtered
+		items = withoutGPGExtension(items)
 	}
 
 	extErr := ext.RunAll(items, operation, buf.Bytes())
@@ -83,6 +76,17 @@ func (rt *Runtime) distributeKey(cmd *cli.Command, operation string) error {
 	}
 
 	return extErr
+}
+
+func withoutGPGExtension(items []ext.Ext) []ext.Ext {
+	filtered := make([]ext.Ext, 0, len(items))
+	for _, item := range items {
+		if item.Name() != gpgExtensionName {
+			filtered = append(filtered, item)
+		}
+	}
+
+	return filtered
 }
 
 func (rt *Runtime) refreshGPGKeys() error {

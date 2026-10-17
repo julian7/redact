@@ -14,14 +14,16 @@ func (rt *Runtime) extRunCmd() *cli.Command {
 		Name:        "run",
 		Usage:       "Run extension commands",
 		Description: `Run commands in redact extensions`,
-		Action: func(ctx context.Context, cmd *cli.Command) error {
+		Action: func(_ context.Context, cmd *cli.Command) error {
 			if err := rt.SetupRepo(); err != nil {
 				return err
 			}
+
 			conf, err := ext.Load(rt.Repo)
 			if err != nil {
 				return err
 			}
+
 			items, err := conf.Select("", "", nil)
 			if err != nil {
 				return err

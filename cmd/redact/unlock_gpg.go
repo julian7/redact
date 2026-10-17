@@ -14,9 +14,8 @@ import (
 
 func (rt *Runtime) unlockGpgCmd() *cli.Command {
 	return &cli.Command{
-		Name:   gpgExtensionName,
-		Usage:  "Unlocks repository",
-		Before: requireInTreeGPGMode,
+		Name:  gpgExtensionName,
+		Usage: "Unlocks repository",
 		Description: `Unlock repository
 
 This command unlocks the repository using a GPG key.
@@ -38,29 +37,27 @@ this case, you have to provide the appropriate key with the --gpgkey option.`,
 }
 
 func (rt *Runtime) unlockGpgDo(_ context.Context, cmd *cli.Command) error {
-	var err error
-
 	if err := rt.SetupRepo(); err != nil {
 		return fmt.Errorf("building secret key: %w", err)
 	}
 
-	var key string
+	if gpgExtensionMode() {
+		options := map[string]string{}
+		if key := cmd.String("gpgkey"); key != "" {
+			options["gpgkey"] = key
+		}
 
-	key, err = rt.loadKeyFromGPG(cmd.String("gpgkey"))
+		if err := rt.loadSecretKeyFromExt(gpgExtensionName, "", options); err != nil {
+			return err
+		}
+
+		return rt.finishUnlock()
+	}
+
+	err := rt.loadSecretKeyFromGPG(cmd.String("gpgkey"))
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			return nil
-		}
-
-		if key != "" {
-			fmt.Printf("Hint: try to unlock by hand:\n\n")
-			fmt.Printf(
-				"  gpg -o key -u %s -d .redact/%s.key\n",
-				key,
-				key,
-			)
-			fmt.Println("  redact unlock key")
-			fmt.Println("  rm key")
 		}
 
 		return err
@@ -77,6 +74,26 @@ func (rt *Runtime) unlockGpgDo(_ context.Context, cmd *cli.Command) error {
 	}
 
 	fmt.Println("Repo is unlocked.")
+
+	return nil
+}
+
+func (rt *Runtime) loadSecretKeyFromGPG(gpgkey string) error {
+	key, err := rt.loadKeyFromGPG(gpgkey)
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return err
+		}
+
+		if key != "" {
+			fmt.Printf("Hint: try to unlock by hand:\n\n")
+			fmt.Printf("  gpg -o key -u %s -d .redact/%s.key\n", key, key)
+			fmt.Println("  redact unlock key")
+			fmt.Println("  rm key")
+		}
+
+		return err
+	}
 
 	return nil
 }

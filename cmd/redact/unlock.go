@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 
 	"github.com/julian7/redact/ext"
 	"github.com/urfave/cli/v3"
@@ -64,11 +66,23 @@ func (rt *Runtime) unlockDo(_ context.Context, cmd *cli.Command) error {
 			return err
 		}
 	} else {
-		if err := rt.loadSecretKeyFromExt(extName, cmd.String(extCommandFlag), cmd.StringMap(extOptionFlag)); err != nil {
+		err := rt.loadSecretKeyFromExt(extName, cmd.String(extCommandFlag), cmd.StringMap(extOptionFlag))
+		if errors.Is(err, ErrNoSuitableKey) && extName == "" && cmd.String(extCommandFlag) == "" && !gpgExtensionMode() {
+			err = rt.loadSecretKeyFromGPG(cmd.StringMap(extOptionFlag)["gpgkey"])
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+		}
+
+		if err != nil {
 			return err
 		}
 	}
 
+	return rt.finishUnlock()
+}
+
+func (rt *Runtime) finishUnlock() error {
 	if err := rt.Save(); err != nil {
 		return err
 	}
@@ -120,6 +134,10 @@ func (rt *Runtime) loadSecretKeyFromExt(name, command string, options map[string
 	items, err := conf.Select(name, command, options)
 	if err != nil {
 		return err
+	}
+
+	if name == "" && !gpgExtensionMode() {
+		items = withoutGPGExtension(items)
 	}
 
 	for _, item := range items {
