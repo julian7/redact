@@ -178,7 +178,7 @@ To switch, either set `REDACT_GIT_CLEAN_TYPE` environment variable, or set `git.
   * generate: generates new secret key
   * info (default): shows secret key info
   * list: lists all keys
-  * save: saves secret key in Key Exchange (both OpenPGP and extensions)
+  * save: publishes secret key to the enabled Key Exchange destinations
 * lock: locks repository (deletes local key and removes diff/filter configs)
 * grant: grants access through configured extensions
 * revoke: removes access through configured extensions
@@ -212,7 +212,7 @@ As always, play safe, and revoke all secrets if there is any chance it can cause
 
 ## Extensions
 
-Redact can store secret keys externally, with a simple extension mechanism. It allows managing multiple redact keys in a controlled manner. This package ships AWS Parameter Store and Azure Key Vault extensions, but implementing such an extension is very straightforward.
+Redact can store secret keys externally, with a simple extension mechanism. It allows managing multiple redact keys in a controlled manner. This package ships AWS Parameter Store, Azure Key Vault, and GnuPG extensions.
 
 In general, all extension configuration goes to
 
@@ -264,19 +264,19 @@ Extensions manage Key Exchange collections. Exported collections use PEM seriali
 | `get` | Retrieve a Key Exchange collection | Unused | Key Exchange collection (PEM), on success |
 | `put` | Store the supplied Key Exchange collection; retries must converge | Key Exchange collection (PEM) | No required output |
 | `grant` | Register access and distribute the current Key Exchange collection | Key Exchange collection (PEM) | No required output |
-| `revoke` | Remove matching access registrations and copies | Usused | No required output |
+| `revoke` | Remove matching access registrations and copies | Unused | No required output |
 | `update` | Refresh the Key Exchange collection at all remaining destinations | Key Exchange collection (PEM) | No required output |
 
 Send diagnostics, candidates, and retry instructions to **stderr**, including when more selection information is needed. Keep successful `get` stdout exclusively the exported Key Exchange collection in PEM format. Selection is a second invocation with settings; no interactive selection is required.
 
 | Exit code | Meaning | Outcome (get) | Outcome (other operations) |
 |---|---|---|---|
-| `0` | Success | Stop successfully | Continue |
+| `0` | Success | Stop successfully | Continue successfully |
 | `1` | Not applicable, including unsupported operations | Continue (skip) | Continue (skip) |
 | `2` | Missing data or selection input; explain how to proceed on stderr | Stop with error | Stop with error |
 | `3` | Failure | Stop with error | Stop with error |
 
-Launch failures, signals, and other exit codes are treated as failures. Exhausting all extensions without a key is an error.
+Launch failures, signals, and exit codes other than the above mentioned are treated as failures. Exhausting all extensions without a key is an error.
 
 ### Extension Integration
 
@@ -295,12 +295,24 @@ redact revoke --ext custom --option recipient=alice
 | `key generate` | `update` |
 | `key save` | `put` |
 | `revoke` | `revoke` |
-| `update` | `update` |
 | `unlock` | `get` |
 
-Key Exchange publishing attempts every configured destination, even after errors. Successful changes remain available for inspection and retry; there is no rollback of the Key Exchange collection. A mix of success and unsupported destinations succeeds; unsupported destinations alone return `1`. Other errors are reported after the remaining attempts, using their highest severity. An empty configuration permits init/save/generate; grant/revoke require configured destinations or explicit selection.
+Collection changes made before an error remain for inspection and recovery; Redact does not roll them back. An empty configuration permits init/save/generate. Grant/revoke require configured destinations or explicit selection.
 
 `put`, `grant`, and `update` perform real writes, including writes to cloud stores. Rotation saves the new local Key Exchange collection, retaining previous key epochs, before distribution. Repository exchange changes need a user commit and push; Redact never commits or pushes automatically. Revoke performs removal only, with no implicit rotation or publication, and cannot remove historical access.
+
+### GnuPG extension
+
+`redact-ext-gpg` stores encrypted Key Exchange copies and armored public-key registrations in `.redact/<fingerprint>.key` and `.redact/<fingerprint>.asc`. It supports `list`, `get`, `put`, `grant`, `revoke`, and `update`. Use `recipient=SELECTOR` for a local GnuPG public-key selector, `file=PATH` for a binary public key, or `armor=PATH` for an armored public key. `get` accepts `gpgkey=SELECTOR`; if several local identities can unlock the repository, it lists candidates on stderr and asks for a second invocation with that setting. `GNUPGHOME` and other GnuPG environment variables are inherited.
+
+During the transition, leave `FF_GIT_EXT` unset to keep the built-in OpenPGP commands and legacy GPG refresh enabled; the GPG extension reports not applicable and is skipped. Set `FF_GIT_EXT=1` to disable `redact openpgp` and `redact unlock gpg`, and use the GPG extension instead. Other configured extensions remain active. For an old GPG-only repository with no extension configuration, force the extension for one invocation:
+
+```shell
+FF_GIT_EXT=1 redact unlock --ext gpg --option gpgkey=alice@example.org
+FF_GIT_EXT=1 redact grant --ext gpg --option recipient=alice@example.org
+```
+
+With the flag enabled, configure `gpg` in the normal extension configuration to include it in automatic unlock and collection updates. `key generate` invokes `update`; `key save` invokes `put`.
 
 ## Configuration with environment variables
 
@@ -309,11 +321,12 @@ A couple of options are configurable with environment variables too, which are t
 * `REDACT_GIT_CLEAN_EPOCH`: sets `--epoch` option for `redact git clean` subcommand
 * `REDACT_GIT_CLEAN_TYPE`: sets `--type` option for `redact git clean` subcommand
 * `REDACT_LOG_LEVEL`: sets `--verbosity` global option
-* `REDACT_LOG_LEVEL`: sets `--logfile` global option
+* `REDACT_LOG_FILE`: sets `--logfile` global option
 * `REDACT_STRICT`: sets `--strict-permissions` global option
 * `REDACT_UNLOCK_EXPORTED_KEY`: sets `--exported-key` option for `redact unlock` subcommand
 * `REDACT_UNLOCK_GPG_KEY`: sets `--gpgkey` option for `redact unlock gpg` subcommand
 * `REDACT_UNLOCK_KEY`: sets `--key` option for `redact unlock` subcommand
+* `FF_GIT_EXT`: enables the GPG extension and disables the in-tree GPG path when set
 
 ## Any issues?
 
