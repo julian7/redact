@@ -25,8 +25,8 @@ const (
 )
 
 // GetExchangeFilename returns full path to file name in Key Exchange
-func (r *Repo) GetExchangeFilename(filename string, log *logger.Logger) (string, error) {
-	if err := r.ensureExchangeDir(log); err != nil {
+func (r *Repo) GetExchangeFilename(filename string) (string, error) {
+	if err := r.ensureExchangeDir(); err != nil {
 		return "", err
 	}
 
@@ -40,8 +40,8 @@ func (r *Repo) GetExchangeFilename(filename string, log *logger.Logger) (string,
 //
 // - .asc: Public key ASCII armor file
 // - .key: Secret key encryped with public key
-func (r *Repo) GetExchangeFilenameStubFor(fingerprint []byte, log *logger.Logger) (string, error) {
-	return r.GetExchangeFilename(fmt.Sprintf("%x", fingerprint), log)
+func (r *Repo) GetExchangeFilenameStubFor(fingerprint []byte) (string, error) {
+	return r.GetExchangeFilename(fmt.Sprintf("%x", fingerprint))
 }
 
 func (r *Repo) CheckExchangeDir() error {
@@ -59,7 +59,7 @@ func (r *Repo) CheckExchangeDir() error {
 	return nil
 }
 
-func (r *Repo) ensureExchangeDir(log *logger.Logger) error {
+func (r *Repo) ensureExchangeDir() error {
 	kxdir := DefaultKeyExchangeDir
 
 	st, err := r.Workdir.Stat(kxdir)
@@ -80,14 +80,14 @@ func (r *Repo) ensureExchangeDir(log *logger.Logger) error {
 		return fmt.Errorf("%q: %w", kxdir, ErrExchangeIsNotDir)
 	}
 
-	if err := r.ensureExchangeGitAttributes(log); err != nil {
+	if err := r.ensureExchangeGitAttributes(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *Repo) ensureExchangeGitAttributes(log *logger.Logger) error {
+func (r *Repo) ensureExchangeGitAttributes() error {
 	kxdir := DefaultKeyExchangeDir
 
 	var data []byte
@@ -116,9 +116,7 @@ func (r *Repo) ensureExchangeGitAttributes(log *logger.Logger) error {
 			return nil
 		}
 
-		if log != nil {
-			log.Warn("rewriting .gitattributes file in key exchange dir")
-		}
+		logger.Warn("rewriting .gitattributes file in key exchange dir")
 	}
 
 	if err := util.WriteFile(r.Workdir, gaFileName, []byte(kxGitAttributesContents), 0644); err != nil {

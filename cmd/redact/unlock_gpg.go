@@ -8,6 +8,7 @@ import (
 
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/kx"
+	"github.com/julian7/redact/logger"
 	"github.com/julian7/redact/repo"
 	"github.com/urfave/cli/v3"
 )
@@ -68,7 +69,7 @@ func (rt *Runtime) unlockGpgDo(_ context.Context, cmd *cli.Command) error {
 	}
 
 	if err := rt.ForceReencrypt(false, func(err error) {
-		rt.Warn(err.Error())
+		logger.Warn(err.Error())
 	}); err != nil {
 		return err
 	}
@@ -106,16 +107,16 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 
 	if len(warns) > 0 {
 		for _, item := range warns {
-			rt.Warn(item)
+			logger.Warn(item)
 		}
 	}
 
 	availableKeys := make([]int, 0, len(keys))
 
 	for idx, key := range keys {
-		stub, err := rt.GetExchangeFilenameStubFor(key, rt.Logger)
+		stub, err := rt.GetExchangeFilenameStubFor(key)
 		if err != nil {
-			rt.Warnf("cannot get exchange filename for %x: %v", key, err)
+			logger.Warnf("cannot get exchange filename for %x: %v", key, err)
 
 			continue
 		}
@@ -136,7 +137,7 @@ func (rt *Runtime) selectKey(keyname string) (*[]byte, error) {
 		for _, idx := range availableKeys {
 			pubKey, err := kx.LoadGPGPubkeysFromKX(rt.Repo, keys[idx])
 			if err != nil {
-				rt.Warnf("%v", err)
+				logger.Warnf("%v", err)
 
 				continue
 			}

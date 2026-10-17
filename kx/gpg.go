@@ -19,7 +19,7 @@ import (
 // SecretKeyFromExchange loads data from an encrypted secret key into provided
 // object, and then saves it.
 func SecretKeyFromExchange(redactRepo *repo.Repo, fingerprint []byte) (io.ReadCloser, error) {
-	stub, err := redactRepo.GetExchangeFilenameStubFor(fingerprint, nil)
+	stub, err := redactRepo.GetExchangeFilenameStubFor(fingerprint)
 	if err != nil {
 		return nil, fmt.Errorf("finding key in exchange dir: %w", err)
 	}
@@ -40,7 +40,7 @@ func SecretKeyFromExchange(redactRepo *repo.Repo, fingerprint []byte) (io.ReadCl
 
 // SaveGPGKeyToKX saves secret key into key exchange, encrypted with OpenPGP key
 func SaveGPGKeyToKX(redactRepo *repo.Repo, key *openpgp.Entity, writerCallback func(io.Writer) error) error {
-	kxstub, err := redactRepo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint, nil)
+	kxstub, err := redactRepo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func SaveGPGKeyToKX(redactRepo *repo.Repo, key *openpgp.Entity, writerCallback f
 
 // LoadGPGPubkeysFromKX loads a public key from key exchange
 func LoadGPGPubkeysFromKX(redactRepo *repo.Repo, fingerprint []byte) (openpgp.EntityList, error) {
-	stub, err := redactRepo.GetExchangeFilenameStubFor(fingerprint, nil)
+	stub, err := redactRepo.GetExchangeFilenameStubFor(fingerprint)
 	if err != nil {
 		return nil, fmt.Errorf("finding exchange public key: %w", err)
 	}
@@ -102,7 +102,7 @@ func LoadGPGPubkeysFromKX(redactRepo *repo.Repo, fingerprint []byte) (openpgp.En
 
 // SaveGPGPubkeyToKX saves public OpenPGP key into key exchange
 func SaveGPGPubkeyToKX(redactRepo *repo.Repo, key *openpgp.Entity) error {
-	kxstub, err := redactRepo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint, nil)
+	kxstub, err := redactRepo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
 	if err != nil {
 		return err
 	}

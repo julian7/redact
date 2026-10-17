@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/julian7/redact/logger"
 	"github.com/urfave/cli/v3"
 )
 
@@ -75,9 +76,9 @@ func (rt *Runtime) GlobalConfig(ctx context.Context, cmd *cli.Command) (context.
 	if logFile := cmd.String("logfile"); logFile != "" {
 		writer, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
-			rt.Warnf("cannot open log file: %v", err)
+			logger.Warnf("cannot open log file: %v", err)
 		} else {
-			rt.SetOutput(writer)
+			logger.SetOutput(writer)
 		}
 	}
 
@@ -89,12 +90,12 @@ func (rt *Runtime) GlobalConfig(ctx context.Context, cmd *cli.Command) (context.
 }
 
 func (rt *Runtime) setLogLevel(level string) {
-	err := rt.SetLevelFromString(level)
+	err := logger.SetLevelFromString(level)
 	if err != nil {
-		rt.Warnf("cannot set log level: %v", err)
+		logger.Warnf("cannot set log level: %v", err)
 
 		return
 	}
 
-	rt.Debugf("Setting log level to %s", level)
+	logger.Debugf("Setting log level to %s", level)
 }

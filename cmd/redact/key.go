@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"github.com/julian7/redact/logger"
 	"github.com/urfave/cli/v3"
 )
 
@@ -35,7 +36,7 @@ func (rt *Runtime) keyDo(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	rt.Infof("repo key: %v", rt.SecretKey)
+	logger.Infof("repo key: %v", rt.SecretKey)
 
 	return nil
 }

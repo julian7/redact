@@ -89,7 +89,6 @@ these secrets instead.`,
 }
 
 type statusOptions struct {
-	Logger     *logger.Logger
 	repoOnly   bool
 	encOnly    bool
 	plainOnly  bool
@@ -107,7 +106,6 @@ type statusOptions struct {
 
 func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 	opts := statusOptions{
-		Logger:     rt.Logger,
 		repoOnly:   cmd.Bool("repo"),
 		encOnly:    cmd.Bool("encrypted"),
 		plainOnly:  cmd.Bool("unencrypted"),
@@ -138,7 +136,7 @@ func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 
 	for _, entry := range files.Errors {
 		msg := entry.Error()
-		rt.Warn(msg)
+		logger.Warn(msg)
 		opts.issues = append(opts.issues, msg)
 	}
 
@@ -162,7 +160,7 @@ func (rt *Runtime) statusDo(_ context.Context, cmd *cli.Command) error {
 
 	if opts.fixRepo || opts.rekeyFiles {
 		if err := rt.ForceReencrypt(opts.rekeyFiles, func(err error) {
-			rt.Warn(err.Error())
+			logger.Warn(err.Error())
 		}); err != nil {
 			return fmt.Errorf("fixing problems: %w", err)
 		}
@@ -181,7 +179,7 @@ func (rt *Runtime) checkRepoSetup(fix bool) error {
 	}
 
 	if err := rt.FixGitAttributes(func(name string, changed int) {
-		rt.Infof("Added missing attributes to %d line%s in %s; review and commit it", changed, plural[changed == 1], name)
+		logger.Infof("Added missing attributes to %d line%s in %s; review and commit it", changed, plural[changed == 1], name)
 	}); err != nil {
 		return fmt.Errorf("fixing .gitattributes: %w", err)
 	}
@@ -200,13 +198,13 @@ func (rt *Runtime) checkGitSettings(fix bool) error {
 	}
 
 	if fix {
-		rt.Infof("Restoring missing git config: %s", strings.Join(missing, ", "))
+		logger.Infof("Restoring missing git config: %s", strings.Join(missing, ", "))
 
 		return rt.SaveGitSettings()
 	}
 
 	for _, attr := range missing {
-		rt.Warnf("git config %s is not set; run \"redact status --fix\" to set it", attr)
+		logger.Warnf("git config %s is not set; run \"redact status --fix\" to set it", attr)
 	}
 
 	return nil
@@ -218,7 +216,7 @@ func (opts *statusOptions) warnMissingAttrs() {
 		return
 	}
 
-	opts.Logger.Warnf(
+	logger.Warnf(
 		"%d encrypted file%s without %s=%s and %s=%s attributes; run \"redact status --fix\" to add them",
 		noAttrsLen,
 		plural[noAttrsLen == 1],
@@ -277,7 +275,7 @@ func (opts *statusOptions) handleFileEntry(entry *gitutil.FileEntry, shouldBeEnc
 	reader, err := gitutil.Cat(entry.SHA1[:])
 	if err != nil {
 		msg := fmt.Sprintf("git cat-file %s: %v", entry.Name, err)
-		opts.Logger.Warn(msg)
+		logger.Warn(msg)
 		opts.issues = append(opts.issues, msg)
 
 		return

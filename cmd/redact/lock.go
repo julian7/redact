@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/julian7/redact/logger"
 	"github.com/urfave/cli/v3"
 )
 
@@ -25,7 +26,7 @@ beforehand.`,
 
 func (rt *Runtime) lockDo(_ context.Context, _ *cli.Command) error {
 	err := rt.RemoveGitSettings(func(attr string) {
-		rt.Debugf("Removing filter/diff/merge git config of %s", attr)
+		logger.Debugf("Removing filter/diff/merge git config of %s", attr)
 	})
 	if err != nil {
 		return fmt.Errorf("locking repo: %w", err)
@@ -36,12 +37,12 @@ func (rt *Runtime) lockDo(_ context.Context, _ *cli.Command) error {
 	}
 
 	if err := rt.ForceReencrypt(false, func(err error) {
-		rt.Warn(err.Error())
+		logger.Warn(err.Error())
 	}); err != nil {
 		return err
 	}
 
-	rt.Info("Repository locked.")
+	logger.Info("Repository locked.")
 
 	return nil
 }

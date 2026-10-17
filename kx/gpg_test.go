@@ -97,7 +97,7 @@ func checkExchangePaths(t *testing.T, r *repo.Repo, key *openpgp.Entity) {
 		t.Fatalf("refresh: updated=%d, err=%v", updated, err)
 	}
 
-	stub, err := r.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint, nil)
+	stub, err := r.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +185,7 @@ func runExchangeReplacement(t *testing.T, key *openpgp.Entity, public bool, fail
 	fs := &failingFS{Filesystem: memfs.New(), failure: failure}
 	r := &repo.Repo{Workdir: fs}
 
-	stub, err := r.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint, nil)
+	stub, err := r.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
 	if err != nil {
 		t.Fatal(err)
 	}

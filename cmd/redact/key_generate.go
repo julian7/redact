@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/julian7/redact/logger"
 	"github.com/urfave/cli/v3"
 )
 
@@ -28,7 +29,7 @@ func (rt *Runtime) generateDo(_ context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("generating secret key: %w", err)
 	}
 
-	rt.Infof("New repo key created: %v", rt.SecretKey)
+	logger.Infof("New repo key created: %v", rt.SecretKey)
 
 	if err := rt.Save(); err != nil {
 		return fmt.Errorf("saving secret key: %w", err)

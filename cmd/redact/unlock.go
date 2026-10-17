@@ -8,6 +8,7 @@ import (
 	"io"
 
 	"github.com/julian7/redact/ext"
+	"github.com/julian7/redact/logger"
 	"github.com/urfave/cli/v3"
 )
 
@@ -92,7 +93,7 @@ func (rt *Runtime) finishUnlock() error {
 	}
 
 	if err := rt.ForceReencrypt(false, func(err error) {
-		rt.Warn(err.Error())
+		logger.Warn(err.Error())
 	}); err != nil {
 		return err
 	}

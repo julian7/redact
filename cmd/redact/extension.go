@@ -7,6 +7,7 @@ import (
 
 	"github.com/julian7/redact/ext"
 	"github.com/julian7/redact/kx"
+	"github.com/julian7/redact/logger"
 	"github.com/urfave/cli/v3"
 )
 
@@ -94,7 +95,7 @@ func (rt *Runtime) refreshGPGKeys() error {
 		return rt.SaveTo(w)
 	})
 	if err != nil {
-		rt.Warn(`unable to update secret keys; restore original key with "redact unlock", and try again`)
+		logger.Warn(`unable to update secret keys; restore original key with "redact unlock", and try again`)
 
 		return fmt.Errorf("updating key exchange secret keys: %w", err)
 	}

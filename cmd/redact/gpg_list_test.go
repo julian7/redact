@@ -75,7 +75,9 @@ func checkGPGList(t *testing.T, fingerprint string) {
 
 	t.Cleanup(func() { os.Stdout = previous })
 
-	rt := &Runtime{Repo: &repo.Repo{}, Logger: logger.With(nil)}
+	logger.SetOutput(io.Discard)
+
+	rt := &Runtime{Repo: &repo.Repo{}}
 	if err := rt.accessListDo(context.Background(), nil); err != nil {
 		t.Fatal(err)
 	}
