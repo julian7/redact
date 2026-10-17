@@ -1,229 +1,128 @@
-//go:generate go run _generate/generate.go -output generated.go
 package logger
 
 import (
-	"fmt"
-	"io"
-	"log"
+	"bytes"
 	"os"
-	"reflect"
-	"slices"
+	"strings"
 	"testing"
 )
 
-func TestNew(t *testing.T) {
-	got := New()
-	if got.Base == nil {
-		t.Errorf("internal logger is nil")
-	}
+func captureOutput(t *testing.T) *bytes.Buffer {
+	t.Helper()
 
-	if lvl := got.Level(); lvl != InfoLevel {
-		t.Errorf("default level is %s, not INFO", prefixes[lvl])
-	}
+	output := &bytes.Buffer{}
+	SetOutput(output)
+	SetLevel(DebugLevel)
+	t.Cleanup(func() {
+		SetOutput(os.Stderr)
+		SetLevel(InfoLevel)
+	})
+
+	return output
 }
 
-func TestWith(t *testing.T) {
-	stdlogger := log.New(os.Stdout, "", log.LstdFlags)
-	tests := []struct {
-		name string
-		base Base
-		want *Logger
-	}{
-		{"empty logger", nil, &Logger{Base: NilLogger, level: InfoLevel}},
-		{"stdlogger", stdlogger, &Logger{Base: stdlogger, level: InfoLevel}},
+func TestSetLevel(t *testing.T) {
+	SetLevel(WarnLevel)
+
+	if got := Level(); got != WarnLevel {
+		t.Fatalf("Level() = %d, want %d", got, WarnLevel)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := With(tt.base); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("With() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	SetLevel(InfoLevel)
 }
 
-func TestLogger_SetLevel(t *testing.T) {
-	type args struct {
-		level int
-	}
-
-	tests := []struct {
-		name   string
-		logger *Logger
-		args   args
-		level  int
-	}{
-		{"sets level", New(), args{5}, 5},
-		{"another level", New(), args{9}, 9},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.logger.SetLevel(tt.args.level)
-
-			got := tt.logger.Level()
-			if got != tt.level {
-				t.Errorf("Logger.SetLevel() -> %d, wants %d", got, tt.level)
-			}
-		})
-	}
-}
-
-func TestLogger_SetLevelFromString(t *testing.T) {
-	type args struct {
-		level string
-	}
-
+func TestSetLevelFromString(t *testing.T) {
 	tests := []struct {
 		name    string
-		logger  *Logger
-		args    args
-		level   int
+		level   string
+		want    int
 		wantErr bool
 	}{
-		{"debug", New(), args{"debug"}, DebugLevel, false},
-		{"info", New(), args{"info"}, InfoLevel, false},
-		{"warn", New(), args{"warn"}, WarnLevel, false},
-		{"error", New(), args{"error"}, ErrorLevel, false},
-		{"fatal", New(), args{"fatal"}, FatalLevel, false},
-		{"unknown", New(), args{"unknown"}, 0, true},
-		{"empty", New(), args{""}, InfoLevel, false},
+		{"debug", "debug", DebugLevel, false},
+		{"info", "info", InfoLevel, false},
+		{"warn", "warn", WarnLevel, false},
+		{"error", "error", ErrorLevel, false},
+		{"fatal", "fatal", FatalLevel, false},
+		{"unknown", "unknown", InfoLevel, true},
+		{"empty", "", InfoLevel, false},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.logger.SetLevelFromString(tt.args.level); (err != nil) != tt.wantErr {
-				t.Errorf("Logger.SetLevelFromString() error = %v, wantErr %v", err, tt.wantErr)
+			SetLevel(InfoLevel)
+
+			err := SetLevelFromString(tt.level)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("SetLevelFromString(%q) error = %v, wantErr %v", tt.level, err, tt.wantErr)
 			}
 
-			if !tt.wantErr {
-				got := tt.logger.Level()
-				if got != tt.level {
-					t.Errorf("Logger.SetLevelFromString() -> %d, wants %d", got, tt.level)
-				}
+			if !tt.wantErr && Level() != tt.want {
+				t.Errorf("Level() = %d, want %d", Level(), tt.want)
 			}
 		})
 	}
 }
 
-type logRecorder struct {
-	Logs []string
-}
-
-func (r *logRecorder) Print(v ...any) {
-	r.Logs = append(r.Logs, fmt.Sprint(v...))
-}
-
-func (r *logRecorder) Printf(format string, v ...any) {
-	r.Logs = append(r.Logs, fmt.Sprintf(format, v...))
-}
-
-func (r *logRecorder) Fatal(v ...any) {
-	r.Logs = append(r.Logs, fmt.Sprint(v...))
-}
-
-func (r *logRecorder) Fatalf(format string, v ...any) {
-	r.Logs = append(r.Logs, fmt.Sprintf(format, v...))
-}
-
-func (r *logRecorder) SetOutput(io.Writer) {}
-
-func (r *logRecorder) Verify(items []string) error {
-	if len(items) != len(r.Logs) {
-		return fmt.Errorf("recorded %d logs, wants %d", len(r.Logs), len(items))
-	}
-
-	for _, item := range items {
-		found := slices.Contains(r.Logs, item)
-
-		if !found {
-			return fmt.Errorf("message %q not found, got %v", item, r.Logs)
-		}
-	}
-
-	return nil
-}
-
-func TestLogger_Log(t *testing.T) {
-	type args struct {
-		level int
-		attrs []any
-	}
-
+func TestLogLevels(t *testing.T) {
 	tests := []struct {
-		name  string
-		args  args
-		items []string
-		until int
+		name    string
+		level   int
+		message string
 	}{
-		{"debug", args{DebugLevel, []any{"one", "two"}}, []string{"DEBUG: onetwo"}, DebugLevel},
-		{"info", args{InfoLevel, []any{"one", "two"}}, []string{"INFO: onetwo"}, InfoLevel},
-		{"warn", args{WarnLevel, []any{"one", "two"}}, []string{"WARN: onetwo"}, WarnLevel},
-		{"error", args{ErrorLevel, []any{"one", "two"}}, []string{"ERROR: onetwo"}, ErrorLevel},
-		{"fatal", args{FatalLevel, []any{"one", "two"}}, []string{"FATAL: onetwo"}, FatalLevel},
+		{"debug", DebugLevel, "DEBUG: onetwo"},
+		{"info", InfoLevel, "INFO: onetwo"},
+		{"warn", WarnLevel, "WARN: onetwo"},
+		{"error", ErrorLevel, "ERROR: onetwo"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for level := DebugLevel; level <= FatalLevel; level++ {
-				level := level
-				t.Run(prefixes[level], func(t *testing.T) {
-					recorder := &logRecorder{}
-					l := With(recorder)
-					l.SetLevel(level)
-					l.Log(tt.args.level, tt.args.attrs...)
+			output := captureOutput(t)
 
-					if level > tt.until {
-						tt.items = []string{}
-					}
+			SetLevel(tt.level)
 
-					if err := recorder.Verify(tt.items); err != nil {
-						t.Error(err)
-					}
-				})
+			Log(tt.level, "one", "two")
+
+			if got := output.String(); !strings.Contains(got, tt.message) {
+				t.Errorf("log output %q does not contain %q", got, tt.message)
 			}
 		})
 	}
 }
 
-func TestLogger_Logf(t *testing.T) {
-	type args struct {
-		level int
-		attrs []any
-	}
-
+func TestLogfLevels(t *testing.T) {
 	tests := []struct {
-		name  string
-		args  args
-		items []string
-		until int
+		name    string
+		level   int
+		message string
 	}{
-		{"no args", args{FatalLevel, []any{}}, []string{}, FatalLevel},
-		{"debug", args{DebugLevel, []any{"one,%s", "two"}}, []string{"DEBUG: one,two"}, DebugLevel},
-		{"info", args{InfoLevel, []any{"one,%s", "two"}}, []string{"INFO: one,two"}, InfoLevel},
-		{"warn", args{WarnLevel, []any{"one,%s", "two"}}, []string{"WARN: one,two"}, WarnLevel},
-		{"error", args{ErrorLevel, []any{"one,%s", "two"}}, []string{"ERROR: one,two"}, ErrorLevel},
-		{"fatal", args{FatalLevel, []any{"one,%s", "two"}}, []string{"FATAL: one,two"}, FatalLevel},
+		{"debug", DebugLevel, "DEBUG: one,two"},
+		{"info", InfoLevel, "INFO: one,two"},
+		{"warn", WarnLevel, "WARN: one,two"},
+		{"error", ErrorLevel, "ERROR: one,two"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for level := DebugLevel; level <= FatalLevel; level++ {
-				level := level
-				t.Run(prefixes[level], func(t *testing.T) {
-					recorder := &logRecorder{}
-					l := With(recorder)
-					l.SetLevel(level)
-					l.Logf(tt.args.level, tt.args.attrs...)
+			output := captureOutput(t)
 
-					if level > tt.until {
-						tt.items = []string{}
-					}
+			SetLevel(tt.level)
 
-					if err := recorder.Verify(tt.items); err != nil {
-						t.Error(err)
-					}
-				})
+			Logf(tt.level, "one,%s", "two")
+
+			if got := output.String(); !strings.Contains(got, tt.message) {
+				t.Errorf("log output %q does not contain %q", got, tt.message)
 			}
 		})
+	}
+}
+
+func TestLogfWithoutArguments(t *testing.T) {
+	output := captureOutput(t)
+
+	Logf(FatalLevel)
+
+	if got := output.String(); got != "" {
+		t.Errorf("Logf(FatalLevel) output = %q, want empty", got)
 	}
 }

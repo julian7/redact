@@ -9,6 +9,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/kx"
+	"github.com/julian7/redact/logger"
 	"github.com/urfave/cli/v3"
 )
 
@@ -67,7 +68,7 @@ func (rt *Runtime) gpgGrantGPGDo(_ context.Context, cmd *cli.Command) error {
 
 	for _, key := range keyEntries {
 		if err := rt.saveGPGKey(key); err != nil {
-			rt.Warnf("cannot save key: %v", err)
+			logger.Warnf("cannot save key: %v", err)
 
 			failed++
 
@@ -79,7 +80,7 @@ func (rt *Runtime) gpgGrantGPGDo(_ context.Context, cmd *cli.Command) error {
 
 	if failed > 0 {
 		if saved > 0 {
-			rt.Warnf(
+			logger.Warnf(
 				"Added %d key%s, while %d failed. Don't forget to commit exchange files to the repository.",
 				saved,
 				plural[saved == 1],
@@ -90,7 +91,7 @@ func (rt *Runtime) gpgGrantGPGDo(_ context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("adding %d key%s failed: %w", failed, plural[failed == 1], ErrFailedGrant)
 	}
 
-	rt.Infof(
+	logger.Infof(
 		"Added %d key%s. Don't forget to commit exchange files to the repository.",
 		saved,
 		map[bool]string{true: "", false: "s"}[saved == 1],
@@ -107,7 +108,7 @@ func (rt *Runtime) loadKeys(pgpFiles []string, isArmor bool, keyEntries *openpgp
 	for _, pgpFile := range pgpFiles {
 		entries, err := gpgutil.LoadPubKeyFromFile(pgpFile, isArmor)
 		if err != nil {
-			rt.Warnf("loading public key: %v", err)
+			logger.Warnf("loading public key: %v", err)
 
 			continue
 		}

@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"sort"
 
+	"github.com/julian7/redact/logger"
 	"github.com/julian7/redact/repo"
 )
 
@@ -66,6 +67,14 @@ func (ext *Ext) result(operation string, err error) error {
 	return fmt.Errorf("extension %s %s: %w", ext.name, operation, &Error{Code: code, Err: err})
 }
 
+func (ext *Ext) logStart(operation string) {
+	logger.Debugf("Using extension %q for operation %q", ext.name, operation)
+}
+
+func (ext *Ext) logResult(operation string, err error) {
+	logger.Debugf("Extension %q operation %q finished with outcome %d", ext.name, operation, ExitCode(err))
+}
+
 func (ext *Ext) Exec(operation string) error {
 	c, err := ext.cmd(operation)
 	if err != nil {
@@ -76,7 +85,11 @@ func (ext *Ext) Exec(operation string) error {
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
-	return ext.result(operation, c.Run())
+	ext.logStart(operation)
+	err = ext.result(operation, c.Run())
+	ext.logResult(operation, err)
+
+	return err
 }
 
 // ExecAll dispatches a command in preference order using the extension outcome
@@ -125,7 +138,11 @@ func (ext *Ext) Run(operation string, key []byte) error {
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
-	return ext.result(operation, c.Run())
+	ext.logStart(operation)
+	err = ext.result(operation, c.Run())
+	ext.logResult(operation, err)
+
+	return err
 }
 
 func (ext *Ext) SaveKey(key []byte) error {
@@ -140,10 +157,17 @@ func (ext *Ext) LoadKey() ([]byte, error) {
 
 	c.Stderr = os.Stderr
 
+	ext.logStart("get")
+
 	val, err := c.Output()
 	if err != nil {
-		return nil, ext.result("get", err)
+		err = ext.result("get", err)
+		ext.logResult("get", err)
+
+		return nil, err
 	}
+
+	ext.logResult("get", nil)
 
 	return val, nil
 }

@@ -70,7 +70,9 @@ esac
 }
 
 func extensionRuntime() *Runtime {
-	return &Runtime{Repo: &repo.Repo{}, Logger: logger.With(nil)}
+	logger.SetOutput(io.Discard)
+
+	return &Runtime{Repo: &repo.Repo{}}
 }
 
 func runRedact(args ...string) error {

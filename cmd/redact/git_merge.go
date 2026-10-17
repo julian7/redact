@@ -13,6 +13,7 @@ import (
 	"github.com/julian7/redact/encoder"
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
+	"github.com/julian7/redact/logger"
 	"github.com/urfave/cli/v3"
 )
 
@@ -92,7 +93,7 @@ func (rt *Runtime) gitMergeDo(_ context.Context, cmd *cli.Command) error {
 	}
 
 	if conflicts > 0 {
-		rt.Warnf("%d conflict(s) in %s", conflicts, pathname)
+		logger.Warnf("%d conflict(s) in %s", conflicts, pathname)
 
 		return cli.Exit("", 1)
 	}

@@ -1,2 +1,2 @@
-// Logger is a minimalistic leveled log writer based on log package.
+// Package logger provides a process-wide leveled logger.
 package logger

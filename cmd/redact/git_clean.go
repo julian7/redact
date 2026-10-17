@@ -12,6 +12,7 @@ import (
 	"github.com/julian7/redact/encoder"
 	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gitutil"
+	"github.com/julian7/redact/logger"
 	"github.com/urfave/cli/v3"
 )
 
@@ -71,7 +72,7 @@ func (rt *Runtime) gitCleanDo(_ context.Context, cmd *cli.Command) error {
 		hdr, err := rt.hdrByFilename(fname)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
-				rt.Warnf("unable to determine epoch from filename: %s", err.Error())
+				logger.Warnf("unable to determine epoch from filename: %s", err.Error())
 			}
 		} else {
 			keyEpoch = hdr.Epoch

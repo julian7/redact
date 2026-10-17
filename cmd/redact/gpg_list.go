@@ -10,6 +10,7 @@ import (
 
 	"github.com/julian7/redact/ext"
 	"github.com/julian7/redact/gpgutil"
+	"github.com/julian7/redact/logger"
 	"github.com/julian7/redact/repo"
 	"github.com/urfave/cli/v3"
 )
@@ -48,7 +49,7 @@ func (rt *Runtime) accessListDo(ctx context.Context, cmd *cli.Command) error {
 
 		file, err := rt.Workdir.Open(path)
 		if err != nil {
-			rt.Warnf("cannot open public key: %v", err)
+			logger.Warnf("cannot open public key: %v", err)
 
 			return nil
 		}
@@ -56,13 +57,13 @@ func (rt *Runtime) accessListDo(ctx context.Context, cmd *cli.Command) error {
 
 		entities, err := gpgutil.LoadPubKey(file, true)
 		if err != nil {
-			rt.Warnf("cannot load public key: %v", err)
+			logger.Warnf("cannot load public key: %v", err)
 
 			return nil
 		}
 
 		if len(entities) != 1 {
-			rt.Warnf("multiple entities in key file %s", path)
+			logger.Warnf("multiple entities in key file %s", path)
 
 			return nil
 		}
