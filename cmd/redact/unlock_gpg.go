@@ -43,6 +43,8 @@ func (rt *Runtime) unlockGpgDo(_ context.Context, cmd *cli.Command) error {
 	}
 
 	if gpgExtensionMode() {
+		logger.Debugf("Using GnuPG extension for unlock because FF_GIT_EXT is set")
+
 		options := map[string]string{}
 		if key := cmd.String("gpgkey"); key != "" {
 			options["gpgkey"] = key
@@ -54,6 +56,8 @@ func (rt *Runtime) unlockGpgDo(_ context.Context, cmd *cli.Command) error {
 
 		return rt.finishUnlock()
 	}
+
+	logger.Debugf("Using in-tree GnuPG for unlock because FF_GIT_EXT is unset")
 
 	err := rt.loadSecretKeyFromGPG(cmd.String("gpgkey"))
 	if err != nil {
