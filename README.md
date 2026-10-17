@@ -180,12 +180,13 @@ To switch, either set `REDACT_GIT_CLEAN_TYPE` environment variable, or set `git.
   * list: lists all keys
   * save: saves secret key in Key Exchange (both OpenPGP and extensions)
 * lock: locks repository (deletes local key and removes diff/filter configs)
-* unlock: unlocks repository with local key
+* grant: grants access through configured extensions
+* revoke: removes access through configured extensions
+* unlock: unlocks repository with extensions or a key file
   * gpg: unlocks repository with GPG-encrypted key from key exchange
 * openpgp/gpg: OpenPGP key exchange commands
   * list: list user access
   * grant: add OpenPGP key access
-  * update: re-encrypt secret key with OpenPGP keys (not implemented yet)
 * git: git filter commands
   * clean: acts as clean filter for git
   * diff: acts as diff filter for git
@@ -224,17 +225,71 @@ which should be committed to the repository, and should not be encrypted. Every 
 * command path: command to execute the extension, defaults to `redact-ext-<name>`
 * options: `key=value` pairs, which are passed to the extension command as command-line arguments
 
-An extension has to implement the following commands:
+The top-level `_order_` array sets extension preference, independently of extension entries:
 
-* `list`: basic information about the extension and its configuration
-* `get`: retrieves an exported secret key to standard output
-* `put`: stores an exported secret key read from standard input
-
-Configured extensions are invoked as the following:
-
+```json
+{
+  "_order_": ["aws", "azure"],
+  "aws": {"config": {"keyid": "alias/redact", "param": "/project/redact"}},
+  "azure": {"config": {"vault": "project", "secret": "redact"}}
+}
 ```
-<command path> <command> <option1>=<value1> [<option2>=<value2> ...]
+
+Names absent from `_order_` follow in alphabetical order. Duplicate names and names without a configured extension are ignored.
+
+### Extension interface
+
+Extensions are executable programs, ran from the repository worktree root and inherit the environment. The protocol uses only process arguments, stdin, stdout, stderr, and exit status:
+
+```text
+<command path> <operation> <key1>=<value1> [<key2>=<value2> ...]
 ```
+
+Settings are defaults from configuration. There is no positional operand forwarding or interaction protocol.
+
+| Operation | Responsibility | Stdin | Stdout |
+|---|---|---|---|
+| `list` | Describe stored keys or recipients; no local Redact key required | Unused | Listing |
+| `get` | Retrieve a Redact key collection | Unused | Exported Redact PEM only on success |
+| `put` | Store the supplied collection; retries must converge | Exported Redact PEM | No required output |
+| `grant` | Register access and distribute the supplied current collection | Exported Redact PEM | No required output |
+| `revoke` | Remove matching access registrations and copies | Usused | No required output |
+| `update` | Refresh the collection at all remaining destinations | Exported Redact PEM | No required output |
+
+Send diagnostics, candidates, and retry instructions to **stderr**, including when more selection information is needed. Keep successful `get` stdout exclusively PEM data. Selection is a second invocation with settings; no interactive selection is required.
+
+| Exit code | Meaning | Outcome (get) | Outcome (other operations) |
+|---|---|---|---|
+| `0` | Success | Stop successfully | Continue |
+| `1` | Not applicable, including unsupported operations | Continue (skip) | Continue (skip) |
+| `2` | Missing data or selection input; explain how to proceed on stderr | Stop with error | Stop with error |
+| `3` | Failure | Stop with error | Stop with error |
+
+Launch failures, signals, and other exit codes are treated as failures. Exhausting all extensions without a key is an error.
+
+### Extension Integration
+
+By default, subcommand supporting extensions loop through all configured extensions, until they find the suitable one. However, it is possible to run only one extension, even if it is not configured by providing `--extension NAME` option. That extension can be configured further in command line by providing `--cmd PATH` and `--option KEY=VALUE` flags:
+
+```shell
+redact unlock --ext custom --cmd /path/to/redact-ext-custom --option identity=alice
+redact grant --ext custom --option recipient=alice
+redact revoke --ext custom --option recipient=alice
+```
+
+| Subcommand | Invokes extension operation |
+|---|----|
+| `grant` | `grant` |
+| `init` | `put` |
+| `key generate` | `update` |
+| `key save` | `put` |
+| `revoke` | `revoke` |
+| `update` | `update` |
+| `unlock` | `get` |
+
+Collection publishing attempts every configured destination, even after errors. Successful changes remain available for inspection and retry; there is no collection rollback. A mix of success and unsupported destinations succeeds; unsupported destinations alone return `1`. Other errors are reported after the remaining attempts, using their highest severity. An empty configuration permits init/save/generate; grant/revoke require configured destinations or explicit selection.
+
+`put`, `grant`, and `update` perform real writes, including writes to cloud stores. Rotation saves the new local collection, retaining previous key epochs, before distribution. Repository exchange changes need a user commit and push; Redact never commits or pushes automatically. Revoke performs removal only, with no implicit rotation or publication, and cannot remove historical access.
 
 ## Configuration with environment variables
 

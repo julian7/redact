@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
+
+	"github.com/julian7/redact/ext"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets"
@@ -44,16 +47,16 @@ func loadConfig(args []string) (*Config, error) {
 		case "secret":
 			config.SecretName = val
 		default:
-			fmt.Printf("unknown setting: %v\n", key)
+			fmt.Fprintf(os.Stderr, "unknown setting: %v\n", key)
 		}
 	}
 
 	if config.KeyvaultURL == "" {
-		return nil, ErrMissingKeyvault
+		return nil, &ext.Error{Code: ext.MissingData, Err: ErrMissingKeyvault}
 	}
 
 	if config.SecretName == "" {
-		return nil, ErrMissingSecret
+		return nil, &ext.Error{Code: ext.MissingData, Err: ErrMissingSecret}
 	}
 
 	return config, nil

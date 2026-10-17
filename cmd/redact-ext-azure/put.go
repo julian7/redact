@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/julian7/redact/ext"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets"
 	"github.com/urfave/cli/v3"
@@ -13,6 +16,7 @@ import (
 func cmdPut() *cli.Command {
 	return &cli.Command{
 		Name:        "put",
+		Aliases:     []string{"update"},
 		Usage:       "Put secret to Azure Key Vault",
 		ArgsUsage:   "[key=val [key=val ...]]", //nolint:goconst
 		Description: "Reads secret from STDIN and writes to Key Vault",
@@ -27,29 +31,39 @@ func cmdPut() *cli.Command {
 				return err
 			}
 
+			if len(key) == 0 {
+				return &ext.Error{Code: ext.MissingData, Err: errors.New("missing exported key on stdin")}
+			}
+
 			client, err := config.secretsClient()
 			if err != nil {
 				return err
 			}
 
-			contentType := "text/plain"
-
-			gotSecret, err := client.GetSecret(ctx, config.SecretName, "", nil)
-			if err == nil && gotSecret.Value != nil && *gotSecret.Value == string(key) {
-				return ErrAlreadyWritten
-			}
-
-			params := azsecrets.SetSecretParameters{
-				ContentType: &contentType,
-				Value:       new(string(key)),
-			}
-
-			_, err = client.SetSecret(ctx, config.SecretName, params, nil)
-			if err != nil {
-				return fmt.Errorf("cannot write secret %s: %w", config.SecretName, err)
-			}
-
-			return nil
+			return config.save(ctx, client, string(key))
 		},
 	}
+}
+
+type secretStore interface {
+	GetSecret(context.Context, string, string, *azsecrets.GetSecretOptions) (azsecrets.GetSecretResponse, error)
+	SetSecret(
+		context.Context, string, azsecrets.SetSecretParameters, *azsecrets.SetSecretOptions,
+	) (azsecrets.SetSecretResponse, error)
+}
+
+func (config *Config) save(ctx context.Context, client secretStore, key string) error {
+	got, err := client.GetSecret(ctx, config.SecretName, "", nil)
+	if err == nil && got.Value != nil && *got.Value == key {
+		return nil
+	}
+
+	contentType := "text/plain"
+
+	params := azsecrets.SetSecretParameters{ContentType: &contentType, Value: &key}
+	if _, err := client.SetSecret(ctx, config.SecretName, params, nil); err != nil {
+		return fmt.Errorf("cannot write secret %s: %w", config.SecretName, err)
+	}
+
+	return nil
 }
