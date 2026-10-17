@@ -25,11 +25,13 @@ configured defaults. Repository changes require a commit and push.`,
 
 func (rt *Runtime) grantCmd() *cli.Command {
 	return &cli.Command{
-		Name:        grantOperation,
-		Usage:       "Grant access",
-		Description: descrAppendix("Grant access and distribute the current Key Exchange collection."),
-		Flags:       extensionFlags(),
-		Before:      rt.LoadSecretKey,
+		Name:  grantOperation,
+		Usage: "Grant access",
+		Description: descrAppendix(`Grant access and distribute the current Key Exchange collection.
+
+Provide extension-specific inputs with --option key=value.`),
+		Flags:  extensionFlags(),
+		Before: rt.LoadSecretKey,
 		Action: func(_ context.Context, cmd *cli.Command) error {
 			return rt.collectionDo(cmd, grantOperation)
 		},
