@@ -18,6 +18,9 @@ type Ext struct {
 	Config  map[string]string `json:"config,omitempty"`
 }
 
+// Name returns the configured extension name.
+func (ext *Ext) Name() string { return ext.name }
+
 func (ext *Ext) cmd(operation string) *exec.Cmd {
 	executable := ext.Command
 	if executable == "" {
@@ -66,6 +69,36 @@ func (ext *Ext) Exec(operation string) error {
 	c.Stderr = os.Stderr
 
 	return ext.result(operation, c.Run())
+}
+
+// ExecAll dispatches a command in preference order using the extension outcome
+// contract. Success and not-applicable advance; missing data and failure stop.
+func ExecAll(items []Ext, operation string) error {
+	var skipped []error
+
+	successful := false
+
+	for _, item := range items {
+		err := item.Exec(operation)
+		switch ExitCode(err) {
+		case Success:
+			if operation == "get" {
+				return nil
+			}
+
+			successful = true
+		case NotApplicable:
+			skipped = append(skipped, err)
+		default:
+			return err
+		}
+	}
+
+	if !successful {
+		return errors.Join(skipped...)
+	}
+
+	return nil
 }
 
 func (ext *Ext) List() error {

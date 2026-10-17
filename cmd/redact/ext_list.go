@@ -22,11 +22,7 @@ func (rt *Runtime) extListCmd() *cli.Command {
 				return err
 			}
 
-			for _, ext := range conf.Exts {
-				_ = ext.List()
-			}
-
-			return nil
+			return conf.List()
 		},
 	}
 }

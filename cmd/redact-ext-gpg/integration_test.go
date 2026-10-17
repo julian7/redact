@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -29,7 +30,25 @@ func TestGPGCollectionLifecycle(t *testing.T) {
 	t.Chdir(root)
 	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
 	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
-	home := t.TempDir()
+
+	homeBase := os.TempDir()
+	if runtime.GOOS == "darwin" {
+		// GnuPG's agent socket can exceed macOS's Unix socket path limit when
+		// GNUPGHOME inherits Go's long /var/folders test directory.
+		homeBase = "/tmp"
+	}
+
+	home, err := os.MkdirTemp(homeBase, "redact-gpg-")
+	if err != nil {
+		t.Fatalf("create isolated GnuPG home: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if err := os.RemoveAll(home); err != nil {
+			t.Errorf("remove isolated GnuPG home: %v", err)
+		}
+	})
+
 	t.Setenv("GNUPGHOME", home)
 
 	if err := os.Chmod(home, 0700); err != nil {

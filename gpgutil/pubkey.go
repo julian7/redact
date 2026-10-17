@@ -13,11 +13,19 @@ import (
 
 // PrintKey prints information about an OpenPGP key entity
 func PrintKey(key *openpgp.Entity) {
-	fmt.Printf(
+	_ = PrintKeyTo(os.Stdout, key)
+}
+
+// PrintKeyTo writes information about an OpenPGP key entity to writer.
+func PrintKeyTo(writer io.Writer, key *openpgp.Entity) error {
+	if _, err := fmt.Fprintf(
+		writer,
 		"KeyID: %s, fingerprint: %x\n",
 		key.PrimaryKey.KeyIdShortString(),
 		key.PrimaryKey.Fingerprint,
-	)
+	); err != nil {
+		return err
+	}
 
 	for _, id := range key.Identities {
 		var expires string
@@ -39,12 +47,17 @@ func PrintKey(key *openpgp.Entity) {
 			}
 		}
 
-		fmt.Printf(
+		if _, err := fmt.Fprintf(
+			writer,
 			"  identity: %s, expires: %s\n",
 			id.Name,
 			expires,
-		)
+		); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // LoadPubKeyFromFile Loads public key into openpgp's Entity

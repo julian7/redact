@@ -13,6 +13,7 @@ var (
 	ErrExtAlreadyExists = errors.New("extension already exists")
 	ErrExtNotFound      = errors.New("extension not found")
 	ErrReservedName     = errors.New("_order_ is reserved for extension ordering")
+	ErrCmdRequiresExt   = errors.New("--cmd requires --ext")
 )
 
 // Error describes a standardized extension outcome. Its cause is retained for

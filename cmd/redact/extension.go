@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 
@@ -42,8 +41,7 @@ func (rt *Runtime) selectExtensions(cmd *cli.Command) ([]ext.Ext, error) {
 	return conf.Select(cmd.String("ext"), cmd.String(extCommandFlag), cmd.StringMap(extOptionFlag))
 }
 
-// distributeKey attempts both extension and legacy destinations even when one
-// fails. The local Key Exchange collection has already been saved; successful writes remain.
+// distributeKey retains writes completed before a stopping extension outcome.
 func (rt *Runtime) distributeKey(cmd *cli.Command, operation string) error {
 	items, err := rt.selectExtensions(cmd)
 	if err != nil {
@@ -55,13 +53,36 @@ func (rt *Runtime) distributeKey(cmd *cli.Command, operation string) error {
 		return err
 	}
 
+	if cmd.String("ext") == "" && !gpgExtensionMode() {
+		filtered := items[:0]
+		for _, item := range items {
+			if item.Name() != gpgExtensionName {
+				filtered = append(filtered, item)
+			}
+		}
+
+		items = filtered
+	}
+
 	extErr := ext.RunAll(items, operation, buf.Bytes())
 	// An explicit extension selection must only call that extension.
 	if cmd.String("ext") != "" {
 		return extErr
 	}
 
-	return errors.Join(extErr, rt.refreshGPGKeys())
+	if ext.ExitCode(extErr) >= ext.MissingData {
+		return extErr
+	}
+
+	if !gpgExtensionMode() {
+		if err := rt.refreshGPGKeys(); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return extErr
 }
 
 func (rt *Runtime) refreshGPGKeys() error {

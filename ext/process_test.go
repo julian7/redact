@@ -196,8 +196,8 @@ func TestOrderedConfigurationRoundTrip(t *testing.T) {
 func TestCollectionBatchContinuesAfterFailures(t *testing.T) {
 	conf, root, program := processConfig(t)
 
-	conf.Order = []string{"failed", "skipped", "saved"}
-	for name, code := range map[string]string{"failed": "3", "skipped": "1", "saved": "0"} {
+	conf.Order = []string{"saved", "skipped", "failed", "later"}
+	for name, code := range map[string]string{"failed": "3", "skipped": "1", "saved": "0", "later": "0"} {
 		if err := conf.AddExt(name, ext.Ext{Command: program, Config: map[string]string{"code": code}}); err != nil {
 			t.Fatal(err)
 		}
@@ -208,7 +208,7 @@ func TestCollectionBatchContinuesAfterFailures(t *testing.T) {
 	}
 
 	calls, err := os.ReadFile(filepath.Join(root, "calls"))
-	if err != nil || string(calls) != "put code=3\nput code=1\nput code=0\n" {
+	if err != nil || string(calls) != "put code=0\nput code=1\nput code=3\n" {
 		t.Fatalf("destinations = %q, err=%v", calls, err)
 	}
 
@@ -218,6 +218,7 @@ func TestCollectionBatchContinuesAfterFailures(t *testing.T) {
 	}
 
 	conf.DelExt("failed")
+	conf.DelExt("later")
 
 	if err := conf.SaveKey(data); err != nil {
 		t.Fatalf("unsupported destination failed mixed batch: %v", err)
