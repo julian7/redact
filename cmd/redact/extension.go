@@ -69,6 +69,8 @@ func (rt *Runtime) distributeKey(cmd *cli.Command, operation string) error {
 	}
 
 	if !gpgExtensionMode() {
+		logger.Debugf("Refreshing GPG collection in-tree because FF_GIT_EXT is unset")
+
 		if err := rt.refreshGPGKeys(); err != nil {
 			return err
 		}

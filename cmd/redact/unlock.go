@@ -69,6 +69,8 @@ func (rt *Runtime) unlockDo(_ context.Context, cmd *cli.Command) error {
 	} else {
 		err := rt.loadSecretKeyFromExt(extName, cmd.String(extCommandFlag), cmd.StringMap(extOptionFlag))
 		if errors.Is(err, ErrNoSuitableKey) && extName == "" && cmd.String(extCommandFlag) == "" && !gpgExtensionMode() {
+			logger.Debugf("No extension supplied a key; falling back to in-tree GnuPG because FF_GIT_EXT is unset")
+
 			err = rt.loadSecretKeyFromGPG(cmd.StringMap(extOptionFlag)["gpgkey"])
 			if errors.Is(err, io.EOF) {
 				return nil
