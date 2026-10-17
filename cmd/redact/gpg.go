@@ -7,7 +7,6 @@ func (rt *Runtime) gpgCmd() *cli.Command {
 		Name:    "openpgp",
 		Aliases: []string{gpgExtensionName},
 		Usage:   "OpenPGP Key Exchange commands",
-		Before:  requireInTreeGPGMode,
 		Commands: []*cli.Command{
 			rt.gpgGrantCmd(),
 			rt.gpgListCmd(),
