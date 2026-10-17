@@ -32,13 +32,13 @@ can be provided).`,
 				Required: false,
 			},
 			&cli.StringFlag{
-				Name:     "cmd",
+				Name:     extCommandFlag,
 				Aliases:  []string{"c"},
 				Usage:    "sets extension command name (use full path if it is not in $PATH)",
 				Required: false,
 			},
 			&cli.StringMapFlag{
-				Name:     "option",
+				Name:     extOptionFlag,
 				Aliases:  []string{"o"},
 				Usage:    "Add configuration option",
 				Required: false,
@@ -73,7 +73,7 @@ func (rt *Runtime) doExtUpdate(_ context.Context, cmd *cli.Command) error {
 
 	if cmd.Bool("nocmd") {
 		extension.Command = ""
-	} else if newCmd := cmd.String("cmd"); newCmd != "" {
+	} else if newCmd := cmd.String(extCommandFlag); newCmd != "" {
 		extension.Command = newCmd
 	}
 
@@ -81,7 +81,7 @@ func (rt *Runtime) doExtUpdate(_ context.Context, cmd *cli.Command) error {
 		delete(extension.Config, item)
 	}
 
-	maps.Copy(extension.Config, cmd.StringMap("option"))
+	maps.Copy(extension.Config, cmd.StringMap(extOptionFlag))
 
 	if err = conf.UpdateExt(name, extension); err != nil {
 		return fmt.Errorf("updating extension config: %w", err)

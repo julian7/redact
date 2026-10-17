@@ -28,13 +28,13 @@ can be provided).`,
 				Required: true,
 			},
 			&cli.StringFlag{
-				Name:     "cmd",
+				Name:     extCommandFlag,
 				Aliases:  []string{"c"},
 				Usage:    "extension command name (use full path if it is not in $PATH)",
 				Required: false,
 			},
 			&cli.StringMapFlag{
-				Name:     "option",
+				Name:     extOptionFlag,
 				Aliases:  []string{"o"},
 				Usage:    "Configuration option for extension",
 				Required: false,
@@ -51,8 +51,8 @@ can be provided).`,
 			}
 
 			ext := ext.Ext{
-				Command: cmd.String("cmd"),
-				Config:  cmd.StringMap("option"),
+				Command: cmd.String(extCommandFlag),
+				Config:  cmd.StringMap(extOptionFlag),
 			}
 			if err = conf.AddExt(cmd.String("name"), ext); err != nil {
 				return fmt.Errorf("adding extension: %w", err)

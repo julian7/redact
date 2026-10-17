@@ -25,13 +25,7 @@ Alternatively, a secret key file can be provided. This allows unlocking the
 repository where other ways are not available. Providing '-' reads the key
 from standard input.`,
 		Action: rt.unlockDo,
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "ext",
-				Aliases: []string{"x"},
-				Usage:   "Use specific extension to read key",
-				Sources: cli.EnvVars("REDACT_UNLOCK_EXT"),
-			},
+		Flags: append(extensionFlags(), []cli.Flag{
 			&cli.StringFlag{
 				Name:    "key",
 				Aliases: []string{"k"},
@@ -44,7 +38,7 @@ from standard input.`,
 				Usage:   "Use specific exported secret key file",
 				Sources: cli.EnvVars("REDACT_UNLOCK_EXPORTED_KEY"),
 			},
-		},
+		}...),
 		Commands: []*cli.Command{
 			rt.unlockGpgCmd(),
 		},
@@ -56,8 +50,9 @@ func (rt *Runtime) unlockDo(_ context.Context, cmd *cli.Command) error {
 	pemFile := cmd.String("exported-key")
 	extName := cmd.String("ext")
 
-	if keyFile != "" && pemFile != "" {
-		return fmt.Errorf("%w: --key and --exported-key are mutually exclusive", ErrOptions)
+	extensionSettings := extName != "" || cmd.String(extCommandFlag) != "" || len(cmd.StringMap(extOptionFlag)) > 0
+	if (keyFile != "" && pemFile != "") || ((keyFile != "" || pemFile != "") && extensionSettings) {
+		return fmt.Errorf("%w: key files and extension selection/settings are mutually exclusive", ErrOptions)
 	}
 
 	if err := rt.SetupRepo(); err != nil {
@@ -69,7 +64,7 @@ func (rt *Runtime) unlockDo(_ context.Context, cmd *cli.Command) error {
 			return err
 		}
 	} else {
-		if err := rt.loadSecretKeyFromExt(extName); err != nil {
+		if err := rt.loadSecretKeyFromExt(extName, cmd.String(extCommandFlag), cmd.StringMap(extOptionFlag)); err != nil {
 			return err
 		}
 	}
@@ -116,37 +111,33 @@ func (rt *Runtime) readSecretKey(keyFile, pemFile string) error {
 	return err
 }
 
-func (rt *Runtime) loadSecretKeyFromExt(extName string) error {
+func (rt *Runtime) loadSecretKeyFromExt(name, command string, options map[string]string) error {
 	conf, err := ext.Load(rt.Repo)
 	if err != nil {
 		return fmt.Errorf("loading extension config: %w", err)
 	}
 
-	successful := false
+	items, err := conf.Select(name, command, options)
+	if err != nil {
+		return err
+	}
 
-	for name, ext := range conf.Exts {
-		if extName != "" && extName != name {
+	for _, item := range items {
+		data, err := item.LoadKey()
+		if ext.ExitCode(err) == ext.NotApplicable && name == "" {
 			continue
 		}
 
-		data, err := ext.LoadKey()
 		if err != nil {
-			continue
-		}
-
-		reader := bytes.NewReader(data)
-		if err = rt.Import(reader); err != nil {
 			return err
 		}
 
-		successful = true
+		if err := rt.Import(bytes.NewReader(data)); err != nil {
+			return fmt.Errorf("importing extension key: %w", &ext.Error{Code: ext.Failure, Err: err})
+		}
 
-		break
+		return nil
 	}
 
-	if !successful {
-		return ErrNoSuitableKey
-	}
-
-	return nil
+	return ErrNoSuitableKey
 }

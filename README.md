@@ -247,16 +247,18 @@ Extensions are executable programs, ran from the repository worktree root and in
 
 Settings are defaults from configuration. There is no positional operand forwarding or interaction protocol.
 
+Extensions manage Key Exchange collections. Exported collections use PEM serialization for transfer.
+
 | Operation | Responsibility | Stdin | Stdout |
 |---|---|---|---|
 | `list` | Describe stored keys or recipients; no local Redact key required | Unused | Listing |
-| `get` | Retrieve a Redact key collection | Unused | Exported Redact PEM only on success |
-| `put` | Store the supplied collection; retries must converge | Exported Redact PEM | No required output |
-| `grant` | Register access and distribute the supplied current collection | Exported Redact PEM | No required output |
+| `get` | Retrieve a Key Exchange collection | Unused | Key Exchange collection (PEM), on success |
+| `put` | Store the supplied Key Exchange collection; retries must converge | Key Exchange collection (PEM) | No required output |
+| `grant` | Register access and distribute the current Key Exchange collection | Key Exchange collection (PEM) | No required output |
 | `revoke` | Remove matching access registrations and copies | Usused | No required output |
-| `update` | Refresh the collection at all remaining destinations | Exported Redact PEM | No required output |
+| `update` | Refresh the Key Exchange collection at all remaining destinations | Key Exchange collection (PEM) | No required output |
 
-Send diagnostics, candidates, and retry instructions to **stderr**, including when more selection information is needed. Keep successful `get` stdout exclusively PEM data. Selection is a second invocation with settings; no interactive selection is required.
+Send diagnostics, candidates, and retry instructions to **stderr**, including when more selection information is needed. Keep successful `get` stdout exclusively the exported Key Exchange collection in PEM format. Selection is a second invocation with settings; no interactive selection is required.
 
 | Exit code | Meaning | Outcome (get) | Outcome (other operations) |
 |---|---|---|---|
@@ -287,9 +289,9 @@ redact revoke --ext custom --option recipient=alice
 | `update` | `update` |
 | `unlock` | `get` |
 
-Collection publishing attempts every configured destination, even after errors. Successful changes remain available for inspection and retry; there is no collection rollback. A mix of success and unsupported destinations succeeds; unsupported destinations alone return `1`. Other errors are reported after the remaining attempts, using their highest severity. An empty configuration permits init/save/generate; grant/revoke require configured destinations or explicit selection.
+Key Exchange publishing attempts every configured destination, even after errors. Successful changes remain available for inspection and retry; there is no rollback of the Key Exchange collection. A mix of success and unsupported destinations succeeds; unsupported destinations alone return `1`. Other errors are reported after the remaining attempts, using their highest severity. An empty configuration permits init/save/generate; grant/revoke require configured destinations or explicit selection.
 
-`put`, `grant`, and `update` perform real writes, including writes to cloud stores. Rotation saves the new local collection, retaining previous key epochs, before distribution. Repository exchange changes need a user commit and push; Redact never commits or pushes automatically. Revoke performs removal only, with no implicit rotation or publication, and cannot remove historical access.
+`put`, `grant`, and `update` perform real writes, including writes to cloud stores. Rotation saves the new local Key Exchange collection, retaining previous key epochs, before distribution. Repository exchange changes need a user commit and push; Redact never commits or pushes automatically. Revoke performs removal only, with no implicit rotation or publication, and cannot remove historical access.
 
 ## Configuration with environment variables
 

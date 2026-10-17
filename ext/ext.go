@@ -1,9 +1,12 @@
 package ext
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"sort"
 
 	"github.com/julian7/redact/repo"
 )
@@ -15,17 +18,24 @@ type Ext struct {
 	Config  map[string]string `json:"config,omitempty"`
 }
 
-func (ext *Ext) cmd(cmd string) *exec.Cmd {
+func (ext *Ext) cmd(operation string) *exec.Cmd {
 	executable := ext.Command
-	if len(executable) == 0 {
+	if executable == "" {
 		executable = fmt.Sprintf("redact-ext-%s", ext.name)
 	}
 
-	args := make([]string, 0, len(ext.Config)+1)
-	args = append(args, cmd)
+	keys := make([]string, 0, len(ext.Config))
+	for key := range ext.Config {
+		keys = append(keys, key)
+	}
 
-	for key, val := range ext.Config {
-		args = append(args, fmt.Sprintf("%s=%s", key, val))
+	sort.Strings(keys)
+
+	args := make([]string, 0, len(keys)+1)
+
+	args = append(args, operation)
+	for _, key := range keys {
+		args = append(args, fmt.Sprintf("%s=%s", key, ext.Config[key]))
 	}
 
 	c := exec.Command(executable, args...)
@@ -34,42 +44,47 @@ func (ext *Ext) cmd(cmd string) *exec.Cmd {
 	return c
 }
 
-func (ext *Ext) Exec(cmd string) error {
-	c := ext.cmd(cmd)
+func (ext *Ext) result(operation string, err error) error {
+	if err == nil {
+		return nil
+	}
 
+	code := Failure
+
+	var exit *exec.ExitError
+	if errors.As(err, &exit) && exit.ExitCode() >= NotApplicable && exit.ExitCode() <= Failure {
+		code = exit.ExitCode()
+	}
+
+	return fmt.Errorf("extension %s %s: %w", ext.name, operation, &Error{Code: code, Err: err})
+}
+
+func (ext *Ext) Exec(operation string) error {
+	c := ext.cmd(operation)
 	c.Stdin = os.Stdin
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
-	if err := c.Run(); err != nil {
-		return err
-	}
-
-	return nil
+	return ext.result(operation, c.Run())
 }
 
 func (ext *Ext) List() error {
 	return ext.Exec("list")
 }
 
-func (ext *Ext) SaveKey(key []byte) error {
-	c := ext.cmd("put")
+// Run supplies a Key Exchange collection in PEM format for put, grant, or update.
+// Revoke receives no secret material. Diagnostics are inherited on stderr.
+func (ext *Ext) Run(operation string, key []byte) error {
+	c := ext.cmd(operation)
+	c.Stdin = bytes.NewReader(key)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
-	writer, err := c.StdinPipe()
-	if err != nil {
-		return fmt.Errorf("savekey setting up extension stdin: %w", err)
-	}
+	return ext.result(operation, c.Run())
+}
 
-	if err = c.Start(); err != nil {
-		return fmt.Errorf("savekey running extension: %w", err)
-	}
-
-	_, _ = writer.Write(key)
-	writer.Close()
-
-	return c.Wait()
+func (ext *Ext) SaveKey(key []byte) error {
+	return ext.Run("put", key)
 }
 
 func (ext *Ext) LoadKey() ([]byte, error) {
@@ -78,7 +93,7 @@ func (ext *Ext) LoadKey() ([]byte, error) {
 
 	val, err := c.Output()
 	if err != nil {
-		return nil, fmt.Errorf("loadkey reading extension output: %w", err)
+		return nil, ext.result("get", err)
 	}
 
 	return val, nil

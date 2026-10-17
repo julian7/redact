@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
+
+	"github.com/julian7/redact/ext"
 
 	"github.com/julian7/redact/logger"
 	"github.com/julian7/redact/repo"
@@ -16,6 +19,12 @@ func main() {
 	}
 
 	if err := rt.app().Run(context.Background(), os.Args); err != nil {
+		var outcome *ext.Error
+		if errors.As(err, &outcome) {
+			rt.Error(err.Error())
+			os.Exit(ext.ExitCode(err))
+		}
+
 		rt.Fatal(err.Error())
 	}
 }
