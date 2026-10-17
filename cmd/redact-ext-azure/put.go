@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -32,7 +31,7 @@ func cmdPut() *cli.Command {
 			}
 
 			if len(key) == 0 {
-				return &ext.Error{Code: ext.MissingData, Err: errors.New("missing exported key on stdin")}
+				return &ext.Error{Code: ext.MissingData, Err: ErrMissingExportedKey}
 			}
 
 			client, err := config.secretsClient()

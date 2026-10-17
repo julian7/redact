@@ -27,16 +27,6 @@ const (
 	PEMType        = "REDACT SECRET KEY"
 )
 
-var (
-	ErrInvalidKeyPreamble = errors.New("invalid key file preamble")
-	ErrInvalidKeyType     = errors.New("invalid key type")
-	ErrInvalidKey         = errors.New("invalid key")
-	ErrNoPEMData          = errors.New("no data found in PEM")
-	ErrPEMTypeMismatch    = errors.New("PEM type mismatch")
-	ErrNoKeysLoaded       = errors.New("no keys loaded")
-	ErrKeydirNotDirectory = errors.New("keydir is not a directory")
-)
-
 // SecretKey contains secret key in a git repository
 type SecretKey struct {
 	dot       billy.Filesystem
