@@ -5,8 +5,9 @@ import "github.com/urfave/cli/v3"
 func (rt *Runtime) gpgCmd() *cli.Command {
 	return &cli.Command{
 		Name:    "openpgp",
-		Aliases: []string{"gpg"},
+		Aliases: []string{gpgExtensionName},
 		Usage:   "OpenPGP Key Exchange commands",
+		Before:  requireInTreeGPGMode,
 		Commands: []*cli.Command{
 			rt.gpgGrantCmd(),
 			rt.gpgListCmd(),

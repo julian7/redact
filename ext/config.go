@@ -225,7 +225,7 @@ func (conf *Config) Resolve(name, command string, options map[string]string) (Ex
 // unless one extension is explicitly selected.
 func (conf *Config) Select(name, command string, options map[string]string) ([]Ext, error) {
 	if name == "" && command != "" {
-		return nil, errors.New("--cmd requires --ext")
+		return nil, ErrCmdRequiresExt
 	}
 
 	names := conf.Names()
@@ -246,10 +246,10 @@ func (conf *Config) Select(name, command string, options map[string]string) ([]E
 	return items, nil
 }
 
-// RunAll attempts every destination, retaining successful changes. Unsupported
-// destinations do not make a partially supported batch fail; other errors do.
+// RunAll continues after success or not-applicable outcomes. A missing-data or
+// failure outcome stops dispatch immediately, retaining earlier changes.
 func RunAll(items []Ext, operation string, data []byte) error {
-	var failures, skipped []error
+	var skipped []error
 
 	successful := false
 
@@ -261,12 +261,8 @@ func RunAll(items []Ext, operation string, data []byte) error {
 		case NotApplicable:
 			skipped = append(skipped, err)
 		default:
-			failures = append(failures, err)
+			return err
 		}
-	}
-
-	if len(failures) > 0 {
-		return errors.Join(failures...)
 	}
 
 	if !successful {
@@ -285,9 +281,28 @@ func (conf *Config) SaveKey(data []byte) error {
 	return RunAll(items, "put", data)
 }
 
-func (conf *Config) List() {
+func (conf *Config) List() error {
+	var skipped []error
+
+	successful := false
+
 	for _, name := range conf.Names() {
 		item := conf.Exts[name]
-		_ = item.List()
+
+		err := item.List()
+		switch ExitCode(err) {
+		case Success:
+			successful = true
+		case NotApplicable:
+			skipped = append(skipped, err)
+		default:
+			return err
+		}
 	}
+
+	if !successful {
+		return errors.Join(skipped...)
+	}
+
+	return nil
 }

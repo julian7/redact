@@ -11,4 +11,5 @@ var (
 	ErrNoSuitableKey     = errors.New("no suitable key found")
 	ErrKeyAlreadyExists  = errors.New("secret key already exists")
 	ErrFailedGrant       = errors.New("failed to save GPG key")
+	ErrInTreeGPGDisabled = errors.New("in-tree GPG is disabled while FF_GIT_EXT is set; use the extension commands")
 )

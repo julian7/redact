@@ -32,7 +32,9 @@ func (rt *Runtime) accessListDo(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if extConfig != nil {
-		extConfig.List()
+		if err := extConfig.List(); ext.ExitCode(err) >= ext.MissingData {
+			return err
+		}
 	}
 
 	err = util.Walk(rt.Workdir, kxdir, func(path string, _ os.FileInfo, err error) error {

@@ -22,10 +22,12 @@ func (rt *Runtime) extRunCmd() *cli.Command {
 			if err != nil {
 				return err
 			}
-			for _, ext := range conf.Exts {
-				ext.Exec(cmd.Args().First())
+			items, err := conf.Select("", "", nil)
+			if err != nil {
+				return err
 			}
-			return nil
+
+			return ext.ExecAll(items, cmd.Args().First())
 		},
 	}
 }

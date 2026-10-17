@@ -14,6 +14,7 @@ var (
 	ErrExtNotFound      = errors.New("extension not found")
 	ErrInvalidEnvFile   = errors.New("invalid dotenv syntax")
 	ErrReservedName     = errors.New("_order_ is reserved for extension ordering")
+	ErrCmdRequiresExt   = errors.New("--cmd requires --ext")
 )
 
 // Error describes a standardized extension outcome. Its cause is retained for
