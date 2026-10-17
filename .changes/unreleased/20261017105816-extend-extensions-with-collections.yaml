@@ -1,0 +1,4 @@
+message: extend extensions with collections
+type: Changed
+severity: minor
+author: Balazs Nagy <julsevern@gmail.com>
