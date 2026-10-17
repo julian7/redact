@@ -246,3 +246,31 @@ func TestSave(t *testing.T) {
 		})
 	}
 }
+
+func TestInvalidOrderingMetadata(t *testing.T) {
+	for _, value := range []string{`null`, `{}`, `"gpg"`, `["gpg", 2]`} {
+		t.Run(value, func(t *testing.T) {
+			r := newTestRepo()
+			if err := r.Workdir.MkdirAll(repo.DefaultKeyExchangeDir, 0755); err != nil {
+				t.Fatal(err)
+			}
+
+			fd, err := r.Workdir.Create(redactPath(r))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err := fd.Write([]byte(`{"_order_":` + value + `}`)); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := fd.Close(); err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err := ext.Load(r); err == nil {
+				t.Fatal("malformed ordering metadata accepted")
+			}
+		})
+	}
+}
