@@ -3,7 +3,6 @@ package encoder
 import (
 	"bytes"
 	"crypto/cipher"
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -34,14 +33,6 @@ type Entry struct {
 type Factory func([]byte) (AEAD, error)
 
 var (
-	ErrCyphertextSmall     = errors.New("ciphertext too small")
-	ErrEncoderNotFound     = errors.New("encoder not found")
-	ErrEncoderTypeExists   = errors.New("encoder type already exists")
-	ErrEncoderTypeInvalid  = errors.New("invalid encoding type")
-	ErrEncoderTypeNotFound = errors.New("encoder type not found")
-	ErrInvalidChecksum     = errors.New("invalid HMAC checksum")
-	ErrKeyTooSmall         = errors.New("key too small")
-
 	encoders = map[uint32]Entry{
 		TypeAES256GCM96:      {factory: NewAES256GCM96, name: "AES256-GCM96"},
 		TypeChaCha20Poly1305: {factory: NewChaCha20Poly1305, name: "ChaCha20-Poly1305"},

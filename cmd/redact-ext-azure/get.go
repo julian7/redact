@@ -39,7 +39,7 @@ func cmdGet() *cli.Command {
 			}
 
 			if gotSecret.Value == nil || *gotSecret.Value == "" {
-				return &ext.Error{Code: ext.MissingData, Err: errors.New("secret contains no exported key")}
+				return &ext.Error{Code: ext.MissingData, Err: ErrNoExportedKey}
 			}
 
 			fmt.Print(*gotSecret.Value)
