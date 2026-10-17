@@ -14,7 +14,22 @@ import (
 )
 
 func cmdGrant() *cli.Command {
-	return command("grant", "Register GPG recipients and publish the supplied collection", grantAction)
+	cmd := command("grant", "Register GPG recipients and publish the supplied collection", grantAction)
+	cmd.ArgsUsage = "[recipient=SELECTOR] [file=PATH] [armor=PATH]"
+	cmd.Description = `At least one recipient source is required:
+
+  recipient=SELECTOR  Export a recipient from the local GnuPG keyring.
+  file=PATH           Read a binary OpenPGP public key.
+  armor=PATH          Read an ASCII-armored OpenPGP public key.
+
+Repeat a setting or provide comma-separated values to grant access to multiple
+recipients. Through redact, pass these as --option KEY=VALUE. Examples:
+
+  redact grant --ext gpg --option recipient=alice@example.org
+  redact grant --ext gpg --option file=recipient.gpg
+  redact grant --ext gpg --option armor=recipient.asc`
+
+	return cmd
 }
 
 func grantAction(_ context.Context, cmd *cli.Command) error {
@@ -24,7 +39,7 @@ func grantAction(_ context.Context, cmd *cli.Command) error {
 	}
 
 	if len(settings.values("recipient"))+len(settings.values("file"))+len(settings.values("armor")) == 0 {
-		return missing(ErrGrantRecipientInputRequired)
+		return showGrantCandidates()
 	}
 
 	key, err := readCollection(os.Stdin)
@@ -84,6 +99,37 @@ func grantAction(_ context.Context, cmd *cli.Command) error {
 	}
 
 	return nil
+}
+
+func showGrantCandidates() error {
+	data, err := gpgutil.ExportKey(nil)
+	if err != nil {
+		return failed(fmt.Errorf("listing local GnuPG public keys: %w", err))
+	}
+
+	if len(data) == 0 {
+		fmt.Fprintln(os.Stderr, "No public keys found in the local GnuPG keyring.")
+		fmt.Fprintln(os.Stderr, "Import a recipient key or provide file=PATH or armor=PATH.")
+
+		return missing(ErrGrantRecipientInputRequired)
+	}
+
+	keys, err := gpgutil.LoadPubKey(bytes.NewReader(data), true)
+	if err != nil {
+		return failed(fmt.Errorf("reading local GnuPG public keys: %w", err))
+	}
+
+	fmt.Fprintln(os.Stderr, "Potential recipients in the local GnuPG keyring:")
+
+	for _, key := range keys {
+		if err := gpgutil.PrintKeyTo(os.Stderr, key); err != nil {
+			return failed(fmt.Errorf("printing GnuPG recipient candidate: %w", err))
+		}
+	}
+
+	fmt.Fprintln(os.Stderr, "Retry with --option recipient=<fingerprint>, or provide file=PATH or armor=PATH.")
+
+	return missing(ErrGrantRecipientInputRequired)
 }
 
 func loadGrantKeys(settings settings) ([]*openpgp.Entity, []error) {
