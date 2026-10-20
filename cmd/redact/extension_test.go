@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -29,6 +28,10 @@ func extensionRepo(t *testing.T) (string, string) {
 
 	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
 	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
+	t.Setenv("FF_GIT_EXT", "1")
+	t.Setenv("REDACT_UNLOCK_KEY", "")
+	t.Setenv("REDACT_UNLOCK_EXPORTED_KEY", "")
+	t.Setenv("REDACT_UNLOCK_GPG_KEY", "")
 
 	root := t.TempDir()
 	if output, err := exec.Command("git", "init", "-q", root).CombinedOutput(); err != nil {
@@ -82,7 +85,7 @@ func runRedact(args ...string) error {
 	return app.Run(context.Background(), append([]string{"redact"}, args...))
 }
 
-func setExtensionConfig(t *testing.T, program string, codes map[string]int, order []string) {
+func setExtensionConfig(t *testing.T, program string, codes map[string]int, order []string) *ext.Config {
 	t.Helper()
 
 	rt := extensionRuntime()
@@ -108,6 +111,8 @@ func setExtensionConfig(t *testing.T, program string, codes map[string]int, orde
 	if err := conf.Save(); err != nil {
 		t.Fatal(err)
 	}
+
+	return conf
 }
 
 func fixtureCalls(t *testing.T, root string) []string {
@@ -121,29 +126,78 @@ func fixtureCalls(t *testing.T, root string) []string {
 	return strings.Split(strings.TrimSpace(string(data)), "\n")
 }
 
-func TestUnlockExtensionPolicy(t *testing.T) {
+func TestExtensionScenarios(t *testing.T) {
+	root, program := extensionRepo(t)
+	setExtensionConfig(t, program, map[string]int{"aws": 0, "azure": 0}, []string{"azure", "aws"})
+
+	if err := runRedact("init"); err != nil {
+		t.Fatal(err)
+	}
+
+	keyfile := filepath.Join(root, ".git", "redact", "key")
+
+	key, err := os.ReadFile(keyfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	exported, err := os.ReadFile(filepath.Join(root, "key.pem"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	initCalls, err := os.ReadFile(filepath.Join(root, "calls"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, scenario := range []struct {
+		name  string
+		run   func(*testing.T, string, string)
+		calls []byte
+	}{
+		{"CollectionDispatchAndConfiguration", checkCollectionDispatchAndConfiguration, initCalls},
+		{"UnlockExtensionPolicy", checkUnlockExtensionPolicy, nil},
+		{"ForcedUnconfiguredUnlockAndStderr", checkForcedUnconfiguredUnlockAndStderr, nil},
+		{"ExplicitUnlockNeverFallsBack", checkExplicitUnlockNeverFallsBack, nil},
+		{"InvalidGetDataStopsUnlock", checkInvalidGetDataStopsUnlock, nil},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			// Restore an unlocked repository without repeating Git or redact init.
+			t.Chdir(root)
+
+			for filename, data := range map[string][]byte{
+				keyfile:                        key,
+				filepath.Join(root, "key.pem"): exported,
+				filepath.Join(root, "calls"):   scenario.calls,
+			} {
+				if err := os.WriteFile(filename, data, 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			if err := os.Remove(filepath.Join(root, ".redact", "config.json")); err != nil && !os.IsNotExist(err) {
+				t.Fatal(err)
+			}
+
+			scenario.run(t, root, program)
+		})
+	}
+}
+
+func checkUnlockExtensionPolicy(t *testing.T, root, program string) {
+	conf := setExtensionConfig(t, program, map[string]int{"first": 0, "second": 0}, []string{"first", "second"})
+
 	for _, code := range []int{0, 1, 2, 3, 77} {
 		t.Run(strconv.Itoa(code), func(t *testing.T) {
-			root, program := extensionRepo(t)
-			if err := runRedact("init"); err != nil {
-				t.Fatal(err)
-			}
-			// Export a real Key Exchange collection before testing retrieval.
-			rt := extensionRuntime()
-			if _, err := rt.LoadSecretKey(context.Background(), nil); err != nil {
+			conf.Exts["first"].Config["code"] = strconv.Itoa(code)
+			if err := conf.Save(); err != nil {
 				t.Fatal(err)
 			}
 
-			var data bytes.Buffer
-			if err := rt.Export(&data); err != nil {
+			if err := os.WriteFile(filepath.Join(root, "calls"), nil, 0600); err != nil {
 				t.Fatal(err)
 			}
-
-			if err := os.WriteFile(filepath.Join(root, "key.pem"), data.Bytes(), 0600); err != nil {
-				t.Fatal(err)
-			}
-
-			setExtensionConfig(t, program, map[string]int{"first": code, "second": 0}, []string{"first", "second"})
 
 			err := runRedact("unlock")
 
@@ -170,12 +224,7 @@ func TestUnlockExtensionPolicy(t *testing.T) {
 	}
 }
 
-func TestForcedUnconfiguredUnlockAndStderr(t *testing.T) {
-	root, program := extensionRepo(t)
-	if err := runRedact("init"); err != nil {
-		t.Fatal(err)
-	}
-
+func checkForcedUnconfiguredUnlockAndStderr(t *testing.T, root, program string) {
 	if err := runRedact("key", "save", "--ext", "fixture", "--cmd", program); err != nil {
 		t.Fatal(err)
 	}
@@ -223,12 +272,10 @@ func TestForcedUnconfiguredUnlockAndStderr(t *testing.T) {
 	}
 }
 
-func TestCollectionDispatchAndConfiguration(t *testing.T) {
-	root, program := extensionRepo(t)
+func checkCollectionDispatchAndConfiguration(t *testing.T, root, program string) {
 	setExtensionConfig(t, program, map[string]int{"aws": 0, "azure": 0}, []string{"azure", "aws"})
 
 	for _, args := range [][]string{
-		{"init"},
 		{"key", "save"},
 		{"key", "generate"},
 		{"grant", "--option", "recipient=alice"},
@@ -289,8 +336,7 @@ func TestCollectionDispatchAndConfiguration(t *testing.T) {
 	}
 }
 
-func TestExplicitUnlockNeverFallsBack(t *testing.T) {
-	root, program := extensionRepo(t)
+func checkExplicitUnlockNeverFallsBack(t *testing.T, root, program string) {
 	setExtensionConfig(t, program, map[string]int{"first": 1, "second": 0}, []string{"first", "second"})
 
 	if err := runRedact("unlock", "--ext", "first"); ext.ExitCode(err) != ext.NotApplicable {
@@ -308,8 +354,7 @@ func TestExplicitUnlockNeverFallsBack(t *testing.T) {
 	}
 }
 
-func TestInvalidGetDataStopsUnlock(t *testing.T) {
-	root, program := extensionRepo(t)
+func checkInvalidGetDataStopsUnlock(t *testing.T, root, program string) {
 	setExtensionConfig(t, program, map[string]int{"first": 0, "second": 0}, []string{"first", "second"})
 
 	if err := os.WriteFile(filepath.Join(root, "key.pem"), []byte("invalid Key Exchange data"), 0600); err != nil {
