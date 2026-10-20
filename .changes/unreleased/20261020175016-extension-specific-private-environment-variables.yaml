@@ -1,0 +1,4 @@
+message: extension-specific private environment variables
+type: Added
+severity: minor
+author: Balazs Nagy <julsevern@gmail.com>

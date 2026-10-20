@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.33.9
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.79.3
 	github.com/go-git/go-billy/v5 v5.9.2
+	github.com/joho/godotenv v1.5.1
 	github.com/julian7/tester v0.0.0-20190708141839-fd2332449f51
 	github.com/urfave/cli/v3 v3.14.0
 	golang.org/x/crypto v0.58.0

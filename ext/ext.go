@@ -15,7 +15,7 @@ type Ext struct {
 	Config  map[string]string `json:"config,omitempty"`
 }
 
-func (ext *Ext) cmd(cmd string) *exec.Cmd {
+func (ext *Ext) cmd(cmd string) (*exec.Cmd, error) {
 	executable := ext.Command
 	if len(executable) == 0 {
 		executable = fmt.Sprintf("redact-ext-%s", ext.name)
@@ -31,11 +31,18 @@ func (ext *Ext) cmd(cmd string) *exec.Cmd {
 	c := exec.Command(executable, args...)
 	c.Dir = ext.repo.Workdir.Root()
 
-	return c
+	if err := ext.privateEnv(c); err != nil {
+		return nil, err
+	}
+
+	return c, nil
 }
 
 func (ext *Ext) Exec(cmd string) error {
-	c := ext.cmd(cmd)
+	c, err := ext.cmd(cmd)
+	if err != nil {
+		return err
+	}
 
 	c.Stdin = os.Stdin
 	c.Stdout = os.Stdout
@@ -53,7 +60,11 @@ func (ext *Ext) List() error {
 }
 
 func (ext *Ext) SaveKey(key []byte) error {
-	c := ext.cmd("put")
+	c, err := ext.cmd("put")
+	if err != nil {
+		return err
+	}
+
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
@@ -73,7 +84,11 @@ func (ext *Ext) SaveKey(key []byte) error {
 }
 
 func (ext *Ext) LoadKey() ([]byte, error) {
-	c := ext.cmd("get")
+	c, err := ext.cmd("get")
+	if err != nil {
+		return nil, err
+	}
+
 	c.Stderr = os.Stderr
 
 	val, err := c.Output()

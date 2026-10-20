@@ -224,6 +224,15 @@ which should be committed to the repository, and should not be encrypted. Every 
 * command path: command to execute the extension, defaults to `redact-ext-<name>`
 * options: `key=value` pairs, which are passed to the extension command as command-line arguments
 
+Private, local settings can be placed in `.git/redact/<name>.env`, where `<name>` is the configured extension name. For example, `.git/redact/aws.env` can contain:
+
+```dotenv
+AWS_PROFILE=redact
+AWS_REGION=eu-central-1
+```
+
+These variables override the inherited environment only during that extension's invocation. The files support dotenv syntax, including comments, quoted values, and optional `export` prefixes; they are parsed without executing shell commands. Missing files are ignored; unreadable or malformed files stop the extension. Keep these files private (for example, `chmod 600 .git/redact/aws.env`). They live in Git's metadata directory and are not committed. Linked worktrees use the common Git directory, alongside redact's local keys.
+
 An extension has to implement the following commands:
 
 * `list`: basic information about the extension and its configuration
