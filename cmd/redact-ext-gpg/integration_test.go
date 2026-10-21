@@ -55,8 +55,6 @@ func TestGPGCollectionLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Setenv("FF_GIT_EXT", "1")
-
 	for _, name := range []string{"Alice One", "Alice Two"} {
 		args := []string{
 			"--batch", "--pinentry-mode", "loopback", "--passphrase", "",
@@ -88,15 +86,23 @@ func TestGPGCollectionLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// An unset feature flag leaves the GPG extension skipped.
-	os.Unsetenv("FF_GIT_EXT")
+	var stored bytes.Buffer
 
-	_, _, err = runExtension(t, []string{"redact-ext-gpg", "list"}, nil)
-	if ext.ExitCode(err) != ext.NotApplicable {
-		t.Fatalf("unset transition flag exit = %v", err)
+	if err := key.SaveTo(&stored); err != nil {
+		t.Fatal(err)
 	}
 
-	t.Setenv("FF_GIT_EXT", "1")
+	// The standalone extension works without the core's transition flag.
+	t.Setenv("FF_GIT_EXT", "")
+
+	if err := os.Unsetenv("FF_GIT_EXT"); err != nil {
+		t.Fatal(err)
+	}
+
+	_, _, err = runExtension(t, []string{"redact-ext-gpg", "list"}, nil)
+	if err != nil {
+		t.Fatalf("unset transition flag exit = %v", err)
+	}
 
 	dataDir := t.TempDir()
 	binaryKey := gpgRunOutput(t, "--export", "--", fmt.Sprintf("%x", fingerprints[0]))
@@ -153,9 +159,9 @@ func TestGPGCollectionLifecycle(t *testing.T) {
 
 	got, _, err := runExtension(t, []string{"redact-ext-gpg", "get", "gpgkey=" + selector}, nil)
 
-	equal := bytes.Equal([]byte(got), collection.Bytes())
+	equal := bytes.Equal([]byte(got), stored.Bytes())
 	if err != nil || !equal {
-		t.Fatalf("explicit get did not return only the exported collection: equal=%v err=%v", equal, err)
+		t.Fatalf("explicit get did not return the stored plaintext: equal=%v err=%v", equal, err)
 	}
 
 	t.Chdir(root)
@@ -184,8 +190,8 @@ func TestGPGCollectionLifecycle(t *testing.T) {
 		selector := fmt.Sprintf("%x", fingerprint)
 
 		got, _, err := runExtension(t, []string{"redact-ext-gpg", "get", "gpgkey=" + selector}, nil)
-		if err != nil || !bytes.Equal([]byte(got), collection.Bytes()) {
-			t.Fatalf("updated recipient %s: equal=%v err=%v", selector, bytes.Equal([]byte(got), collection.Bytes()), err)
+		if err != nil || !bytes.Equal([]byte(got), stored.Bytes()) {
+			t.Fatalf("updated recipient %s: equal=%v err=%v", selector, bytes.Equal([]byte(got), stored.Bytes()), err)
 		}
 	}
 

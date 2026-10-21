@@ -14,7 +14,22 @@ import (
 )
 
 func cmdRevoke() *cli.Command {
-	return command("revoke", "Remove matching GPG recipient registrations", revokeAction)
+	cmd := command("revoke", "Remove matching GPG recipient registrations", revokeAction)
+	cmd.ArgsUsage = "[recipient=SELECTOR] [file=PATH] [armor=PATH]"
+	cmd.Description = `Removes encrypted Key Exchange copies and public-key registrations
+for matching recipients. At least one recipient source is required:
+
+  recipient=SELECTOR  Match a registered recipient by fingerprint or user ID.
+  file=PATH           Identify recipients using a binary OpenPGP public key.
+  armor=PATH          Identify recipients using an armored OpenPGP public key.
+
+Repeat a setting or provide comma-separated values to revoke multiple recipients.
+
+Example:
+
+  redact-ext-gpg revoke recipient=alice@example.org`
+
+	return cmd
 }
 
 func revokeAction(_ context.Context, cmd *cli.Command) error {

@@ -3,7 +3,6 @@ package main
 import "errors"
 
 var (
-	ErrGPGExtensionFlagUnset        = errors.New("GPG extension is skipped because FF_GIT_EXT is unset")
 	ErrNoLocalKeyExchangeCopy       = errors.New("no local GnuPG identity has an encrypted Key Exchange copy")
 	ErrIdentityHasNoKeyExchangeCopy = errors.New("GnuPG identity has no encrypted Key Exchange copy")
 	ErrGPGIdentitySelectionRequired = errors.New("GnuPG identity selection is required")

@@ -38,14 +38,6 @@ func app() *cli.Command {
 	}
 }
 
-func requireExtensionMode(ctx context.Context, _ *cli.Command) (context.Context, error) {
-	if _, enabled := os.LookupEnv("FF_GIT_EXT"); !enabled {
-		return ctx, notApplicable(ErrGPGExtensionFlagUnset)
-	}
-
-	return ctx, nil
-}
-
 func notApplicable(err error) error { return outcome(ext.NotApplicable, err) }
 
 func outcome(code int, err error) error {
@@ -64,7 +56,6 @@ func command(name, usage string, action cli.ActionFunc) *cli.Command {
 	return &cli.Command{
 		Name:   name,
 		Usage:  usage,
-		Before: requireExtensionMode,
 		Action: action,
 	}
 }

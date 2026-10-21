@@ -12,7 +12,7 @@ import (
 )
 
 func cmdList() *cli.Command {
-	return command("list", "List registered GPG recipients", func(_ context.Context, cmd *cli.Command) error {
+	cmd := command("list", "List registered GPG recipients", func(_ context.Context, cmd *cli.Command) error {
 		if _, err := parseSettings(cmd.Args().Slice()); err != nil {
 			return err
 		}
@@ -35,6 +35,9 @@ func cmdList() *cli.Command {
 
 		return nil
 	})
+	cmd.Description = "Prints the identities and fingerprints of GPG recipients registered in the repository."
+
+	return cmd
 }
 
 func openRepo() (*repo.Repo, error) {

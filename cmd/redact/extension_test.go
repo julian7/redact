@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -161,6 +162,7 @@ func TestExtensionScenarios(t *testing.T) {
 		{"ForcedUnconfiguredUnlockAndStderr", checkForcedUnconfiguredUnlockAndStderr, nil},
 		{"ExplicitUnlockNeverFallsBack", checkExplicitUnlockNeverFallsBack, nil},
 		{"InvalidGetDataStopsUnlock", checkInvalidGetDataStopsUnlock, nil},
+		{"BinaryCollectionUnlock", checkBinaryCollectionUnlock, nil},
 	} {
 		t.Run(scenario.name, func(t *testing.T) {
 			// Restore an unlocked repository without repeating Git or redact init.
@@ -367,5 +369,34 @@ func checkInvalidGetDataStopsUnlock(t *testing.T, root, program string) {
 
 	if got := fixtureCalls(t, root); len(got) != 1 {
 		t.Fatalf("invalid successful output caused fallback: %v", got)
+	}
+}
+
+func checkBinaryCollectionUnlock(t *testing.T, root, program string) {
+	keyfile := filepath.Join(root, ".git", "redact", "key")
+
+	key, err := os.ReadFile(keyfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Both paths belong to the isolated temporary repository fixture.
+	if err := os.WriteFile(filepath.Join(root, "key.pem"), key, 0600); err != nil { //nolint:gosec
+		t.Fatal(err)
+	}
+
+	if err := os.Remove(keyfile); err != nil {
+		t.Fatal(err)
+	}
+
+	setExtensionConfig(t, program, map[string]int{"fixture": 0}, nil)
+
+	if err := runRedact("unlock", "--ext", "fixture"); err != nil {
+		t.Fatal(err)
+	}
+
+	restored, err := os.ReadFile(keyfile)
+	if err != nil || !bytes.Equal(restored, key) {
+		t.Fatalf("binary collection was not restored: %v", err)
 	}
 }

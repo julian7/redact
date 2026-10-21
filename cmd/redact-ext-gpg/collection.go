@@ -15,11 +15,18 @@ import (
 )
 
 func cmdPut() *cli.Command {
-	return command("put", "Publish the supplied Key Exchange collection", putAction)
+	cmd := command("put", "Publish the supplied Key Exchange collection", putAction)
+	cmd.Description = "Reads a Key Exchange collection from stdin and encrypts a copy for each registered GPG recipient."
+
+	return cmd
 }
 
 func cmdUpdate() *cli.Command {
-	return command("update", "Refresh registered GPG recipients", putAction)
+	cmd := command("update", "Refresh registered GPG recipients", putAction)
+	cmd.Description = `Reads the current Key Exchange collection from stdin and replaces
+registered recipients' encrypted copies.`
+
+	return cmd
 }
 
 func putAction(_ context.Context, cmd *cli.Command) error {

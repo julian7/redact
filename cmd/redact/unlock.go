@@ -8,6 +8,7 @@ import (
 	"io"
 
 	"github.com/julian7/redact/ext"
+	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/logger"
 	"github.com/urfave/cli/v3"
 )
@@ -153,7 +154,13 @@ func (rt *Runtime) loadSecretKeyFromExt(name, command string, options map[string
 			return err
 		}
 
-		if err := rt.Import(bytes.NewReader(data)); err != nil {
+		if bytes.HasPrefix(data, []byte(files.KeyMagic)) {
+			err = rt.Read(bytes.NewReader(data))
+		} else {
+			err = rt.Import(bytes.NewReader(data))
+		}
+
+		if err != nil {
 			return fmt.Errorf("importing extension key: %w", &ext.Error{Code: ext.Failure, Err: err})
 		}
 

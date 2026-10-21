@@ -9,6 +9,10 @@ type settings map[string]string
 
 func parseSettings(args []string, allowed ...string) (settings, error) {
 	allow := make(map[string]struct{}, len(allowed))
+	// Private-key input applies only to get, but configured settings accompany
+	// every operation. Other operations must not consume that input.
+	allow["private-key"] = struct{}{}
+
 	for _, key := range allowed {
 		allow[key] = struct{}{}
 	}

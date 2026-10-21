@@ -224,6 +224,7 @@ which should be committed to the repository, and should not be encrypted. Every 
 * name: name of the extension
 * command path: command to execute the extension, defaults to `redact-ext-<name>`
 * options: `key=value` pairs, which are passed to the extension command as command-line arguments
+* input: an optional command argument array supplying stdin during `get` only
 
 The top-level `_order_` array sets extension preference, independently of extension entries:
 
@@ -246,6 +247,21 @@ AWS_REGION=eu-central-1
 
 These variables override the inherited environment only during that extension's invocation. The files support dotenv syntax, including comments, quoted values, and optional `export` prefixes; they are parsed without executing shell commands. Missing files are ignored; unreadable or malformed files stop the extension. Keep these files private (for example, `chmod 600 .git/redact/aws.env`). They live in Git's metadata directory and are not committed. Linked worktrees use the common Git directory, alongside redact's local keys.
 
+An extension can retrieve input from any command during `get`. For example:
+
+```json
+{
+  "gpg": {
+    "config": {"private-key": "stdin"},
+    "input": ["op", "read", "op://vault/item/section/field"]
+  }
+}
+```
+
+Redact executes the `input` argument array directly, without shell parsing, expansion, or an implicit extension operation. Its standard out is piped to the target extension's standard input. Both commands run from the repository root and receive the target extension's environment, including `.git/redact/gpg.env` in this example. In this example, 1Password command-line tool reads a GPG secret key. Setting `OP_ACCOUNT` will be given to the `op` command to select the appropriate account.
+
+The input filter can emit diagnostic output on standard error. Any non-zero exit of the input filter causes failure.
+
 ### Extension interface
 
 Extensions are executable programs, ran from the repository worktree root and inherit the environment. The protocol uses only process arguments, stdin, stdout, stderr, and exit status:
@@ -261,13 +277,13 @@ Extensions manage Key Exchange collections. Exported collections use PEM seriali
 | Operation | Responsibility | Stdin | Stdout |
 |---|---|---|---|
 | `list` | Describe stored keys or recipients; no local Redact key required | Unused | Listing |
-| `get` | Retrieve a Key Exchange collection | Unused | Key Exchange collection (PEM), on success |
+| `get` | Retrieve a Key Exchange collection | Optional `input` command output | Key Exchange collection, on success |
 | `put` | Store the supplied Key Exchange collection; retries must converge | Key Exchange collection (PEM) | No required output |
 | `grant` | Register access and distribute the current Key Exchange collection | Key Exchange collection (PEM) | No required output |
 | `revoke` | Remove matching access registrations and copies | Unused | No required output |
 | `update` | Refresh the Key Exchange collection at all remaining destinations | Key Exchange collection (PEM) | No required output |
 
-Send diagnostics, candidates, and retry instructions to **stderr**, including when more selection information is needed. Keep successful `get` stdout exclusively the exported Key Exchange collection in PEM format. Selection is a second invocation with settings; no interactive selection is required.
+Send diagnostics, candidates, and retry instructions to **stderr**, including when more selection information is needed. Keep successful `get` stdout exclusively the retrieved payload. Selection is a second invocation with settings; no interactive selection is required.
 
 | Exit code | Meaning | Outcome (get) | Outcome (other operations) |
 |---|---|---|---|
@@ -305,11 +321,13 @@ Collection changes made before an error remain for inspection and recovery; Reda
 
 `redact-ext-gpg` stores encrypted Key Exchange copies and armored public-key registrations in `.redact/<fingerprint>.key` and `.redact/<fingerprint>.asc`. It supports `list`, `get`, `put`, `grant`, `revoke`, and `update`. Use `recipient=SELECTOR` for a local GnuPG public-key selector, `file=PATH` for a binary public key, or `armor=PATH` for an armored public key. `get` accepts `gpgkey=SELECTOR`; if several local identities can unlock the repository, it lists candidates on stderr and asks for a second invocation with that setting. `GNUPGHOME` and other GnuPG environment variables are inherited.
 
-During the transition, leave `FF_GIT_EXT` unset to keep the built-in OpenPGP commands and legacy GPG refresh enabled; the GPG extension reports not applicable and is skipped. Set `FF_GIT_EXT=1` to disable `redact openpgp` and `redact unlock gpg`, and use the GPG extension instead. Other configured extensions remain active. For an old GPG-only repository with no extension configuration, force the extension for one invocation:
+By default, `get` subcommand invokes `gpg` command from the PATH for decryption. With the setting `private-key=stdin`, `get` reads an armored OpenPGP private key from standard input and decrypts its Key Exchange copy internally. Private key stays in memory: this path does not invoke GnuPG, or create temporary secret files. `gpgkey=SELECTOR` can select among supplied identities. For encrypted keys, set `REDACT_GPG_PASSPHRASE` in `.git/redact/gpg.env` or enter the passphrase at the terminal prompt. The `private-key` setting is ignored by other operations.
+
+Set `FF_GIT_EXT=1` to use configured GPG extensions instead of redact's built-in GPG behavior. To select the extension explicitly:
 
 ```shell
-FF_GIT_EXT=1 redact unlock --ext gpg --option gpgkey=alice@example.org
-FF_GIT_EXT=1 redact grant --ext gpg --option recipient=alice@example.org
+redact unlock --ext gpg --option gpgkey=alice@example.org
+redact grant --ext gpg --option recipient=alice@example.org
 ```
 
 With the flag enabled, configure `gpg` in the normal extension configuration to include it in automatic unlock and collection updates. `key generate` invokes `update`; `key save` invokes `put`.
@@ -326,7 +344,7 @@ A couple of options are configurable with environment variables too, which are t
 * `REDACT_UNLOCK_EXPORTED_KEY`: sets `--exported-key` option for `redact unlock` subcommand
 * `REDACT_UNLOCK_GPG_KEY`: sets `--gpgkey` option for `redact unlock gpg` subcommand
 * `REDACT_UNLOCK_KEY`: sets `--key` option for `redact unlock` subcommand
-* `FF_GIT_EXT`: enables the GPG extension and disables the in-tree GPG path when set
+* `FF_GIT_EXT`: selects the GPG extension instead of the in-tree GPG path for redact's default dispatch when set
 
 ## Any issues?
 

@@ -4,18 +4,36 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 
-	"github.com/julian7/redact/files"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/repo"
 	"github.com/urfave/cli/v3"
 )
 
 func cmdGet() *cli.Command {
-	return command("get", "Export a Key Exchange collection using a local GnuPG identity", getAction)
+	cmd := command("get", "Decrypt a Key Exchange copy", getAction)
+	cmd.ArgsUsage = "[gpgkey=SELECTOR] [private-key=stdin]"
+	cmd.Description = `Prints the decrypted Key Exchange copy to stdout.
+
+  gpgkey=SELECTOR    Select an identity by fingerprint or user ID.
+  private-key=stdin  Read an armored OpenPGP private key from stdin.
+
+By default, uses the local GnuPG keyring. If multiple identities match,
+retry with gpgkey=SELECTOR.
+
+For an encrypted stdin key, set REDACT_GPG_PASSPHRASE or enter its passphrase
+at the terminal prompt.
+
+Examples:
+
+  redact-ext-gpg get gpgkey=alice@example.org
+  redact-ext-gpg get private-key=stdin < seckey.asc`
+
+	return cmd
 }
 
 func getAction(_ context.Context, cmd *cli.Command) error {
@@ -30,6 +48,20 @@ func getAction(_ context.Context, cmd *cli.Command) error {
 	}
 
 	selector := settings.identity()
+	if source := settings["private-key"]; source != "" {
+		if source != "stdin" {
+			return failed(fmt.Errorf("private-key must be stdin"))
+		}
+
+		plaintext, err := loadStdinExchangeKey(redactRepo, os.Stdin, selector)
+		if err != nil {
+			return err
+		}
+
+		_, err = os.Stdout.Write(plaintext)
+
+		return failed(err)
+	}
 
 	available, err := availableKeys(redactRepo, selector)
 	if err != nil {
@@ -51,16 +83,14 @@ func getAction(_ context.Context, cmd *cli.Command) error {
 		return missing(ErrGPGIdentitySelectionRequired)
 	}
 
-	key, err := loadExchangeKey(redactRepo, available[0])
+	plaintext, err := loadExchangeKey(redactRepo, available[0])
 	if err != nil {
 		return err
 	}
 
-	if err := key.Export(os.Stdout); err != nil {
-		return failed(fmt.Errorf("exporting Key Exchange collection: %w", err))
-	}
+	_, err = os.Stdout.Write(plaintext)
 
-	return nil
+	return failed(err)
 }
 
 func availableKeys(redactRepo *repo.Repo, selector string) ([][]byte, error) {
@@ -100,7 +130,7 @@ func availableKeys(redactRepo *repo.Repo, selector string) ([][]byte, error) {
 	return available, nil
 }
 
-func loadExchangeKey(redactRepo *repo.Repo, fingerprint []byte) (*files.SecretKey, error) {
+func loadExchangeKey(redactRepo *repo.Repo, fingerprint []byte) ([]byte, error) {
 	filename := filepath.Join(repo.DefaultKeyExchangeDir, fmt.Sprintf("%x%s", fingerprint, repo.ExtSecret))
 
 	ciphertext, err := redactRepo.Workdir.Open(filename)
@@ -124,16 +154,12 @@ func loadExchangeKey(redactRepo *repo.Repo, fingerprint []byte) (*files.SecretKe
 
 	defer plaintext.Close()
 
-	key, err := files.NewSecretKey(nil)
+	data, err := io.ReadAll(plaintext)
 	if err != nil {
-		return nil, failed(err)
-	}
-
-	if err := key.Read(plaintext); err != nil {
 		return nil, failed(fmt.Errorf("reading decrypted Key Exchange collection: %w", err))
 	}
 
-	return key, nil
+	return data, nil
 }
 
 func isNoGPGMatch(err error) bool {

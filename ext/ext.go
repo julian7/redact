@@ -12,11 +12,14 @@ import (
 	"github.com/julian7/redact/repo"
 )
 
+const getOperation = "get"
+
 type Ext struct {
 	name    string            `json:"-"`
 	repo    *repo.Repo        `json:"-"`
 	Command string            `json:"cmd,omitempty"`
 	Config  map[string]string `json:"config,omitempty"`
+	Input   []string          `json:"input,omitempty"`
 }
 
 // Name returns the configured extension name.
@@ -76,6 +79,17 @@ func (ext *Ext) logResult(operation string, err error) {
 }
 
 func (ext *Ext) Exec(operation string) error {
+	if operation == getOperation && len(ext.Input) > 0 {
+		data, err := ext.LoadKey()
+		if err != nil {
+			return err
+		}
+
+		_, err = os.Stdout.Write(data)
+
+		return err
+	}
+
 	c, err := ext.cmd(operation)
 	if err != nil {
 		return err
@@ -103,7 +117,7 @@ func ExecAll(items []Ext, operation string) error {
 		err := item.Exec(operation)
 		switch ExitCode(err) {
 		case Success:
-			if operation == "get" {
+			if operation == getOperation {
 				return nil
 			}
 
@@ -129,6 +143,10 @@ func (ext *Ext) List() error {
 // Run supplies a Key Exchange collection in PEM format for put, grant, or update.
 // Revoke receives no secret material. Diagnostics are inherited on stderr.
 func (ext *Ext) Run(operation string, key []byte) error {
+	if operation == getOperation && len(ext.Input) > 0 {
+		return ext.Exec(operation)
+	}
+
 	c, err := ext.cmd(operation)
 	if err != nil {
 		return err
@@ -155,13 +173,17 @@ func (ext *Ext) LoadKey() ([]byte, error) {
 		return nil, err
 	}
 
+	c.Stdin = os.Stdin
 	c.Stderr = os.Stderr
 
 	ext.logStart("get")
 
-	val, err := c.Output()
+	var output bytes.Buffer
+
+	c.Stdout = &output
+
+	err = ext.get(c)
 	if err != nil {
-		err = ext.result("get", err)
 		ext.logResult("get", err)
 
 		return nil, err
@@ -169,5 +191,5 @@ func (ext *Ext) LoadKey() ([]byte, error) {
 
 	ext.logResult("get", nil)
 
-	return val, nil
+	return output.Bytes(), nil
 }
