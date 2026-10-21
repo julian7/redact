@@ -32,22 +32,6 @@ func TestExchangePaths(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Stand in for GnuPG to verify that exchange data arrives on stdin, without
-	// using a real keyring. Actual ciphertext is checked by assertExchangePayload.
-	bindir := t.TempDir()
-	executable := filepath.Join(bindir, "gpg")
-
-	script := "#!/bin/sh\n[ \"$#\" -eq 6 ] && [ \"$6\" = --decrypt ] || exit 1\n/bin/cat\n"
-	if err := os.WriteFile(executable, []byte(script), 0600); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := os.Chmod(executable, 0700); err != nil {
-		t.Fatal(err)
-	}
-
-	t.Setenv("PATH", bindir+string(os.PathListSeparator)+os.Getenv("PATH"))
-
 	for _, memory := range []bool{false, true} {
 		for _, nested := range []bool{false, true} {
 			t.Run(fmt.Sprintf("memory=%t/nested=%t", memory, nested), func(t *testing.T) {
@@ -81,20 +65,14 @@ func checkExchangePaths(t *testing.T, r *repo.Repo, key *openpgp.Entity) {
 		t.Fatal(err)
 	}
 
-	keys, err := LoadGPGPubkeysFromKX(r, key.PrimaryKey.Fingerprint)
-	if err != nil || len(keys) != 1 {
-		t.Fatalf("loading exchange public key: %v", err)
-	}
-
 	payload := []byte("updated redact keys")
 
-	updated, err := UpdateGPGKeysInKX(r, func(w io.Writer) error {
+	if err := SaveGPGKeyToKX(r, key, func(w io.Writer) error {
 		_, err := w.Write(payload)
 
 		return err
-	})
-	if err != nil || updated != 1 {
-		t.Fatalf("refresh: updated=%d, err=%v", updated, err)
+	}); err != nil {
+		t.Fatalf("save exchange key: %v", err)
 	}
 
 	stub, err := r.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
@@ -108,17 +86,6 @@ func checkExchangePaths(t *testing.T, r *repo.Repo, key *openpgp.Entity) {
 	}
 
 	assertExchangePayload(t, key, false, ciphertext, payload)
-
-	reader, err := SecretKeyFromExchange(r, key.PrimaryKey.Fingerprint)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer reader.Close()
-
-	data, err := io.ReadAll(reader)
-	if err != nil || !bytes.Equal(data, ciphertext) {
-		t.Fatalf("GnuPG did not receive exchange ciphertext: %v", err)
-	}
 }
 
 func (fs *failingFS) TempFile(dir, prefix string) (billy.File, error) {

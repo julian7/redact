@@ -25,8 +25,8 @@ key, what you can generate with "redact init" command. The secret key can
 hold multiple key versions, supporting key rotation and retrieval of old
 secrets.
 
-Secret keys can be distributed inside the repository in the key exchange
-directory ($GIT_DIR/.redact), encrypted by contributors' OpenPGP keys.
+Secret keys can be distributed through extensions, using external stores or
+encrypted copies in the repository's .redact key exchange directory.
 Contributors can unlock the repo by running "redact unlock".
 
 To make files to be managed by adding the file pattern into a .gitattributes
@@ -58,7 +58,6 @@ The subsequent "git add" command will encrypt files matching this pattern.`,
 			},
 		},
 		Commands: []*cli.Command{
-			rt.gpgCmd(),
 			rt.grantCmd(),
 			rt.revokeCmd(),
 			rt.extCmd(),

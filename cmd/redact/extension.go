@@ -3,11 +3,8 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io"
 
 	"github.com/julian7/redact/ext"
-	"github.com/julian7/redact/kx"
-	"github.com/julian7/redact/logger"
 	"github.com/urfave/cli/v3"
 )
 
@@ -54,61 +51,5 @@ func (rt *Runtime) distributeKey(cmd *cli.Command, operation string) error {
 		return err
 	}
 
-	if cmd.String("ext") == "" && !gpgExtensionMode() {
-		items = withoutGPGExtension(items)
-	}
-
-	extErr := ext.RunAll(items, operation, buf.Bytes())
-	// An explicit extension selection must only call that extension.
-	if cmd.String("ext") != "" {
-		return extErr
-	}
-
-	if ext.ExitCode(extErr) >= ext.MissingData {
-		return extErr
-	}
-
-	if !gpgExtensionMode() {
-		logger.Debugf("Refreshing GPG collection in-tree because FF_GIT_EXT is unset")
-
-		if err := rt.refreshGPGKeys(); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	return extErr
-}
-
-func withoutGPGExtension(items []ext.Ext) []ext.Ext {
-	filtered := make([]ext.Ext, 0, len(items))
-	for _, item := range items {
-		if item.Name() != gpgExtensionName {
-			filtered = append(filtered, item)
-		}
-	}
-
-	return filtered
-}
-
-func (rt *Runtime) refreshGPGKeys() error {
-	updatedKeys, err := kx.UpdateGPGKeysInKX(rt.Repo, func(w io.Writer) error {
-		return rt.SaveTo(w)
-	})
-	if err != nil {
-		logger.Warn(`unable to update secret keys; restore original key with "redact unlock", and try again`)
-
-		return fmt.Errorf("updating key exchange secret keys: %w", err)
-	}
-
-	if updatedKeys > 0 {
-		fmt.Printf(
-			"Updated %d key%s. Don't forget to commit and push new encrypted secret keys.\n",
-			updatedKeys,
-			map[bool]string{false: "s", true: ""}[updatedKeys == 1],
-		)
-	}
-
-	return nil
+	return ext.RunAll(items, operation, buf.Bytes())
 }

@@ -112,11 +112,11 @@ Secret Information
 Add contributors:
 
 ```text
-$ redact openpgp grant keybase.io/julian7
+$ redact grant --ext gpg --option recipient=keybase.io/julian7
 KeyID: BDE0F1CE, fingerprint: 1857918cd0b4d303071d6624466cbb98bde0f1ce
   identity: keybase.io/julian7 <js@iksz.hu>, expires: 2027-10-08 18:45:56 +0200 CEST
   identity: keybase.io/julian7 <julian7@keybase.io>, expires: 2025-01-07 22:35:45 +0100 CET
-INFO[0000] Added 1 key. Don't forget to commit exchange files to the repository.
+Granted access to 1 recipient. Commit and push repository changes to distribute them.
 $ git add --all
 $ git status -sb
 ## main
@@ -151,11 +151,11 @@ The merge driver is registered in git config by `redact unlock` (and `redact ini
 
 * Redact is written in go, and as such, it can bring encryption into environments with no bash (???), and can be cross-compiled.
 * it uses OpenPGP for key exchange (almost like git-crypt)
-* it uses GnuPG for OpenPGP unlocking and granting access to recipients from a GnuPG keyring; exchange encryption and public-key file handling are built in
+* its GnuPG extension supports OpenPGP unlocking and granting access to recipients from a GnuPG keyring
 * it stores OpenPGP keys of collaborators next to their encrypted secret key copies
 * it supports key rotation (like transcrypt)
 * auto-generates key (not like transcrypt)
-* only dependencies are git and GnuPG
+* core only depends on git; extensions may have additional dependencies
 * it doesn't commit into the repository automatically
 
 ## Security
@@ -183,10 +183,6 @@ To switch, either set `REDACT_GIT_CLEAN_TYPE` environment variable, or set `git.
 * grant: grants access through configured extensions
 * revoke: removes access through configured extensions
 * unlock: unlocks repository with extensions or a key file
-  * gpg: unlocks repository with GPG-encrypted key from key exchange
-* openpgp/gpg: OpenPGP key exchange commands
-  * list: list user access
-  * grant: add OpenPGP key access
 * git: git filter commands
   * clean: acts as clean filter for git
   * diff: acts as diff filter for git
@@ -323,14 +319,14 @@ Collection changes made before an error remain for inspection and recovery; Reda
 
 By default, `get` subcommand invokes `gpg` command from the PATH for decryption. With the setting `private-key=stdin`, `get` reads an armored OpenPGP private key from standard input and decrypts its Key Exchange copy internally. Private key stays in memory: this path does not invoke GnuPG, or create temporary secret files. `gpgkey=SELECTOR` can select among supplied identities. For encrypted keys, set `REDACT_GPG_PASSPHRASE` in `.git/redact/gpg.env` or enter the passphrase at the terminal prompt. The `private-key` setting is ignored by other operations.
 
-Set `FF_GIT_EXT=1` to use configured GPG extensions instead of redact's built-in GPG behavior. To select the extension explicitly:
+To select the GPG extension explicitly:
 
 ```shell
 redact unlock --ext gpg --option gpgkey=alice@example.org
 redact grant --ext gpg --option recipient=alice@example.org
 ```
 
-With the flag enabled, configure `gpg` in the normal extension configuration to include it in automatic unlock and collection updates. `key generate` invokes `update`; `key save` invokes `put`.
+Run `redact ext add --name gpg` to include it in automatic unlock and collection updates. `key generate` invokes `update`; `key save` invokes `put`.
 
 ### age extension
 
@@ -353,9 +349,7 @@ A couple of options are configurable with environment variables too, which are t
 * `REDACT_LOG_FILE`: sets `--logfile` global option
 * `REDACT_STRICT`: sets `--strict-permissions` global option
 * `REDACT_UNLOCK_EXPORTED_KEY`: sets `--exported-key` option for `redact unlock` subcommand
-* `REDACT_UNLOCK_GPG_KEY`: sets `--gpgkey` option for `redact unlock gpg` subcommand
 * `REDACT_UNLOCK_KEY`: sets `--key` option for `redact unlock` subcommand
-* `FF_GIT_EXT`: selects the GPG extension instead of the in-tree GPG path for redact's default dispatch when set
 
 ## Any issues?
 

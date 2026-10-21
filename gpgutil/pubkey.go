@@ -11,11 +11,6 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
 )
 
-// PrintKey prints information about an OpenPGP key entity
-func PrintKey(key *openpgp.Entity) {
-	_ = PrintKeyTo(os.Stdout, key)
-}
-
 // PrintKeyTo writes information about an OpenPGP key entity to writer.
 func PrintKeyTo(writer io.Writer, key *openpgp.Entity) error {
 	if _, err := fmt.Fprintf(

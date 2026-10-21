@@ -3,9 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
-	"io"
 
 	"github.com/julian7/redact/ext"
 	"github.com/julian7/redact/files"
@@ -19,11 +17,8 @@ func (rt *Runtime) unlockCmd() *cli.Command {
 		Usage: "Unlocks repository",
 		Description: `Unlock repository
 
-This group of commands able to unlock a repository, or to obtain a new version
-of the secret key.
-
-Use a subcommand for different ways of unlocking the repository from key
-exchange.
+Retrieves the secret key through configured extensions, or the extension
+selected with --ext.
 
 Alternatively, a secret key file can be provided. This allows unlocking the
 repository where other ways are not available. Providing '-' reads the key
@@ -43,9 +38,6 @@ from standard input.`,
 				Sources: cli.EnvVars("REDACT_UNLOCK_EXPORTED_KEY"),
 			},
 		}...),
-		Commands: []*cli.Command{
-			rt.unlockGpgCmd(),
-		},
 	}
 }
 
@@ -68,17 +60,7 @@ func (rt *Runtime) unlockDo(_ context.Context, cmd *cli.Command) error {
 			return err
 		}
 	} else {
-		err := rt.loadSecretKeyFromExt(extName, cmd.String(extCommandFlag), cmd.StringMap(extOptionFlag))
-		if errors.Is(err, ErrNoSuitableKey) && extName == "" && cmd.String(extCommandFlag) == "" && !gpgExtensionMode() {
-			logger.Debugf("No extension supplied a key; falling back to in-tree GnuPG because FF_GIT_EXT is unset")
-
-			err = rt.loadSecretKeyFromGPG(cmd.StringMap(extOptionFlag)["gpgkey"])
-			if errors.Is(err, io.EOF) {
-				return nil
-			}
-		}
-
-		if err != nil {
+		if err := rt.loadSecretKeyFromExt(extName, cmd.String(extCommandFlag), cmd.StringMap(extOptionFlag)); err != nil {
 			return err
 		}
 	}
@@ -138,10 +120,6 @@ func (rt *Runtime) loadSecretKeyFromExt(name, command string, options map[string
 	items, err := conf.Select(name, command, options)
 	if err != nil {
 		return err
-	}
-
-	if name == "" && !gpgExtensionMode() {
-		items = withoutGPGExtension(items)
 	}
 
 	for _, item := range items {

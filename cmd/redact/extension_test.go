@@ -29,10 +29,8 @@ func extensionRepo(t *testing.T) (string, string) {
 
 	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
 	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
-	t.Setenv("FF_GIT_EXT", "1")
 	t.Setenv("REDACT_UNLOCK_KEY", "")
 	t.Setenv("REDACT_UNLOCK_EXPORTED_KEY", "")
-	t.Setenv("REDACT_UNLOCK_GPG_KEY", "")
 
 	root := t.TempDir()
 	if output, err := exec.Command("git", "init", "-q", root).CombinedOutput(); err != nil {
@@ -129,7 +127,7 @@ func fixtureCalls(t *testing.T, root string) []string {
 
 func TestExtensionScenarios(t *testing.T) {
 	root, program := extensionRepo(t)
-	setExtensionConfig(t, program, map[string]int{"aws": 0, "azure": 0}, []string{"azure", "aws"})
+	setExtensionConfig(t, program, map[string]int{"aws": 0, "gpg": 0}, []string{"gpg", "aws"})
 
 	if err := runRedact("init"); err != nil {
 		t.Fatal(err)
@@ -188,11 +186,11 @@ func TestExtensionScenarios(t *testing.T) {
 }
 
 func checkUnlockExtensionPolicy(t *testing.T, root, program string) {
-	conf := setExtensionConfig(t, program, map[string]int{"first": 0, "second": 0}, []string{"first", "second"})
+	conf := setExtensionConfig(t, program, map[string]int{"gpg": 0, "second": 0}, []string{"gpg", "second"})
 
 	for _, code := range []int{0, 1, 2, 3, 77} {
 		t.Run(strconv.Itoa(code), func(t *testing.T) {
-			conf.Exts["first"].Config["code"] = strconv.Itoa(code)
+			conf.Exts["gpg"].Config["code"] = strconv.Itoa(code)
 			if err := conf.Save(); err != nil {
 				t.Fatal(err)
 			}
@@ -219,7 +217,7 @@ func checkUnlockExtensionPolicy(t *testing.T, root, program string) {
 				count = 2
 			}
 
-			if len(calls) != count || !strings.HasPrefix(calls[0], "first:get") {
+			if len(calls) != count || !strings.HasPrefix(calls[0], "gpg:get") {
 				t.Fatalf("unlock calls = %v", calls)
 			}
 		})
@@ -275,7 +273,7 @@ func checkForcedUnconfiguredUnlockAndStderr(t *testing.T, root, program string) 
 }
 
 func checkCollectionDispatchAndConfiguration(t *testing.T, root, program string) {
-	setExtensionConfig(t, program, map[string]int{"aws": 0, "azure": 0}, []string{"azure", "aws"})
+	setExtensionConfig(t, program, map[string]int{"aws": 0, "gpg": 0}, []string{"gpg", "aws"})
 
 	for _, args := range [][]string{
 		{"key", "save"},
@@ -297,8 +295,8 @@ func checkCollectionDispatchAndConfiguration(t *testing.T, root, program string)
 	}
 
 	want := []string{
-		"azure:put", "aws:put", "azure:put", "aws:put", "azure:update", "aws:update",
-		"azure:grant", "aws:grant", "aws:revoke", "aws:list",
+		"gpg:put", "aws:put", "gpg:put", "aws:put", "gpg:update", "aws:update",
+		"gpg:grant", "aws:grant", "aws:revoke", "aws:list",
 	}
 	if !reflect.DeepEqual(operations, want) {
 		t.Fatalf("dispatch = %v, want %v", operations, want)
@@ -328,7 +326,7 @@ func checkCollectionDispatchAndConfiguration(t *testing.T, root, program string)
 		t.Fatal(err)
 	}
 
-	if string(raw["_order_"]) != `["azure","aws"]` || strings.Contains(string(data), "recipient") {
+	if string(raw["_order_"]) != `["gpg","aws"]` || strings.Contains(string(data), "recipient") {
 		t.Fatalf("config metadata/defaults were changed by invocation: %s", data)
 	}
 	// Cloud writes and exchange changes are left for inspection; no Git commit.

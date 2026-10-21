@@ -92,18 +92,6 @@ func TestGPGCollectionLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The standalone extension works without the core's transition flag.
-	t.Setenv("FF_GIT_EXT", "")
-
-	if err := os.Unsetenv("FF_GIT_EXT"); err != nil {
-		t.Fatal(err)
-	}
-
-	_, _, err = runExtension(t, []string{"redact-ext-gpg", "list"}, nil)
-	if err != nil {
-		t.Fatalf("unset transition flag exit = %v", err)
-	}
-
 	dataDir := t.TempDir()
 	binaryKey := gpgRunOutput(t, "--export", "--", fmt.Sprintf("%x", fingerprints[0]))
 
@@ -156,6 +144,11 @@ func TestGPGCollectionLifecycle(t *testing.T) {
 	}
 
 	t.Chdir(nested)
+
+	listStdout, _, err = runExtension(t, []string{"redact-ext-gpg", "list"}, nil)
+	if err != nil || strings.Count(listStdout, "fingerprint:") != 2 {
+		t.Fatalf("list recipients from nested directory: output=%q err=%v", listStdout, err)
+	}
 
 	got, _, err := runExtension(t, []string{"redact-ext-gpg", "get", "gpgkey=" + selector}, nil)
 
