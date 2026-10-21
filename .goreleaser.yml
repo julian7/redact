@@ -10,6 +10,7 @@ archives:
   - redact-ext-aws
   - redact-ext-azure
   - redact-ext-gpg
+  - redact-ext-age
   formats: tgz
   format_overrides:
   - goos: windows
@@ -48,6 +49,12 @@ builds:
   env: *env
   ldflags: *ldflags
   targets: *targets
+- id: redact-ext-age
+  binary: redact-ext-age
+  main: ./cmd/redact-ext-age
+  env: *env
+  ldflags: *ldflags
+  targets: *targets
 checksum:
   name_template: 'SHA256SUMS.{{.ProjectName}}-{{.Version}}'
   algorithm: sha256
@@ -69,4 +76,7 @@ universal_binaries:
   replace: true
 - id: redact-ext-gpg
   name_template: "redact-ext-gpg"
+  replace: true
+- id: redact-ext-age
+  name_template: "redact-ext-age"
   replace: true

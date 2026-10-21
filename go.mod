@@ -3,6 +3,7 @@ module github.com/julian7/redact
 go 1.27
 
 require (
+	filippo.io/age v1.3.2
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.1
 	github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets v1.5.0
 	github.com/ProtonMail/go-crypto v1.5.2
@@ -13,9 +14,11 @@ require (
 	github.com/julian7/tester v0.0.0-20190708141839-fd2332449f51
 	github.com/urfave/cli/v3 v3.14.0
 	golang.org/x/crypto v0.58.0
+	golang.org/x/term v0.47.0
 )
 
 require (
+	filippo.io/hpke v0.4.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.3 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.13.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/internal v1.2.0 // indirect

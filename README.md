@@ -212,7 +212,7 @@ As always, play safe, and revoke all secrets if there is any chance it can cause
 
 ## Extensions
 
-Redact can store secret keys externally, with a simple extension mechanism. It allows managing multiple redact keys in a controlled manner. This package ships AWS Parameter Store, Azure Key Vault, and GnuPG extensions.
+Redact can store secret keys externally, with a simple extension mechanism. It allows managing multiple redact keys in a controlled manner. This package ships AWS Parameter Store, Azure Key Vault, GnuPG, and age extensions.
 
 In general, all extension configuration goes to
 
@@ -331,6 +331,17 @@ redact grant --ext gpg --option recipient=alice@example.org
 ```
 
 With the flag enabled, configure `gpg` in the normal extension configuration to include it in automatic unlock and collection updates. `key generate` invokes `update`; `key save` invokes `put`.
+
+### age extension
+
+`redact-ext-age` supports `list`, `get`, `put`, `grant`, `revoke`, and `update`. Create an identity with `age-keygen`, then grant access using its recipient:
+
+```shell
+redact grant --ext age --option recipient=age1...
+redact unlock --ext age --option keyfile=identities.txt
+```
+
+`get` reads identities from `keyfile=PATH`, `AGE_IDENTITIES_FILE`, or the user's age identities file. Use `agekey=RECIPIENT` to select among multiple identities, or `private-key=stdin` to supply identities through an input command. Encrypted identities use `REDACT_AGE_PASSPHRASE` from `.git/redact/age.env`, or prompt on the terminal. `grant` and `revoke` also accept `file=PATH` for an age recipients file. Each recipient has a 40-character fingerprint, with its public key in `.redact/<fingerprint>.age.pub` and its encrypted copy in `.redact/<fingerprint>.age.key`. Fingerprints can be used with `agekey=` and `revoke recipient=`.
 
 ## Configuration with environment variables
 
