@@ -284,6 +284,10 @@ func (conf *Config) List() error {
 	for _, name := range conf.Names() {
 		item := conf.Exts[name]
 
+		if _, err := fmt.Fprintf(os.Stdout, "[%s]\n", name); err != nil {
+			return fmt.Errorf("printing extension header: %w", err)
+		}
+
 		err := item.List()
 		switch ExitCode(err) {
 		case Success:

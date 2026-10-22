@@ -87,6 +87,17 @@ func TestAgeKeyExchangeLifecycle(t *testing.T) {
 		t.Errorf("list printed %d recipients, want 2: %s", got, stdout)
 	}
 
+	standard := identity1.Recipient().String()
+	hybrid := identity2.Recipient().String()
+
+	if !strings.Contains(stdout, "("+standard+")") {
+		t.Errorf("list omitted the full standard recipient: %s", stdout)
+	}
+
+	if !strings.Contains(stdout, "("+hybrid[:len(standard)]+"...)") || strings.Contains(stdout, hybrid) {
+		t.Errorf("list did not shorten the hybrid recipient to standard recipient length: %s", stdout)
+	}
+
 	// Two local identities have encrypted copies, so a bare get cannot pick
 	// one and must ask for an explicit selection without leaking the key.
 	stdout, stderr, err = runExtension(t, []string{"redact-ext-age", "get"}, nil)

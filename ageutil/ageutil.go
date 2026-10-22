@@ -135,7 +135,15 @@ func RecipientString(identity age.Identity) (string, error) {
 }
 
 func PrintRecipientTo(writer io.Writer, recipient string) error {
-	if _, err := fmt.Fprintf(writer, "age recipient: %s\n", RecipientID(recipient)); err != nil {
+	// Keep X25519 recipients whole while bounding hybrid recipient output.
+	const previewLength = 62
+
+	preview := recipient
+	if len(preview) > previewLength {
+		preview = preview[:previewLength] + "..."
+	}
+
+	if _, err := fmt.Fprintf(writer, "age recipient: %s (%s)\n", preview, RecipientID(recipient)); err != nil {
 		return fmt.Errorf("printing age recipient: %w", err)
 	}
 
