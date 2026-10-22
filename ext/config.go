@@ -207,12 +207,7 @@ func (conf *Config) Resolve(name, command string, options map[string]string) (Ex
 	item := conf.Exts[name]
 	item.name, item.repo = name, conf.repo
 
-	item.Config = maps.Clone(item.Config)
-	if item.Config == nil {
-		item.Config = map[string]string{}
-	}
-
-	maps.Copy(item.Config, options)
+	item.options = maps.Clone(options)
 
 	if command != "" {
 		item.Command = command

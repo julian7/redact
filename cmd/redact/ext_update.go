@@ -81,7 +81,14 @@ func (rt *Runtime) doExtUpdate(_ context.Context, cmd *cli.Command) error {
 		delete(extension.Config, item)
 	}
 
-	maps.Copy(extension.Config, cmd.StringMap(extOptionFlag))
+	options := cmd.StringMap(extOptionFlag)
+	if len(options) > 0 {
+		if extension.Config == nil {
+			extension.Config = map[string]string{}
+		}
+
+		maps.Copy(extension.Config, options)
+	}
 
 	if err = conf.UpdateExt(name, extension); err != nil {
 		return fmt.Errorf("updating extension config: %w", err)

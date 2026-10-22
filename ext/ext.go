@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"os/exec"
 	"sort"
@@ -14,12 +15,42 @@ import (
 
 const getOperation = "get"
 
+type Operation struct {
+	Config map[string]string `json:"config,omitempty"`
+	Filter []string          `json:"filter,omitempty"`
+}
+
 type Ext struct {
 	name    string            `json:"-"`
 	repo    *repo.Repo        `json:"-"`
+	options map[string]string `json:"-"`
 	Command string            `json:"cmd,omitempty"`
 	Config  map[string]string `json:"config,omitempty"`
-	Input   []string          `json:"input,omitempty"`
+	Get     *Operation        `json:"get,omitempty"`
+	Put     *Operation        `json:"put,omitempty"`
+	Update  *Operation        `json:"update,omitempty"`
+	Grant   *Operation        `json:"grant,omitempty"`
+	Revoke  *Operation        `json:"revoke,omitempty"`
+	Listing *Operation        `json:"list,omitempty"`
+}
+
+func (ext *Ext) operation(name string) *Operation {
+	switch name {
+	case "get":
+		return ext.Get
+	case "put":
+		return ext.Put
+	case "update":
+		return ext.Update
+	case "grant":
+		return ext.Grant
+	case "revoke":
+		return ext.Revoke
+	case "list":
+		return ext.Listing
+	default:
+		return nil
+	}
 }
 
 // Name returns the configured extension name.
@@ -31,8 +62,17 @@ func (ext *Ext) cmd(operation string) (*exec.Cmd, error) {
 		executable = fmt.Sprintf("redact-ext-%s", ext.name)
 	}
 
-	keys := make([]string, 0, len(ext.Config))
-	for key := range ext.Config {
+	config := map[string]string{}
+	maps.Copy(config, ext.Config)
+
+	if settings := ext.operation(operation); settings != nil {
+		maps.Copy(config, settings.Config)
+	}
+
+	maps.Copy(config, ext.options)
+
+	keys := make([]string, 0, len(config))
+	for key := range config {
 		keys = append(keys, key)
 	}
 
@@ -42,7 +82,7 @@ func (ext *Ext) cmd(operation string) (*exec.Cmd, error) {
 
 	args = append(args, operation)
 	for _, key := range keys {
-		args = append(args, fmt.Sprintf("%s=%s", key, ext.Config[key]))
+		args = append(args, fmt.Sprintf("%s=%s", key, config[key]))
 	}
 
 	c := exec.Command(executable, args...)
@@ -79,7 +119,7 @@ func (ext *Ext) logResult(operation string, err error) {
 }
 
 func (ext *Ext) Exec(operation string) error {
-	if operation == getOperation && len(ext.Input) > 0 {
+	if operation == getOperation && ext.Get != nil && len(ext.Get.Filter) > 0 {
 		data, err := ext.LoadKey()
 		if err != nil {
 			return err
@@ -100,7 +140,7 @@ func (ext *Ext) Exec(operation string) error {
 	c.Stderr = os.Stderr
 
 	ext.logStart(operation)
-	err = ext.result(operation, c.Run())
+	err = ext.run(operation, c)
 	ext.logResult(operation, err)
 
 	return err
@@ -143,7 +183,7 @@ func (ext *Ext) List() error {
 // Run supplies a Key Exchange collection in PEM format for put, grant, or update.
 // Revoke receives no secret material. Diagnostics are inherited on stderr.
 func (ext *Ext) Run(operation string, key []byte) error {
-	if operation == getOperation && len(ext.Input) > 0 {
+	if operation == getOperation && ext.Get != nil && len(ext.Get.Filter) > 0 {
 		return ext.Exec(operation)
 	}
 
@@ -157,7 +197,7 @@ func (ext *Ext) Run(operation string, key []byte) error {
 	c.Stderr = os.Stderr
 
 	ext.logStart(operation)
-	err = ext.result(operation, c.Run())
+	err = ext.run(operation, c)
 	ext.logResult(operation, err)
 
 	return err
@@ -182,7 +222,7 @@ func (ext *Ext) LoadKey() ([]byte, error) {
 
 	c.Stdout = &output
 
-	err = ext.get(c)
+	err = ext.run(getOperation, c)
 	if err != nil {
 		ext.logResult("get", err)
 

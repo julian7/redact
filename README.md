@@ -217,10 +217,12 @@ In general, all extension configuration goes to
 
 which should be committed to the repository, and should not be encrypted. Every extension configuration can hold the following information:
 
-* name: name of the extension
-* command path: command to execute the extension, defaults to `redact-ext-<name>`
-* options: `key=value` pairs, which are passed to the extension command as command-line arguments
-* input: an optional command argument array supplying stdin during `get` only
+* name: the object key identifies the extension
+* `cmd`: command to execute, defaults to `redact-ext-<name>`
+* `config`: shared `key=value` settings passed to every operation
+* `get`, `put`, `update`, `grant`, `revoke`, `list`: operation-specific objects with `config` settings and an optional `filter` command array
+
+Operation settings override shared settings. Invocation `--option` values override both.
 
 The top-level `_order_` array sets extension preference, independently of extension entries:
 
@@ -243,20 +245,22 @@ AWS_REGION=eu-central-1
 
 These variables override the inherited environment only during that extension's invocation. The files support dotenv syntax, including comments, quoted values, and optional `export` prefixes; they are parsed without executing shell commands. Missing files are ignored; unreadable or malformed files stop the extension. Keep these files private (for example, `chmod 600 .git/redact/aws.env`). They live in Git's metadata directory and are not committed. Linked worktrees use the common Git directory, alongside redact's local keys.
 
-An extension can retrieve input from any command during `get`. For example:
+A filter supplies input to its operation. For example, retrieve a GPG private key from 1Password during `get`:
 
 ```json
 {
   "gpg": {
-    "config": {"private-key": "stdin"},
-    "input": ["op", "read", "op://vault/item/section/field"]
+    "get": {
+      "config": {"private-key": "stdin"},
+      "filter": ["op", "read", "op://vault/item/section/field"]
+    }
   }
 }
 ```
 
-Redact executes the `input` argument array directly, without shell parsing, expansion, or an implicit extension operation. Its standard out is piped to the target extension's standard input. Both commands run from the repository root and receive the target extension's environment, including `.git/redact/gpg.env` in this example. In this example, 1Password command-line tool reads a GPG secret key. Setting `OP_ACCOUNT` will be given to the `op` command to select the appropriate account.
+Redact executes the `filter` argument array directly, without shell parsing, expansion, or an implicit extension operation. Its standard out is piped to the target extension's standard input. Both commands run from the repository root and receive the target extension's environment, including `.git/redact/gpg.env` in this example. In this example, 1Password command-line tool reads a GPG secret key. Set `OP_ACCOUNT` there to select the appropriate account.
 
-The input filter can emit diagnostic output on standard error. Any non-zero exit of the input filter causes failure.
+Only `get` receives `private-key=stdin` and runs this filter. The filter receives the operation’s original stdin and can emit diagnostics on stderr. Any non-zero filter exit causes failure.
 
 ### Extension interface
 
@@ -273,7 +277,7 @@ Extensions manage Key Exchange collections. Exported collections use PEM seriali
 | Operation | Responsibility | Stdin | Stdout |
 |---|---|---|---|
 | `list` | Describe stored keys or recipients; no local Redact key required | Unused | Listing |
-| `get` | Retrieve a Key Exchange collection | Optional `input` command output | Key Exchange collection, on success |
+| `get` | Retrieve a Key Exchange collection | Optional `get.filter` output | Key Exchange collection, on success |
 | `put` | Store the supplied Key Exchange collection; retries must converge | Key Exchange collection (PEM) | No required output |
 | `grant` | Register access and distribute the current Key Exchange collection | Key Exchange collection (PEM) | No required output |
 | `revoke` | Remove matching access registrations and copies | Unused | No required output |
@@ -337,7 +341,7 @@ redact grant --ext age --option recipient=age1...
 redact unlock --ext age --option keyfile=identities.txt
 ```
 
-`get` reads identities from `keyfile=PATH`, `AGE_IDENTITIES_FILE`, or the user's age identities file. Use `agekey=RECIPIENT` to select among multiple identities, or `private-key=stdin` to supply identities through an input command. Encrypted identities use `REDACT_AGE_PASSPHRASE` from `.git/redact/age.env`, or prompt on the terminal. `grant` and `revoke` also accept `file=PATH` for an age recipients file. Each recipient has a 40-character fingerprint, with its public key in `.redact/<fingerprint>.age.pub` and its encrypted copy in `.redact/<fingerprint>.age.key`. Fingerprints can be used with `agekey=` and `revoke recipient=`.
+`get` reads identities from `keyfile=PATH`, `AGE_IDENTITIES_FILE`, or the user's age identities file. Use `agekey=RECIPIENT` to select among multiple identities, or `private-key=stdin` to supply identities through a `get.filter` command. Encrypted identities use `REDACT_AGE_PASSPHRASE` from `.git/redact/age.env`, or prompt on the terminal. `grant` and `revoke` also accept `file=PATH` for an age recipients file. Each recipient has a 40-character fingerprint, with its public key in `.redact/<fingerprint>.age.pub` and its encrypted copy in `.redact/<fingerprint>.age.key`. Fingerprints can be used with `agekey=` and `revoke recipient=`.
 
 ## Configuration with environment variables
 
