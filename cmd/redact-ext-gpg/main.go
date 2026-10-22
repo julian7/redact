@@ -20,11 +20,23 @@ func main() {
 
 func app() *cli.Command {
 	return &cli.Command{
-		Name:      "redact-ext-gpg",
-		Usage:     "GnuPG Key Exchange extension",
-		ArgsUsage: "[key=value ...]",
-		Version:   version,
+		Name:    "redact-ext-gpg",
+		Usage:   "GnuPG Key Exchange extension",
+		Version: version,
+		Description: `Shares Redact keys with OpenPGP recipients using the repository's .redact directory.
+Run commands from within the repository. Pass settings as key=value arguments.
+
+Examples:
+  redact-ext-gpg get gpgkey=alice@example.org
+  redact grant --ext gpg --option recipient=alice@example.org
+
+Configure for a repository:
+  redact ext add --name gpg`,
 		Action: func(_ context.Context, cmd *cli.Command) error {
+			if cmd.Args().Len() == 0 {
+				return cli.ShowRootCommandHelp(cmd)
+			}
+
 			return notApplicable(fmt.Errorf("unsupported extension command %q", cmd.Args().First()))
 		},
 		Commands: []*cli.Command{

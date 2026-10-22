@@ -25,11 +25,22 @@ func main() {
 
 func app() *cli.Command {
 	return &cli.Command{
-		Name:      "redact-ext-aws",
-		Usage:     "AWS KMS+param store extension for redact key exchange",
-		ArgsUsage: "keyid=kms_key_id_or_alias param=/path/to/param", //nolint:goconst
-		Version:   version,
+		Name:    "redact-ext-aws",
+		Usage:   "AWS KMS+param store extension for redact key exchange",
+		Version: version,
+		Description: `Stores Redact keys in AWS Systems Manager Parameter Store, encrypted with KMS.
+Pass settings as key=value arguments. Uses the standard AWS credentials and region.
+
+Example:
+  redact-ext-aws get keyid=alias/redact param=/project/redact
+
+Configure for a repository:
+  redact ext add --name aws --option keyid=alias/redact --option param=/project/redact`,
 		Action: func(_ context.Context, cmd *cli.Command) error {
+			if cmd.Args().Len() == 0 {
+				return cli.ShowRootCommandHelp(cmd)
+			}
+
 			return &ext.Error{Code: ext.NotApplicable, Err: fmt.Errorf("%w: %s", ErrNotSupported, cmd.Args().First())}
 		},
 		Commands: []*cli.Command{

@@ -25,11 +25,23 @@ func main() {
 
 func app() *cli.Command {
 	return &cli.Command{
-		Name:      "redact-ext-azure",
-		Usage:     "Azure Key Vault extension for redact key exchange",
-		ArgsUsage: "[key=val [key=val ...]]", //nolint:goconst
-		Version:   version,
+		Name:    "redact-ext-azure",
+		Usage:   "Azure Key Vault extension for redact key exchange",
+		Version: version,
+		Description: `Stores Redact keys as secrets in Azure Key Vault.
+Pass vault=NAME_OR_URL and secret=NAME as key=value arguments.
+Uses Azure credentials from the environment or an authenticated Azure CLI session.
+
+Example:
+  redact-ext-azure get vault=project secret=redact
+
+Configure for a repository:
+  redact ext add --name azure --option vault=project --option secret=redact`,
 		Action: func(_ context.Context, cmd *cli.Command) error {
+			if cmd.Args().Len() == 0 {
+				return cli.ShowRootCommandHelp(cmd)
+			}
+
 			return &ext.Error{Code: ext.NotApplicable, Err: fmt.Errorf("%w: %s", ErrNotSupported, cmd.Args().First())}
 		},
 		Commands: []*cli.Command{

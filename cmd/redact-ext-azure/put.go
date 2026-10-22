@@ -17,7 +17,7 @@ func cmdPut() *cli.Command {
 		Name:        "put",
 		Aliases:     []string{"update"},
 		Usage:       "Put secret to Azure Key Vault",
-		ArgsUsage:   "[key=val [key=val ...]]", //nolint:goconst
+		ArgsUsage:   "vault=NAME_OR_URL secret=NAME", //nolint:goconst
 		Description: "Reads secret from STDIN and writes to Key Vault",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			config, err := loadConfig(cmd.Args().Slice())

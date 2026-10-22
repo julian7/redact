@@ -11,7 +11,7 @@ func cmdList() *cli.Command {
 	return &cli.Command{
 		Name:      "list",
 		Usage:     "Shows Azure Key Vault configuration",
-		ArgsUsage: "[key=val [key=val ...]]", //nolint:goconst
+		ArgsUsage: "vault=NAME_OR_URL secret=NAME", //nolint:goconst
 		Action: func(_ context.Context, cmd *cli.Command) error {
 			config, err := loadConfig(cmd.Args().Slice())
 			if err != nil {

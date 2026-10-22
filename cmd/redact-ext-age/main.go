@@ -19,11 +19,23 @@ func main() {
 
 func app() *cli.Command {
 	return &cli.Command{
-		Name:      "redact-ext-age",
-		Usage:     "age Key Exchange extension",
-		ArgsUsage: "[key=value ...]",
-		Version:   version,
+		Name:    "redact-ext-age",
+		Usage:   "age Key Exchange extension",
+		Version: version,
+		Description: `Shares Redact keys with age recipients using the repository's .redact directory.
+Run commands from within the repository. Pass settings as key=value arguments.
+
+Examples:
+  redact-ext-age get keyfile=identities.txt
+  redact grant --ext age --option recipient=age1...
+
+Configure for a repository:
+  redact ext add --name age`,
 		Action: func(_ context.Context, cmd *cli.Command) error {
+			if cmd.Args().Len() == 0 {
+				return cli.ShowRootCommandHelp(cmd)
+			}
+
 			return notApplicable(fmt.Errorf("unsupported extension command %q", cmd.Args().First()))
 		},
 		Commands: []*cli.Command{cmdList(), cmdGet(), cmdPut(), cmdGrant(), cmdRevoke(), cmdUpdate()},
