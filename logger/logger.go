@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync/atomic"
 )
 
 const (
@@ -32,61 +33,34 @@ var (
 		FatalLevel: FatalLabel,
 	}
 
-	NilLogger = &Discard{}
+	standard = log.New(os.Stderr, "", log.LstdFlags)
+	level    atomic.Int64
 )
 
-// Logger implements log levels on a Base interface
-type Logger struct {
-	Base
-	level int
+func init() {
+	level.Store(InfoLevel)
 }
 
-// Base is a minimal requirement for internal logger implementation.
-// log.Logger implements that.
-type Base interface {
-	Print(...any)
-	Printf(string, ...any)
-	Fatal(...any)
-	Fatalf(string, ...any)
-	SetOutput(w io.Writer)
+// SetOutput changes the destination for all log messages.
+func SetOutput(w io.Writer) {
+	standard.SetOutput(w)
 }
 
-// New returns new logger with default config
-func New() *Logger {
-	return &Logger{
-		Base:  log.New(os.Stderr, "", log.LstdFlags),
-		level: InfoLevel,
-	}
+// SetLevel sets the minimum visible log level.
+func SetLevel(newLevel int) {
+	level.Store(int64(newLevel))
 }
 
-// With returns new Logger with an already existing log.Logger as a base
-func With(base Base) *Logger {
-	if base == nil {
-		base = NilLogger
-	}
-
-	return &Logger{
-		Base:  base,
-		level: InfoLevel,
-	}
+// Level returns the minimum visible log level.
+func Level() int {
+	return int(level.Load())
 }
 
-// SetLevel sets log visibility level
-func (l *Logger) SetLevel(level int) {
-	l.level = level
-}
-
-// Level returns visibility level
-func (l *Logger) Level() int {
-	return l.level
-}
-
-// SetLevelFromString sets log visibility level based on
-// their names (like debug, info, warn, error, fatal)
-func (l *Logger) SetLevelFromString(level string) error {
+// SetLevelFromString sets the minimum visible log level based on its name.
+func SetLevelFromString(name string) error {
 	var logLevel int
 
-	switch strings.ToUpper(level) {
+	switch strings.ToUpper(name) {
 	case DebugLabel:
 		logLevel = DebugLevel
 	case InfoLabel:
@@ -100,57 +74,53 @@ func (l *Logger) SetLevelFromString(level string) error {
 	case "":
 		return nil
 	default:
-		return fmt.Errorf("unknown log level %q", level)
+		return fmt.Errorf("unknown log level %q", name)
 	}
 
-	l.SetLevel(logLevel)
+	SetLevel(logLevel)
 
 	return nil
 }
 
-func (l *Logger) silenced(level int) bool {
-	return level < l.level
+func silenced(logLevel int) bool {
+	return logLevel < Level()
 }
 
-func (l *Logger) buildPrefix(level int, msg string) string {
-	pfx, ok := prefixes[level]
+func buildPrefix(logLevel int, message string) string {
+	prefix, ok := prefixes[logLevel]
 	if !ok {
-		pfx = prefixes[WarnLevel]
+		prefix = prefixes[WarnLevel]
 	}
 
-	return fmt.Sprintf("%s: %v", pfx, msg)
+	return fmt.Sprintf("%s: %v", prefix, message)
 }
 
-// Log implements generic logging on certain level, using
-// log.Print or log.Fatal.
-func (l *Logger) Log(level int, attrs ...any) {
-	if l.silenced(level) {
+// Log writes a message at the requested level.
+func Log(logLevel int, attrs ...any) {
+	if silenced(logLevel) {
 		return
 	}
 
-	msg := make([]any, 0, len(attrs))
-	msg = append(msg, l.buildPrefix(level, attrs[0].(string)))
-	msg = append(msg, attrs[1:]...)
+	message := buildPrefix(logLevel, attrs[0].(string))
+	args := append([]any{message}, attrs[1:]...)
 
-	if level == FatalLevel {
-		l.Base.Fatal(msg...)
+	if logLevel == FatalLevel {
+		standard.Fatal(args...)
 	} else {
-		l.Print(msg...)
+		standard.Print(args...)
 	}
 }
 
-// Logf implements generic logging on certain level, using
-// log.Printf or log.Fatalf.
-func (l *Logger) Logf(level int, attrs ...any) {
-	if l.silenced(level) || len(attrs) < 1 {
+// Logf writes a formatted message at the requested level.
+func Logf(logLevel int, attrs ...any) {
+	if silenced(logLevel) || len(attrs) < 1 {
 		return
 	}
 
-	message := l.buildPrefix(level, attrs[0].(string))
-
-	if level == FatalLevel {
-		l.Base.Fatalf(message, attrs[1:]...)
+	message := buildPrefix(logLevel, attrs[0].(string))
+	if logLevel == FatalLevel {
+		standard.Fatalf(message, attrs[1:]...)
 	} else {
-		l.Printf(message, attrs[1:]...)
+		standard.Printf(message, attrs[1:]...)
 	}
 }

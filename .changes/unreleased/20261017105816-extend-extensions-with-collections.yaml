@@ -1,0 +1,4 @@
+message: collection extensions support
+type: Added
+severity: minor
+author: Balazs Nagy <julsevern@gmail.com>

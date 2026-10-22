@@ -112,11 +112,11 @@ Secret Information
 Add contributors:
 
 ```text
-$ redact openpgp grant keybase.io/julian7
+$ redact grant --ext gpg --option recipient=keybase.io/julian7
 KeyID: BDE0F1CE, fingerprint: 1857918cd0b4d303071d6624466cbb98bde0f1ce
   identity: keybase.io/julian7 <js@iksz.hu>, expires: 2027-10-08 18:45:56 +0200 CEST
   identity: keybase.io/julian7 <julian7@keybase.io>, expires: 2025-01-07 22:35:45 +0100 CET
-INFO[0000] Added 1 key. Don't forget to commit exchange files to the repository.
+Granted access to 1 recipient. Commit and push repository changes to distribute them.
 $ git add --all
 $ git status -sb
 ## main
@@ -151,11 +151,11 @@ The merge driver is registered in git config by `redact unlock` (and `redact ini
 
 * Redact is written in go, and as such, it can bring encryption into environments with no bash (???), and can be cross-compiled.
 * it uses OpenPGP for key exchange (almost like git-crypt)
-* it uses GnuPG for OpenPGP unlocking and granting access to recipients from a GnuPG keyring; exchange encryption and public-key file handling are built in
+* its GnuPG extension supports OpenPGP unlocking and granting access to recipients from a GnuPG keyring
 * it stores OpenPGP keys of collaborators next to their encrypted secret key copies
 * it supports key rotation (like transcrypt)
 * auto-generates key (not like transcrypt)
-* only dependencies are git and GnuPG
+* core only depends on git; extensions may have additional dependencies
 * it doesn't commit into the repository automatically
 
 ## Security
@@ -178,14 +178,11 @@ To switch, either set `REDACT_GIT_CLEAN_TYPE` environment variable, or set `git.
   * generate: generates new secret key
   * info (default): shows secret key info
   * list: lists all keys
-  * save: saves secret key in Key Exchange (both OpenPGP and extensions)
+  * save: publishes secret key to the enabled Key Exchange destinations
 * lock: locks repository (deletes local key and removes diff/filter configs)
-* unlock: unlocks repository with local key
-  * gpg: unlocks repository with GPG-encrypted key from key exchange
-* openpgp/gpg: OpenPGP key exchange commands
-  * list: list user access
-  * grant: add OpenPGP key access
-  * update: re-encrypt secret key with OpenPGP keys (not implemented yet)
+* grant: grants access through configured extensions
+* revoke: removes access through configured extensions
+* unlock: unlocks repository with extensions or a key file
 * git: git filter commands
   * clean: acts as clean filter for git
   * diff: acts as diff filter for git
@@ -211,7 +208,7 @@ As always, play safe, and revoke all secrets if there is any chance it can cause
 
 ## Extensions
 
-Redact can store secret keys externally, with a simple extension mechanism. It allows managing multiple redact keys in a controlled manner. This package ships AWS Parameter Store and Azure Key Vault extensions, but implementing such an extension is very straightforward.
+Redact can store secret keys externally, with a simple extension mechanism. It allows managing multiple redact keys in a controlled manner. This package ships AWS Parameter Store, Azure Key Vault, GnuPG, and age extensions.
 
 In general, all extension configuration goes to
 
@@ -220,9 +217,24 @@ In general, all extension configuration goes to
 
 which should be committed to the repository, and should not be encrypted. Every extension configuration can hold the following information:
 
-* name: name of the extension
-* command path: command to execute the extension, defaults to `redact-ext-<name>`
-* options: `key=value` pairs, which are passed to the extension command as command-line arguments
+* name: the object key identifies the extension
+* `cmd`: command to execute, defaults to `redact-ext-<name>`
+* `config`: shared `key=value` settings passed to every operation
+* `get`, `put`, `update`, `grant`, `revoke`, `list`: operation-specific objects with `config` settings and an optional `filter` command array
+
+Operation settings override shared settings. Invocation `--option` values override both.
+
+The top-level `_order_` array sets extension preference, independently of extension entries:
+
+```json
+{
+  "_order_": ["aws", "azure"],
+  "aws": {"config": {"keyid": "alias/redact", "param": "/project/redact"}},
+  "azure": {"config": {"vault": "project", "secret": "redact"}}
+}
+```
+
+Names absent from `_order_` follow in alphabetical order. Duplicate names and names without a configured extension are ignored.
 
 Private, local settings can be placed in `.git/redact/<name>.env`, where `<name>` is the configured extension name. For example, `.git/redact/aws.env` can contain:
 
@@ -233,17 +245,103 @@ AWS_REGION=eu-central-1
 
 These variables override the inherited environment only during that extension's invocation. The files support dotenv syntax, including comments, quoted values, and optional `export` prefixes; they are parsed without executing shell commands. Missing files are ignored; unreadable or malformed files stop the extension. Keep these files private (for example, `chmod 600 .git/redact/aws.env`). They live in Git's metadata directory and are not committed. Linked worktrees use the common Git directory, alongside redact's local keys.
 
-An extension has to implement the following commands:
+A filter supplies input to its operation. For example, retrieve a GPG private key from 1Password during `get`:
 
-* `list`: basic information about the extension and its configuration
-* `get`: retrieves an exported secret key to standard output
-* `put`: stores an exported secret key read from standard input
-
-Configured extensions are invoked as the following:
-
+```json
+{
+  "gpg": {
+    "get": {
+      "config": {"private-key": "stdin"},
+      "filter": ["op", "read", "op://vault/item/section/field"]
+    }
+  }
+}
 ```
-<command path> <command> <option1>=<value1> [<option2>=<value2> ...]
+
+Redact executes the `filter` argument array directly, without shell parsing, expansion, or an implicit extension operation. Its standard out is piped to the target extension's standard input. Both commands run from the repository root and receive the target extension's environment, including `.git/redact/gpg.env` in this example. In this example, 1Password command-line tool reads a GPG secret key. Set `OP_ACCOUNT` there to select the appropriate account.
+
+Only `get` receives `private-key=stdin` and runs this filter. The filter receives the operation’s original stdin and can emit diagnostics on stderr. Any non-zero filter exit causes failure.
+
+### Extension interface
+
+Extensions are executable programs, ran from the repository worktree root and inherit the environment. The protocol uses only process arguments, stdin, stdout, stderr, and exit status:
+
+```text
+<command path> <operation> <key1>=<value1> [<key2>=<value2> ...]
 ```
+
+Settings are defaults from configuration. There is no positional operand forwarding or interaction protocol.
+
+Extensions manage Key Exchange collections. Exported collections use PEM serialization for transfer.
+
+| Operation | Responsibility | Stdin | Stdout |
+|---|---|---|---|
+| `list` | Describe stored keys or recipients; no local Redact key required | Unused | Listing |
+| `get` | Retrieve a Key Exchange collection | Optional `get.filter` output | Key Exchange collection, on success |
+| `put` | Store the supplied Key Exchange collection; retries must converge | Key Exchange collection (PEM) | No required output |
+| `grant` | Register access and distribute the current Key Exchange collection | Key Exchange collection (PEM) | No required output |
+| `revoke` | Remove matching access registrations and copies | Unused | No required output |
+| `update` | Refresh the Key Exchange collection at all remaining destinations | Key Exchange collection (PEM) | No required output |
+
+Send diagnostics, candidates, and retry instructions to **stderr**, including when more selection information is needed. Keep successful `get` stdout exclusively the retrieved payload. Selection is a second invocation with settings; no interactive selection is required.
+
+| Exit code | Meaning | Outcome (get) | Outcome (other operations) |
+|---|---|---|---|
+| `0` | Success | Stop successfully | Continue successfully |
+| `1` | Not applicable, including unsupported operations | Continue (skip) | Continue (skip) |
+| `2` | Missing data or selection input; explain how to proceed on stderr | Stop with error | Stop with error |
+| `3` | Failure | Stop with error | Stop with error |
+
+Launch failures, signals, and exit codes other than the above mentioned are treated as failures. Exhausting all extensions without a key is an error.
+
+### Extension Integration
+
+By default, subcommand supporting extensions loop through all configured extensions, until they find the suitable one. However, it is possible to run only one extension, even if it is not configured by providing `--extension NAME` option. That extension can be configured further in command line by providing `--cmd PATH` and `--option KEY=VALUE` flags:
+
+```shell
+redact unlock --ext custom --cmd /path/to/redact-ext-custom --option identity=alice
+redact grant --ext custom --option recipient=alice
+redact revoke --ext custom --option recipient=alice
+```
+
+| Subcommand | Invokes extension operation |
+|---|----|
+| `grant` | `grant` |
+| `init` | `put` |
+| `key generate` | `update` |
+| `key save` | `put` |
+| `revoke` | `revoke` |
+| `unlock` | `get` |
+
+Collection changes made before an error remain for inspection and recovery; Redact does not roll them back. An empty configuration permits init/save/generate. Grant/revoke require configured destinations or explicit selection.
+
+`put`, `grant`, and `update` perform real writes, including writes to cloud stores. Rotation saves the new local Key Exchange collection, retaining previous key epochs, before distribution. Repository exchange changes need a user commit and push; Redact never commits or pushes automatically. Revoke performs removal only, with no implicit rotation or publication, and cannot remove historical access.
+
+### GnuPG extension
+
+`redact-ext-gpg` stores encrypted Key Exchange copies and armored public-key registrations in `.redact/<fingerprint>.key` and `.redact/<fingerprint>.asc`. It supports `list`, `get`, `put`, `grant`, `revoke`, and `update`. Use `recipient=SELECTOR` for a local GnuPG public-key selector, `file=PATH` for a binary public key, or `armor=PATH` for an armored public key. `get` accepts `gpgkey=SELECTOR`; if several local identities can unlock the repository, it lists candidates on stderr and asks for a second invocation with that setting. `GNUPGHOME` and other GnuPG environment variables are inherited.
+
+By default, `get` subcommand invokes `gpg` command from the PATH for decryption. With the setting `private-key=stdin`, `get` reads an armored OpenPGP private key from standard input and decrypts its Key Exchange copy internally. Private key stays in memory: this path does not invoke GnuPG, or create temporary secret files. `gpgkey=SELECTOR` can select among supplied identities. For encrypted keys, set `REDACT_GPG_PASSPHRASE` in `.git/redact/gpg.env` or enter the passphrase at the terminal prompt. The `private-key` setting is ignored by other operations.
+
+To select the GPG extension explicitly:
+
+```shell
+redact unlock --ext gpg --option gpgkey=alice@example.org
+redact grant --ext gpg --option recipient=alice@example.org
+```
+
+Run `redact ext add --name gpg` to include it in automatic unlock and collection updates. `key generate` invokes `update`; `key save` invokes `put`.
+
+### age extension
+
+`redact-ext-age` supports `list`, `get`, `put`, `grant`, `revoke`, and `update`. Create an identity with `age-keygen`, then grant access using its recipient:
+
+```shell
+redact grant --ext age --option recipient=age1...
+redact unlock --ext age --option keyfile=identities.txt
+```
+
+`get` reads identities from `keyfile=PATH`, `AGE_IDENTITIES_FILE`, or the user's age identities file. Use `agekey=RECIPIENT` to select among multiple identities, or `private-key=stdin` to supply identities through a `get.filter` command. Encrypted identities use `REDACT_AGE_PASSPHRASE` from `.git/redact/age.env`, or prompt on the terminal. `grant` and `revoke` also accept `file=PATH` for an age recipients file. Each recipient has a 40-character fingerprint, with its public key in `.redact/<fingerprint>.age.pub` and its encrypted copy in `.redact/<fingerprint>.age.key`. Fingerprints can be used with `agekey=` and `revoke recipient=`.
 
 ## Configuration with environment variables
 
@@ -252,10 +350,9 @@ A couple of options are configurable with environment variables too, which are t
 * `REDACT_GIT_CLEAN_EPOCH`: sets `--epoch` option for `redact git clean` subcommand
 * `REDACT_GIT_CLEAN_TYPE`: sets `--type` option for `redact git clean` subcommand
 * `REDACT_LOG_LEVEL`: sets `--verbosity` global option
-* `REDACT_LOG_LEVEL`: sets `--logfile` global option
+* `REDACT_LOG_FILE`: sets `--logfile` global option
 * `REDACT_STRICT`: sets `--strict-permissions` global option
 * `REDACT_UNLOCK_EXPORTED_KEY`: sets `--exported-key` option for `redact unlock` subcommand
-* `REDACT_UNLOCK_GPG_KEY`: sets `--gpgkey` option for `redact unlock gpg` subcommand
 * `REDACT_UNLOCK_KEY`: sets `--key` option for `redact unlock` subcommand
 
 ## Any issues?

@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
 
+	"github.com/julian7/redact/ext"
 	"github.com/julian7/redact/logger"
 	"github.com/julian7/redact/repo"
 	"github.com/urfave/cli/v3"
@@ -11,12 +13,17 @@ import (
 
 func main() {
 	rt := &Runtime{
-		Repo:   &repo.Repo{},
-		Logger: logger.New(),
+		Repo: &repo.Repo{},
 	}
 
 	if err := rt.app().Run(context.Background(), os.Args); err != nil {
-		rt.Fatal(err.Error())
+		var outcome *ext.Error
+		if errors.As(err, &outcome) {
+			logger.Error(err.Error())
+			os.Exit(ext.ExitCode(err))
+		}
+
+		logger.Fatal(err.Error())
 	}
 }
 

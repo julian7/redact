@@ -10,7 +10,6 @@ import (
 )
 
 type Runtime struct {
-	*logger.Logger
 	*repo.Repo
 }
 
@@ -21,7 +20,7 @@ func (rt *Runtime) SaveGitSettings() error {
 	}
 
 	if err := rt.Repo.SaveGitSettings(argv0, func(attr string) {
-		rt.Debugf("Setting up filter/diff/merge git config of %s to %s", attr, argv0)
+		logger.Debugf("Setting up filter/diff/merge git config of %s to %s", attr, argv0)
 	}); err != nil {
 		return fmt.Errorf("setting git config: %w", err)
 	}

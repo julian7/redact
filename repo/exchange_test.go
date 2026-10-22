@@ -130,7 +130,7 @@ func TestGetExchangeFilenameStubFor(t *testing.T) {
 				}
 			}
 
-			ret, err := mk.GetExchangeFilenameStubFor(fingerprint, nil)
+			ret, err := mk.GetExchangeFilenameStubFor(fingerprint)
 			if err2 := tester.AssertError(tc.expErr, err); err2 != nil {
 				t.Error(err2)
 			}

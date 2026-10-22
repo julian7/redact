@@ -3,7 +3,6 @@ package files
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 
@@ -13,13 +12,6 @@ import (
 const (
 	// FileMagic magic string the encoded file starts with
 	FileMagic = "\000REDACTED\000"
-)
-
-var (
-	ErrAlreadyEncoded     = errors.New("already encoded")
-	ErrExcessiveRights    = errors.New("excessive rights")
-	ErrInsufficientRights = errors.New("insufficient rights")
-	ErrInvalidPreamble    = errors.New("invalid file preamble")
 )
 
 type FileHeader struct {

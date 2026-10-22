@@ -13,6 +13,8 @@ run = """
     go build -ldflags="-X main.version=$ver" ./cmd/redact
     go build -ldflags="-X main.version=$ver" ./cmd/redact-ext-aws
     go build -ldflags="-X main.version=$ver" ./cmd/redact-ext-azure
+    go build -ldflags="-X main.version=$ver" ./cmd/redact-ext-gpg
+    go build -ldflags="-X main.version=$ver" ./cmd/redact-ext-age
 """
 
 [tasks.check]

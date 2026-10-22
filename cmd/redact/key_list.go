@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/julian7/redact/files"
+	"github.com/julian7/redact/logger"
 	"github.com/urfave/cli/v3"
 )
 
@@ -17,10 +18,10 @@ func (rt *Runtime) keyListCmd() *cli.Command {
 }
 
 func (rt *Runtime) listDo(_ context.Context, _ *cli.Command) error {
-	rt.Infof("repo key: %v", rt.SecretKey)
+	logger.Infof("repo key: %v", rt.SecretKey)
 
 	return files.EachKey(rt.Keys, func(_ uint32, key files.KeyHandler) error {
-		rt.Infof(" - %s", key)
+		logger.Infof(" - %s", key)
 
 		return nil
 	})

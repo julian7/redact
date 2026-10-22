@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
+
+	"github.com/julian7/redact/ext"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
@@ -33,16 +36,16 @@ func loadConfig(args []string) (*Config, error) {
 		case "param":
 			config.ParamPath = val
 		default:
-			fmt.Printf("unknown setting: %v\n", key)
+			fmt.Fprintf(os.Stderr, "unknown setting: %v\n", key)
 		}
 	}
 
 	if config.KeyID == "" {
-		return nil, ErrMissingKeyID
+		return nil, &ext.Error{Code: ext.MissingData, Err: ErrMissingKeyID}
 	}
 
 	if config.ParamPath == "" {
-		return nil, ErrMissingParamPath
+		return nil, &ext.Error{Code: ext.MissingData, Err: ErrMissingParamPath}
 	}
 
 	return config, nil
@@ -59,14 +62,14 @@ func ssmClient(ctx context.Context) (*ssm.Client, error) {
 	return ssm.NewFromConfig(awscfg), err
 }
 
-func (config *Config) get(ctx context.Context, client *ssm.Client) (*ssm.GetParameterOutput, error) {
+func (config *Config) get(ctx context.Context, client parameterStore) (*ssm.GetParameterOutput, error) {
 	return client.GetParameter(ctx, &ssm.GetParameterInput{
 		Name:           new(config.ParamPath),
 		WithDecryption: new(true),
 	})
 }
 
-func (config *Config) put(ctx context.Context, client *ssm.Client, key string) (*ssm.PutParameterOutput, error) {
+func (config *Config) put(ctx context.Context, client parameterStore, key string) (*ssm.PutParameterOutput, error) {
 	return client.PutParameter(ctx, &ssm.PutParameterInput{
 		Name:      new(config.ParamPath),
 		Value:     new(key),

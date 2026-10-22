@@ -2,45 +2,17 @@ package kx
 
 import (
 	"bytes"
-	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/go-git/go-billy/v5/util"
 	"github.com/julian7/redact/gpgutil"
 	"github.com/julian7/redact/repo"
 )
 
-// SecretKeyFromExchange loads data from an encrypted secret key into provided
-// object, and then saves it.
-func SecretKeyFromExchange(redactRepo *repo.Repo, fingerprint []byte) (io.ReadCloser, error) {
-	stub, err := redactRepo.GetExchangeFilenameStubFor(fingerprint, nil)
-	if err != nil {
-		return nil, fmt.Errorf("finding key in exchange dir: %w", err)
-	}
-
-	ciphertext, err := redactRepo.Workdir.Open(repo.ExchangeSecretKeyFile(stub))
-	if err != nil {
-		return nil, fmt.Errorf("opening exchange secret key: %w", err)
-	}
-	defer ciphertext.Close()
-
-	reader, err := gpgutil.DecryptWithKey(ciphertext, fingerprint)
-	if err != nil {
-		return nil, fmt.Errorf("decrypt secret key from exchange dir: %w", err)
-	}
-
-	return reader, nil
-}
-
 // SaveGPGKeyToKX saves secret key into key exchange, encrypted with OpenPGP key
 func SaveGPGKeyToKX(redactRepo *repo.Repo, key *openpgp.Entity, writerCallback func(io.Writer) error) error {
-	kxstub, err := redactRepo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint, nil)
+	kxstub, err := redactRepo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
 	if err != nil {
 		return err
 	}
@@ -79,30 +51,9 @@ func SaveGPGKeyToKX(redactRepo *repo.Repo, key *openpgp.Entity, writerCallback f
 	return nil
 }
 
-// LoadGPGPubkeysFromKX loads a public key from key exchange
-func LoadGPGPubkeysFromKX(redactRepo *repo.Repo, fingerprint []byte) (openpgp.EntityList, error) {
-	stub, err := redactRepo.GetExchangeFilenameStubFor(fingerprint, nil)
-	if err != nil {
-		return nil, fmt.Errorf("finding exchange public key: %w", err)
-	}
-
-	file, err := redactRepo.Workdir.Open(repo.ExchangePubKeyFile(stub))
-	if err != nil {
-		return nil, fmt.Errorf("opening public key for %x: %w", fingerprint, err)
-	}
-	defer file.Close()
-
-	pubkey, err := gpgutil.LoadPubKey(file, true)
-	if err != nil {
-		return nil, fmt.Errorf("loading public key for %x: %w", fingerprint, err)
-	}
-
-	return pubkey, nil
-}
-
 // SaveGPGPubkeyToKX saves public OpenPGP key into key exchange
 func SaveGPGPubkeyToKX(redactRepo *repo.Repo, key *openpgp.Entity) error {
-	kxstub, err := redactRepo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint, nil)
+	kxstub, err := redactRepo.GetExchangeFilenameStubFor(key.PrimaryKey.Fingerprint)
 	if err != nil {
 		return err
 	}
@@ -129,62 +80,4 @@ func SaveGPGPubkeyToKX(redactRepo *repo.Repo, key *openpgp.Entity) error {
 	}
 
 	return nil
-}
-
-// UpdateGPGKeysInKX updates all key exchange secret keys with new data
-func UpdateGPGKeysInKX(redactRepo *repo.Repo, writerCallback func(io.Writer) error) (int, error) {
-	kxdir := repo.DefaultKeyExchangeDir
-	updated := 0
-
-	err := util.Walk(redactRepo.Workdir, kxdir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			if path == kxdir && info == nil && errors.Is(err, os.ErrNotExist) {
-				return nil
-			}
-
-			return fmt.Errorf("walking exchange path %s: %w", path, err)
-		}
-
-		if path == kxdir && !info.IsDir() {
-			return repo.ErrExchangeIsNotDir
-		}
-
-		if !strings.HasSuffix(path, repo.ExtKeyArmor) {
-			return nil
-		}
-
-		fingerprintText := strings.TrimSuffix(filepath.Base(path), repo.ExtKeyArmor)
-
-		fingerprint, err := hex.DecodeString(fingerprintText)
-		if err != nil {
-			return nil // nolint:nilerr
-		}
-
-		keys, err := LoadGPGPubkeysFromKX(redactRepo, fingerprint)
-		if err != nil {
-			return fmt.Errorf("loading public key for %s: %w", fingerprintText, err)
-		}
-
-		if len(keys) != 1 {
-			return fmt.Errorf("key %s has %d public keys", fingerprintText, len(keys))
-		}
-
-		updated++
-
-		err = SaveGPGKeyToKX(redactRepo, keys[0], writerCallback)
-		if err != nil {
-			return fmt.Errorf(
-				"saving secret key encrypted with key %s: %w",
-				fingerprintText,
-				err,
-			)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return 0, fmt.Errorf("updating secret key in exchange dir: %w", err)
-	}
-
-	return updated, nil
 }
