@@ -272,18 +272,18 @@ Extensions are executable programs, ran from the repository worktree root and in
 
 Settings are defaults from configuration. There is no positional operand forwarding or interaction protocol.
 
-Extensions manage Key Exchange collections. Exported collections use PEM serialization for transfer.
+Extensions manage Key Exchange copies of the Redact key. Redact exports the key in PEM format for transfer.
 
 | Operation | Responsibility | Stdin | Stdout |
 |---|---|---|---|
 | `list` | Describe stored keys or recipients; no local Redact key required | Unused | Listing |
-| `get` | Retrieve a Key Exchange collection | Optional `get.filter` output | Key Exchange collection, on success |
-| `put` | Store the supplied Key Exchange collection; retries must converge | Key Exchange collection (PEM) | No required output |
-| `grant` | Register access and distribute the current Key Exchange collection | Key Exchange collection (PEM) | No required output |
+| `get` | Retrieve the stored Redact key | Optional `get.filter` output | Exported Redact key (PEM), on success |
+| `put` | Store the supplied Key Exchange collection; retries must converge | Exported Redact key (PEM) | No required output |
+| `grant` | Register access and distribute the current Key Exchange collection | Exported Redact key (PEM) | No required output |
 | `revoke` | Remove matching access registrations and copies | Unused | No required output |
-| `update` | Refresh the Key Exchange collection at all remaining destinations | Key Exchange collection (PEM) | No required output |
+| `update` | Refresh the Key Exchange collection at all remaining destinations | Exported Redact key (PEM) | No required output |
 
-Send diagnostics, candidates, and retry instructions to **stderr**, including when more selection information is needed. Keep successful `get` stdout exclusively the retrieved payload. Selection is a second invocation with settings; no interactive selection is required.
+Send diagnostics, candidates, and retry instructions to **stderr**, including when more selection information is needed. Keep successful `get` stdout exclusively the exported Redact key in PEM format. Selection is a second invocation with settings; no interactive selection is required.
 
 | Exit code | Meaning | Outcome (get) | Outcome (other operations) |
 |---|---|---|---|
