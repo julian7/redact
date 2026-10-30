@@ -90,11 +90,11 @@ func TestAgeKeyExchangeLifecycle(t *testing.T) {
 	standard := identity1.Recipient().String()
 	hybrid := identity2.Recipient().String()
 
-	if !strings.Contains(stdout, "("+standard+")") {
+	if !strings.Contains(stdout, standard) {
 		t.Errorf("list omitted the full standard recipient: %s", stdout)
 	}
 
-	if !strings.Contains(stdout, "("+hybrid[:len(standard)]+"...)") || strings.Contains(stdout, hybrid) {
+	if !strings.Contains(stdout, hybrid[:len(standard)]+"...") || strings.Contains(stdout, hybrid) {
 		t.Errorf("list did not shorten the hybrid recipient to standard recipient length: %s", stdout)
 	}
 

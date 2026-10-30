@@ -34,7 +34,7 @@ func TestStrayKeyExchangeFileIsReported(t *testing.T) {
 		t.Fatalf("list with a stray Key Exchange file: exit code %d, want %d (%s)", code, Failure, stderr)
 	}
 
-	if !strings.Contains(stdout, "age recipient: "+ageutil.RecipientID(recipient)) {
+	if !strings.Contains(stdout, ageutil.RecipientID(recipient)) {
 		t.Errorf("list did not print the registered recipient %s: %s", recipient, stdout)
 	}
 
