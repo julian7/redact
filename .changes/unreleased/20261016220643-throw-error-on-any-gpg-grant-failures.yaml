@@ -1,4 +1,0 @@
-message: throw error on any gpg grant failures
-type: Fixed
-severity: patch
-author: Balazs Nagy <julsevern@gmail.com>

@@ -1,4 +1,0 @@
-message: 'GPG extension: unlock with an exported GPG private key'
-type: Changed
-severity: minor
-author: Balazs Nagy <julsevern@gmail.com>

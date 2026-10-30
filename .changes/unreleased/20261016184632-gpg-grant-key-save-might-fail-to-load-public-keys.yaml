@@ -1,4 +1,0 @@
-message: gpg grant / key save might fail to load public keys due corrupted fingerprint detection
-type: Fixed
-severity: patch
-author: Balazs Nagy <julsevern@gmail.com>

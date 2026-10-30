@@ -1,4 +1,0 @@
-message: read GPG files from the detected workdir instead of relative path
-type: Fixed
-severity: patch
-author: Balazs Nagy <julsevern@gmail.com>

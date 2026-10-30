@@ -1,4 +1,0 @@
-message: moved GPG out of the main app into collection extension
-type: Changed
-severity: minor
-author: Balazs Nagy <julsevern@gmail.com>
