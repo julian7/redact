@@ -17,12 +17,13 @@ import (
 
 func cmdGet() *cli.Command {
 	cmd := command("get", "Decrypt a Key Exchange copy", getAction)
-	cmd.ArgsUsage = "[agekey=RECIPIENT] [keyfile=PATH] [private-key=stdin]"
+	cmd.ArgsUsage = "[agekey=RECIPIENT] [keyfile=PATH] [private-key=stdin] [prompt=LABEL]"
 	cmd.Description = `Prints the decrypted Key Exchange copy to stdout.
 
   agekey=RECIPIENT    Select an identity by its fingerprint or age recipient.
   keyfile=PATH        Read an age identities file; repeat for multiple files.
   private-key=stdin   Read plain or encrypted age identities from stdin.
+  prompt=LABEL        Name the stdin source in the passphrase prompt.
 
 Without keyfile, uses AGE_IDENTITIES_FILE or the user's age identities file.
 For encrypted identities, set REDACT_AGE_PASSPHRASE or enter the passphrase
@@ -31,7 +32,8 @@ at the terminal prompt.
 Examples:
 
   redact-ext-age get keyfile=identities.txt
-  redact-ext-age get private-key=stdin < identity.txt`
+  redact-ext-age get private-key=stdin < identity.txt
+  redact-ext-age get private-key=stdin prompt=thekey.sh < identity.txt`
 
 	return cmd
 }
@@ -47,9 +49,20 @@ func getAction(_ context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	// The label replaces the name of an unnamed source, so it is meaningless
+	// elsewhere; rejecting it here keeps a misspelled setting from being ignored.
+	if settings["prompt"] != "" && settings["private-key"] != "stdin" {
+		return failed(fmt.Errorf("use prompt with private-key=stdin"))
+	}
+
+	promptLabel, err := settings.prompt()
+	if err != nil {
+		return err
+	}
+
 	selector := settings.identity()
 
-	available, err := availableKeys(settings, selector, promptPassphrase)
+	available, err := availableKeys(settings, promptLabel, selector, promptPassphrase)
 	if err != nil {
 		return fmt.Errorf("cannot find available key: %w", err)
 	}
@@ -83,13 +96,13 @@ func getAction(_ context.Context, cmd *cli.Command) error {
 
 // Skip unreadable files so other identities or extensions remain usable.
 // A rejected passphrase stops dispatch because another extension cannot fix it.
-func loadIdentities(settings settings, prompt ageutil.PassphraseFunc) ([]localIdentity, error) {
+func loadIdentities(settings settings, promptLabel string, prompt ageutil.PassphraseFunc) ([]localIdentity, error) {
 	if source := settings["private-key"]; source != "" {
 		if source != "stdin" || len(settings.values("keyfile")) > 0 {
 			return nil, failed(fmt.Errorf("use private-key=stdin without keyfile"))
 		}
 
-		parsed, err := ageutil.ReadIdentities(os.Stdin, "stdin", prompt)
+		parsed, err := ageutil.ReadIdentities(os.Stdin, promptLabel, prompt)
 		if errors.Is(err, ageutil.ErrPassphraseUnavailable) {
 			return nil, missing(err)
 		}
@@ -156,13 +169,15 @@ func identitiesOf(parsed []age.Identity) []localIdentity {
 	return identities
 }
 
-func availableKeys(settings settings, selector string, prompt ageutil.PassphraseFunc) ([]localIdentity, error) {
+func availableKeys(
+	settings settings, promptLabel string, selector string, prompt ageutil.PassphraseFunc,
+) ([]localIdentity, error) {
 	directory, err := exchangeDirectory()
 	if err != nil {
 		return nil, failed(err)
 	}
 
-	identities, err := loadIdentities(settings, prompt)
+	identities, err := loadIdentities(settings, promptLabel, prompt)
 	if err != nil {
 		return nil, fmt.Errorf("loading identities: %w", err)
 	}

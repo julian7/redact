@@ -16,11 +16,12 @@ import (
 
 func cmdGet() *cli.Command {
 	cmd := command("get", "Decrypt a Key Exchange copy", getAction)
-	cmd.ArgsUsage = "[gpgkey=SELECTOR] [private-key=stdin]"
+	cmd.ArgsUsage = "[gpgkey=SELECTOR] [private-key=stdin] [prompt=LABEL]"
 	cmd.Description = `Prints the decrypted Key Exchange copy to stdout.
 
   gpgkey=SELECTOR    Select an identity by fingerprint or user ID.
   private-key=stdin  Read an armored OpenPGP private key from stdin.
+  prompt=LABEL       Name the stdin source in the passphrase prompt.
 
 By default, uses the local GnuPG keyring. If multiple identities match,
 retry with gpgkey=SELECTOR.
@@ -31,7 +32,8 @@ at the terminal prompt.
 Examples:
 
   redact-ext-gpg get gpgkey=alice@example.org
-  redact-ext-gpg get private-key=stdin < seckey.asc`
+  redact-ext-gpg get private-key=stdin < seckey.asc
+  redact-ext-gpg get private-key=stdin prompt=thekey.sh < seckey.asc`
 
 	return cmd
 }
@@ -47,13 +49,24 @@ func getAction(_ context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	// The label names an unnamed source, so it is meaningless without stdin key
+	// input; rejecting it here keeps a misspelled setting from being ignored.
+	if settings["prompt"] != "" && settings["private-key"] != "stdin" {
+		return failed(fmt.Errorf("use prompt with private-key=stdin"))
+	}
+
 	selector := settings.identity()
 	if source := settings["private-key"]; source != "" {
 		if source != "stdin" {
 			return failed(fmt.Errorf("private-key must be stdin"))
 		}
 
-		plaintext, err := loadStdinExchangeKey(redactRepo, os.Stdin, selector)
+		promptLabel, err := settings.prompt()
+		if err != nil {
+			return err
+		}
+
+		plaintext, err := loadStdinExchangeKey(redactRepo, os.Stdin, selector, promptLabel)
 		if err != nil {
 			return err
 		}

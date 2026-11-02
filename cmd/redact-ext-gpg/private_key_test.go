@@ -101,7 +101,7 @@ func TestPrivateKeyInput(t *testing.T) {
 	}
 
 	for _, selector := range []string{"", fmt.Sprintf("%x", identity.PrimaryKey.Fingerprint), "recipient@example.test"} {
-		got, err := loadStdinExchangeKey(r, bytes.NewReader(private), selector)
+		got, err := loadStdinExchangeKey(r, bytes.NewReader(private), selector, "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -112,12 +112,12 @@ func TestPrivateKeyInput(t *testing.T) {
 	}
 
 	for _, input := range [][]byte{nil, []byte("not a private key"), armoredIdentity(t, identity, false)} {
-		if _, err := loadStdinExchangeKey(r, bytes.NewReader(input), ""); ext.ExitCode(err) != ext.Failure {
+		if _, err := loadStdinExchangeKey(r, bytes.NewReader(input), "", ""); ext.ExitCode(err) != ext.Failure {
 			t.Fatalf("invalid private key outcome: %v", err)
 		}
 	}
 
-	_, err = loadStdinExchangeKey(r, bytes.NewReader(private), "other@example.test")
+	_, err = loadStdinExchangeKey(r, bytes.NewReader(private), "other@example.test", "")
 	if ext.ExitCode(err) != ext.NotApplicable {
 		t.Fatalf("mismatched identity outcome: %v", err)
 	}
@@ -130,7 +130,9 @@ func TestPrivateKeyInput(t *testing.T) {
 	}
 
 	protected := armoredIdentity(t, identity, true)
-	checkEncryptedPrivateKey(t, r, protected, plaintext, passphrase)
+	// A key that arrives through a pipe has no name of its own, so the config labels
+	// it; the label has to reach the request the user actually sees.
+	checkEncryptedPrivateKey(t, r, protected, plaintext, passphrase, "thekey.sh")
 
 	// Corrupt the final integrity bytes, after the entire collection payload.
 	corrupt := bytes.Clone(ciphertext.Bytes())
@@ -140,12 +142,12 @@ func TestPrivateKeyInput(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got, err := loadStdinExchangeKey(r, bytes.NewReader(private), ""); err == nil || got != nil {
+	if got, err := loadStdinExchangeKey(r, bytes.NewReader(private), "", ""); err == nil || got != nil {
 		t.Fatal("corrupt ciphertext exposed a collection")
 	}
 }
 
-func checkEncryptedPrivateKey(t *testing.T, r *repo.Repo, protected, plaintext []byte, passphrase string) {
+func checkEncryptedPrivateKey(t *testing.T, r *repo.Repo, protected, plaintext []byte, passphrase, promptLabel string) {
 	t.Helper()
 
 	for _, scenario := range []struct {
@@ -175,19 +177,28 @@ func checkEncryptedPrivateKey(t *testing.T, r *repo.Repo, protected, plaintext [
 			}
 
 			prompts := 0
+			asked := ""
+
 			previous := promptPassphrase
-			promptPassphrase = func(string) ([]byte, error) {
+			promptPassphrase = func(prompt string) ([]byte, error) {
 				prompts++
+				asked = prompt
 
 				return []byte(scenario.answer), scenario.promptErr
 			}
 
 			t.Cleanup(func() { promptPassphrase = previous })
 
-			got, err := loadStdinExchangeKey(r, bytes.NewReader(protected), "")
+			got, err := loadStdinExchangeKey(r, bytes.NewReader(protected), "", promptLabel)
 			if ext.ExitCode(err) != scenario.wantCode || prompts != scenario.wantPrompt {
 				t.Fatalf("outcome=%d prompts=%d, want outcome=%d prompts=%d",
 					ext.ExitCode(err), prompts, scenario.wantCode, scenario.wantPrompt)
+			}
+
+			// Only the terminal is told the label; an environment passphrase is
+			// typed by nobody, so no request is worded at all.
+			if want := passphrasePrompt(promptLabel); prompts != 0 && asked != want {
+				t.Fatalf("the prompt was %q, want %q", asked, want)
 			}
 
 			if err == nil && !bytes.Equal(got, plaintext) {
