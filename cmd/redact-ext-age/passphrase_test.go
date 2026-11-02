@@ -164,6 +164,137 @@ func TestGetIgnoresUnusableIdentitiesFile(t *testing.T) {
 	}
 }
 
+func TestGetPromptNamesTheSourceOfTheKey(t *testing.T) {
+	const passphrase = "the passphrase of this identities file"
+
+	initRepo(t)
+
+	keyText, recipient := newIdentity(t)
+	grantCollection(t, testCollection, recipient)
+
+	prompts := answerPassphrase(t, passphrase, nil)
+
+	stdout, stderr, err := runExtension(t,
+		[]string{"redact-ext-age", "get", "private-key=stdin", "prompt=thekey.sh"},
+		passphraseContainer(t, keyText, passphrase))
+	if err != nil {
+		t.Fatalf("get with a labelled stdin key: %v (%s)", err, stderr)
+	}
+
+	if stdout != string(testCollection) {
+		t.Errorf("get exported %q, want the original collection", stdout)
+	}
+
+	if len(*prompts) != 1 {
+		t.Fatalf("the extension asked %d passphrases, want 1: %q", len(*prompts), *prompts)
+	}
+
+	// A key that arrives through a pipe has no name of its own, so without the
+	// label the request cannot say which key it is about.
+	if !strings.Contains((*prompts)[0], "thekey.sh") {
+		t.Errorf("the prompt does not name the source of the key: %s", (*prompts)[0])
+	}
+
+	if strings.Contains((*prompts)[0], "stdin") {
+		t.Errorf("the prompt names stdin although the config labelled the key: %s", (*prompts)[0])
+	}
+}
+
+func TestGetPromptWithoutLabelNamesStdin(t *testing.T) {
+	const passphrase = "the passphrase of this identities file"
+
+	initRepo(t)
+
+	keyText, recipient := newIdentity(t)
+	grantCollection(t, testCollection, recipient)
+
+	prompts := answerPassphrase(t, passphrase, nil)
+
+	_, stderr, err := runExtension(t, []string{"redact-ext-age", "get", "private-key=stdin"},
+		passphraseContainer(t, keyText, passphrase))
+	if err != nil {
+		t.Fatalf("get with an unlabelled stdin key: %v (%s)", err, stderr)
+	}
+
+	if len(*prompts) != 1 {
+		t.Fatalf("the extension asked %d passphrases, want 1: %q", len(*prompts), *prompts)
+	}
+
+	if !strings.Contains((*prompts)[0], defaultPrompt) {
+		t.Errorf("the prompt does not name %s: %s", defaultPrompt, (*prompts)[0])
+	}
+}
+
+// A label belongs to the source it names: without stdin key input the identities
+// file already has a name, and silently ignoring the setting would let a
+// misspelled one look like it worked.
+func TestGetRejectsPromptWithoutStdinKey(t *testing.T) {
+	prompts := answerPassphrase(t, "", nil)
+
+	stdout, stderr, err := runExtension(t, []string{"redact-ext-age", "get", "prompt=thekey.sh"}, nil)
+	if code := ExitCode(err); code != Failure {
+		t.Errorf("get with a label and no stdin key: exit code %d, want %d", code, Failure)
+	}
+
+	if stdout != "" {
+		t.Errorf("get with a label and no stdin key printed a collection: %s", stdout)
+	}
+
+	// The command reports the failure itself; the harness keeps it as the error.
+	if err == nil || !strings.Contains(err.Error(), "use prompt with private-key=stdin") {
+		t.Errorf("get did not say how to use the label: %v (%s)", err, stderr)
+	}
+
+	if len(*prompts) != 0 {
+		t.Errorf("the extension asked %d passphrases, want none: %q", len(*prompts), *prompts)
+	}
+}
+
+// The label comes from a repository's committed extension config and is written to
+// the terminal as-is, so it must not carry what a terminal would act on.
+func TestGetRejectsUnusablePromptLabel(t *testing.T) {
+	unusable := []struct {
+		name    string
+		label   string
+		wantErr string
+	}{
+		{name: "a newline that could forge another prompt", label: "key\nEnter admin password:", wantErr: "printable"},
+		{name: "a tab", label: "key\tsource", wantErr: "printable"},
+		{name: "an escape sequence", label: "key\x1b[2J", wantErr: "printable"},
+		{
+			name:    "a label over the length limit",
+			label:   strings.Repeat("k", maxPromptLength+1),
+			wantErr: "at most 80 characters",
+		},
+	}
+
+	for _, one := range unusable {
+		t.Run(one.name, func(t *testing.T) {
+			prompts := answerPassphrase(t, "", nil)
+
+			stdout, stderr, err := runExtension(t,
+				[]string{"redact-ext-age", "get", "private-key=stdin", "prompt=" + one.label}, nil)
+			if code := ExitCode(err); code != Failure {
+				t.Fatalf("get with an unusable label: exit code %d, want %d", code, Failure)
+			}
+
+			// The command reports the rejection itself; the harness keeps it as the
+			// error the process prints on exit.
+			if err == nil || !strings.Contains(err.Error(), one.wantErr) {
+				t.Errorf("get did not say why the label is unusable: %v (%s)", err, stderr)
+			}
+
+			if stdout != "" {
+				t.Errorf("get with an unusable label printed a collection: %s", stdout)
+			}
+
+			if len(*prompts) != 0 {
+				t.Errorf("the extension asked %d passphrases, want none: %q", len(*prompts), *prompts)
+			}
+		})
+	}
+}
+
 // Replace the prompt so tests never block on the controlling terminal.
 func answerPassphrase(t *testing.T, answer string, promptErr error) *[]string {
 	t.Helper()

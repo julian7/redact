@@ -13,8 +13,9 @@ import (
 )
 
 // loadStdinExchangeKey uses supplied private material entirely in memory,
-// independently of the local GnuPG keyring and agent.
-func loadStdinExchangeKey(r *repo.Repo, input io.Reader, selector string) ([]byte, error) {
+// independently of the local GnuPG keyring and agent. The prompt label names the
+// source of that material in the passphrase request.
+func loadStdinExchangeKey(r *repo.Repo, input io.Reader, selector, promptLabel string) ([]byte, error) {
 	identities, err := openpgp.ReadArmoredKeyRing(input)
 	if err != nil {
 		return nil, failed(fmt.Errorf("reading armored private key from stdin: %w", err))
@@ -56,7 +57,7 @@ func loadStdinExchangeKey(r *repo.Repo, input io.Reader, selector string) ([]byt
 		return nil, missing(fmt.Errorf("multiple supplied private identities match; retry with gpgkey=<identity>"))
 	}
 
-	return decryptSuppliedKey(r, available[0])
+	return decryptSuppliedKey(r, available[0], promptLabel)
 }
 
 func hasPrivateKey(identity *openpgp.Entity) bool {
@@ -73,7 +74,7 @@ func hasPrivateKey(identity *openpgp.Entity) bool {
 	return false
 }
 
-func decryptSuppliedKey(r *repo.Repo, identity *openpgp.Entity) ([]byte, error) {
+func decryptSuppliedKey(r *repo.Repo, identity *openpgp.Entity, promptLabel string) ([]byte, error) {
 	stub := fmt.Sprintf("%x%s", identity.PrimaryKey.Fingerprint, repo.ExtSecret)
 	filename := filepath.Join(repo.DefaultKeyExchangeDir, stub)
 
@@ -83,7 +84,7 @@ func decryptSuppliedKey(r *repo.Repo, identity *openpgp.Entity) ([]byte, error) 
 	}
 	defer ciphertext.Close()
 
-	message, err := openpgp.ReadMessage(ciphertext, openpgp.EntityList{identity}, privateKeyPrompt(), nil)
+	message, err := openpgp.ReadMessage(ciphertext, openpgp.EntityList{identity}, privateKeyPrompt(promptLabel), nil)
 	if err != nil {
 		if ext.ExitCode(err) == ext.MissingData {
 			return nil, err

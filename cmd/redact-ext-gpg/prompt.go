@@ -11,12 +11,27 @@ import (
 
 const passphraseEnv = "REDACT_GPG_PASSPHRASE" //nolint:gosec // Environment variable name.
 
+// defaultPassphrasePrompt asks for the passphrase of a private key whose source
+// has no name of its own. A repository's extension config can name that source
+// with prompt=, so that a key a filter command supplies is named after the command.
+const defaultPassphrasePrompt = "OpenPGP private-key passphrase:" //nolint:gosec // Prompt wording, not a credential.
+
 var (
 	ErrPassphraseUnavailable = errors.New("no terminal available; set " + passphraseEnv)
 	promptPassphrase         = terminalPassphrase
 )
 
-func privateKeyPrompt() openpgp.PromptFunction {
+// passphrasePrompt words the request for a private-key passphrase, naming the
+// source the extension was told to read the key from.
+func passphrasePrompt(label string) string {
+	if label == "" {
+		return defaultPassphrasePrompt
+	}
+
+	return fmt.Sprintf("OpenPGP private-key passphrase for %q:", label)
+}
+
+func privateKeyPrompt(label string) openpgp.PromptFunction {
 	attempted := false
 
 	return func(keys []openpgp.Key, _ bool) ([]byte, error) {
@@ -26,7 +41,7 @@ func privateKeyPrompt() openpgp.PromptFunction {
 
 		attempted = true
 
-		passphrase, err := privateKeyPassphrase()
+		passphrase, err := privateKeyPassphrase(label)
 		if err != nil {
 			return nil, err
 		}
@@ -48,12 +63,12 @@ func privateKeyPrompt() openpgp.PromptFunction {
 	}
 }
 
-func privateKeyPassphrase() ([]byte, error) {
+func privateKeyPassphrase(label string) ([]byte, error) {
 	if value, ok := os.LookupEnv(passphraseEnv); ok {
 		return []byte(value), nil
 	}
 
-	value, err := promptPassphrase("OpenPGP private-key passphrase:")
+	value, err := promptPassphrase(passphrasePrompt(label))
 	if errors.Is(err, ErrPassphraseUnavailable) {
 		return nil, missing(err)
 	}

@@ -152,7 +152,7 @@ func dedupeRecipients(keys []age.Recipient) ([]grantRecipient, []error) {
 }
 
 func showGrantCandidates() error {
-	identities, err := loadIdentities(nil, promptPassphrase)
+	identities, err := loadIdentities(nil, defaultPrompt, promptPassphrase)
 	if err != nil {
 		return err
 	}

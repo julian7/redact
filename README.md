@@ -251,7 +251,7 @@ A filter supplies input to its operation. For example, retrieve a GPG private ke
 {
   "gpg": {
     "get": {
-      "config": {"private-key": "stdin"},
+      "config": {"private-key": "stdin", "prompt": "1Password"},
       "filter": ["op", "read", "op://vault/item/section/field"]
     }
   }
@@ -261,6 +261,8 @@ A filter supplies input to its operation. For example, retrieve a GPG private ke
 Redact executes the `filter` argument array directly, without shell parsing, expansion, or an implicit extension operation. Its standard out is piped to the target extension's standard input. Both commands run from the repository root and receive the target extension's environment, including `.git/redact/gpg.env` in this example. In this example, 1Password command-line tool reads a GPG secret key. Set `OP_ACCOUNT` there to select the appropriate account.
 
 Only `get` receives `private-key=stdin` and runs this filter. The filter receives the operation’s original stdin and can emit diagnostics on stderr. Any non-zero filter exit causes failure.
+
+A key that arrives through a filter has no name of its own, so `prompt=LABEL` names it in the passphrase prompt, which asks for the key of a command or vault instead of unnamed standard input. The label is a short single-line text of at most 80 characters; a repository config with an unusable label fails at `get`. It applies only together with `private-key=stdin`.
 
 ### Extension interface
 
@@ -321,7 +323,7 @@ Collection changes made before an error remain for inspection and recovery; Reda
 
 `redact-ext-gpg` stores encrypted Key Exchange copies and armored public-key registrations in `.redact/<fingerprint>.key` and `.redact/<fingerprint>.asc`. It supports `list`, `get`, `put`, `grant`, `revoke`, and `update`. Use `recipient=SELECTOR` for a local GnuPG public-key selector, `file=PATH` for a binary public key, or `armor=PATH` for an armored public key. `get` accepts `gpgkey=SELECTOR`; if several local identities can unlock the repository, it lists candidates on stderr and asks for a second invocation with that setting. `GNUPGHOME` and other GnuPG environment variables are inherited.
 
-By default, `get` subcommand invokes `gpg` command from the PATH for decryption. With the setting `private-key=stdin`, `get` reads an armored OpenPGP private key from standard input and decrypts its Key Exchange copy internally. Private key stays in memory: this path does not invoke GnuPG, or create temporary secret files. `gpgkey=SELECTOR` can select among supplied identities. For encrypted keys, set `REDACT_GPG_PASSPHRASE` in `.git/redact/gpg.env` or enter the passphrase at the terminal prompt. The `private-key` setting is ignored by other operations.
+By default, `get` subcommand invokes `gpg` command from the PATH for decryption. With the setting `private-key=stdin`, `get` reads an armored OpenPGP private key from standard input and decrypts its Key Exchange copy internally. Private key stays in memory: this path does not invoke GnuPG, or create temporary secret files. `gpgkey=SELECTOR` can select among supplied identities. For encrypted keys, set `REDACT_GPG_PASSPHRASE` in `.git/redact/gpg.env` or enter the passphrase at the terminal prompt. `prompt=LABEL` names that standard input in the request, so it says which command or vault supplied the key. The `private-key` and `prompt` settings are ignored by other operations.
 
 To select the GPG extension explicitly:
 
@@ -341,7 +343,7 @@ redact grant --ext age --option recipient=age1...
 redact unlock --ext age --option keyfile=identities.txt
 ```
 
-`get` reads identities from `keyfile=PATH`, `AGE_IDENTITIES_FILE`, or the user's age identities file. Use `agekey=RECIPIENT` to select among multiple identities, or `private-key=stdin` to supply identities through a `get.filter` command. Encrypted identities use `REDACT_AGE_PASSPHRASE` from `.git/redact/age.env`, or prompt on the terminal. `grant` and `revoke` also accept `file=PATH` for an age recipients file. Each recipient has a 40-character fingerprint, with its public key in `.redact/<fingerprint>.age.pub` and its encrypted copy in `.redact/<fingerprint>.age.key`. Fingerprints can be used with `agekey=` and `revoke recipient=`.
+`get` reads identities from `keyfile=PATH`, `AGE_IDENTITIES_FILE`, or the user's age identities file. Use `agekey=RECIPIENT` to select among multiple identities, or `private-key=stdin` to supply identities through a `get.filter` command. Encrypted identities use `REDACT_AGE_PASSPHRASE` from `.git/redact/age.env`, or prompt on the terminal, where `prompt=LABEL` names the standard input after the command that supplied it. `grant` and `revoke` also accept `file=PATH` for an age recipients file. Each recipient has a 40-character fingerprint, with its public key in `.redact/<fingerprint>.age.pub` and its encrypted copy in `.redact/<fingerprint>.age.key`. Fingerprints can be used with `agekey=` and `revoke recipient=`.
 
 ## Configuration with environment variables
 
