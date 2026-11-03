@@ -1,4 +1,4 @@
 message: 'age and gpg extensions: name the stdin key source in the passphrase prompt'
 type: Added
-severity: minor
+severity: patch
 author: Laszlo Soos <sooslaca@gmail.com>
