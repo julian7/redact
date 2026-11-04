@@ -1,4 +1,0 @@
-message: Add shell completion for redact command
-type: Added
-severity: patch
-author: Balazs Nagy <julsevern@gmail.com>
