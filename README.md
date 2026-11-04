@@ -193,8 +193,51 @@ To switch, either set `REDACT_GIT_CLEAN_TYPE` environment variable, or set `git.
   * rm/del: removes extension
   * list: lists all extensions
   * update: updates extension configuration
+* completion: outputs or installs shell completion script (see [Shell completion](#shell-completion))
 
 See [the to do](TODO.md) file for details.
+
+## Shell completion
+
+`redact completion bash`, `redact completion zsh`, and `redact completion fish`
+print the completion script of the shell, which can be sourced right away:
+
+```shell
+source <(redact completion bash)
+```
+
+With `--install` the script is written into the completion directory of the
+shell instead, where it is picked up without editing the startup files:
+
+```shell
+redact completion zsh --install
+```
+
+| Shell | Installed as |
+|---|---|
+| bash | `$XDG_DATA_HOME/bash-completion/completions/redact` |
+| zsh | `$XDG_DATA_HOME/zsh/site-functions/_redact` |
+| fish | `$XDG_CONFIG_HOME/fish/completions/redact.fish` |
+
+The XDG directories default to `~/.local/share` and `~/.config` when their
+environment variables are not set.
+
+Installation prints what still has to be set up in the shell:
+
+* bash: the [bash-completion](https://github.com/scop/bash-completion) package
+  must be installed and enabled in the shell.
+* zsh: the completion directory must be in `$fpath` before `compinit` runs, for
+  example in `~/.zshrc`:
+
+  ```shell
+  fpath=(~/.local/share/zsh/site-functions $fpath)
+  autoload -Uz compinit && compinit
+  ```
+
+* fish: nothing, new shells pick the script up automatically.
+
+A PowerShell script is also printed by `redact completion pwsh`, but it has no
+`--install` support.
 
 ## Revoke access
 

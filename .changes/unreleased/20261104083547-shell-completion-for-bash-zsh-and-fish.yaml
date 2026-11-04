@@ -1,0 +1,4 @@
+message: shell completion for bash, zsh, and fish
+type: Added
+severity: patch
+author: Laszlo Soos <sooslaca@gmail.com>

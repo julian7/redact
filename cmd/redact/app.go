@@ -37,6 +37,10 @@ file like this:
 The subsequent "git add" command will encrypt files matching this pattern.`,
 		Before:  rt.GlobalConfig,
 		Version: version,
+		// urfave/cli builds the "completion" command, which configureCompletion
+		// extends with the --install option.
+		EnableShellCompletion:           true,
+		ConfigureShellCompletionCommand: configureCompletion,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "verbosity",
