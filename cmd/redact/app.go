@@ -17,6 +17,11 @@ func (rt *Runtime) app() *cli.Command {
 	return &cli.Command{
 		Name:  "redact",
 		Usage: "encrypts files in a git repository",
+
+		EnableShellCompletion: true,
+		ConfigureShellCompletionCommand: func(cmd *cli.Command) {
+			cmd.Hidden = false
+		},
 		Description: `redact - keep secrets in a git repository
 
 This application uses gitattributes(5) to encrypt and decrypt files behind
